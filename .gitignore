@@ -29,3 +29,6 @@ Thumbs.db
 *.tar
 *.tar.gz
 *.7z
+
+# Obsidian local workspace
+.obsidian/
