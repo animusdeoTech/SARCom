@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "name": "SOS state",
+  "description": "TAG-02 has triggered SOS. Banner at top. Info card shown for the SOS tag. Other tags normal.",
+  "shapes": [
+    {
+      "type": "sarcom",
+      "x": 20,
+      "y": 70,
+      "props": {
+        "w": 200,
+        "h": 390,
+        "ui_kind": "side-panel",
+        "label": "Active Tags",
+        "node_id": "",
+        "state": "sos",
+        "last_seen_text": "",
+        "coords_text": "",
+        "battery_text": ""
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 20,
+      "y": 10,
+      "props": {
+        "w": 760,
+        "h": 56,
+        "ui_kind": "sos-banner",
+        "label": "SOS ALERT",
+        "node_id": "0x0002  TAG-02",
+        "state": "sos",
+        "last_seen_text": "2s ago",
+        "coords_text": "46.9519°N 7.4401°E",
+        "battery_text": ""
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 560,
+      "y": 80,
+      "props": {
+        "w": 220,
+        "h": 130,
+        "ui_kind": "info-card",
+        "label": "TAG-02",
+        "node_id": "0x0002",
+        "state": "sos",
+        "last_seen_text": "2s ago",
+        "coords_text": "46.9519°N 7.4401°E",
+        "battery_text": "43%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 310,
+      "y": 160,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "tag",
+        "label": "TAG-01",
+        "node_id": "0x0001",
+        "state": "normal",
+        "last_seen_text": "9s ago",
+        "coords_text": "46.9521°N 7.4386°E",
+        "battery_text": "87%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 470,
+      "y": 220,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "tag",
+        "label": "TAG-02",
+        "node_id": "0x0002",
+        "state": "sos",
+        "last_seen_text": "2s ago",
+        "coords_text": "46.9519°N 7.4401°E",
+        "battery_text": "43%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 360,
+      "y": 310,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "tag",
+        "label": "TAG-03",
+        "node_id": "0x0003",
+        "state": "normal",
+        "last_seen_text": "18s ago",
+        "coords_text": "46.9525°N 7.4375°E",
+        "battery_text": "91%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 390,
+      "y": 250,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "relay",
+        "label": "RELAY-01",
+        "node_id": "0x0101",
+        "state": "normal",
+        "last_seen_text": "6s ago",
+        "coords_text": "46.9522°N 7.4390°E",
+        "battery_text": "72%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 222,
+      "y": 370,
+      "props": {
+        "w": 80,
+        "h": 96,
+        "ui_kind": "gateway",
+        "label": "GATEWAY",
+        "node_id": "0x0200",
+        "state": "normal",
+        "last_seen_text": "",
+        "coords_text": "46.9510°N 7.4365°E",
+        "battery_text": ""
+      }
+    }
+  ]
+}

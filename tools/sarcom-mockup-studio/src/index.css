@@ -1,0 +1,76 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; }
+
+/* Panel base styles */
+.sarcom-panel {
+  background: #1e293b;
+  border-radius: 8px;
+  color: #e2e8f0;
+  pointer-events: all;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sarcom-panel-header {
+  padding: 8px 10px;
+  background: #0f172a;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.sarcom-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  background: #334155;
+  border: 1px solid #475569;
+  border-radius: 5px;
+  color: #e2e8f0;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  flex-shrink: 0;
+}
+.sarcom-btn:hover { background: #3f5470; border-color: #64748b; }
+.sarcom-btn:active { background: #1d4ed8; }
+
+.sarcom-prop-label {
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+.sarcom-prop-input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 11px;
+  padding: 4px 6px;
+  font-family: monospace;
+  outline: none;
+}
+.sarcom-prop-input:focus { border-color: #3b82f6; }
+
+.sarcom-prop-select {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 11px;
+  padding: 4px 6px;
+  outline: none;
+  cursor: pointer;
+}
+.sarcom-prop-select:focus { border-color: #3b82f6; }

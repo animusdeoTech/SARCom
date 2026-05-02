@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "name": "Normal multi-tag",
+  "description": "Normal operation: three tags active, one relay, gateway at bottom-left. All nodes reporting normally.",
+  "shapes": [
+    {
+      "type": "sarcom",
+      "x": 10,
+      "y": 20,
+      "props": {
+        "w": 200,
+        "h": 440,
+        "ui_kind": "side-panel",
+        "label": "Active Tags",
+        "node_id": "",
+        "state": "normal",
+        "last_seen_text": "",
+        "coords_text": "",
+        "battery_text": ""
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 570,
+      "y": 10,
+      "props": {
+        "w": 56,
+        "h": 72,
+        "ui_kind": "north-arrow",
+        "label": "N",
+        "node_id": "",
+        "state": "normal",
+        "last_seen_text": "",
+        "coords_text": "",
+        "battery_text": ""
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 640,
+      "y": 10,
+      "props": {
+        "w": 152,
+        "h": 40,
+        "ui_kind": "scale-bar",
+        "label": "100m",
+        "node_id": "",
+        "state": "normal",
+        "last_seen_text": "",
+        "coords_text": "",
+        "battery_text": ""
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 310,
+      "y": 130,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "tag",
+        "label": "TAG-01",
+        "node_id": "0x0001",
+        "state": "normal",
+        "last_seen_text": "5s ago",
+        "coords_text": "46.9521°N 7.4386°E",
+        "battery_text": "87%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 460,
+      "y": 200,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "tag",
+        "label": "TAG-02",
+        "node_id": "0x0002",
+        "state": "normal",
+        "last_seen_text": "11s ago",
+        "coords_text": "46.9519°N 7.4401°E",
+        "battery_text": "63%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 360,
+      "y": 300,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "tag",
+        "label": "TAG-03",
+        "node_id": "0x0003",
+        "state": "normal",
+        "last_seen_text": "22s ago",
+        "coords_text": "46.9525°N 7.4375°E",
+        "battery_text": "91%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 390,
+      "y": 240,
+      "props": {
+        "w": 72,
+        "h": 88,
+        "ui_kind": "relay",
+        "label": "RELAY-01",
+        "node_id": "0x0101",
+        "state": "normal",
+        "last_seen_text": "8s ago",
+        "coords_text": "46.9522°N 7.4390°E",
+        "battery_text": "72%"
+      }
+    },
+    {
+      "type": "sarcom",
+      "x": 222,
+      "y": 362,
+      "props": {
+        "w": 80,
+        "h": 96,
+        "ui_kind": "gateway",
+        "label": "GATEWAY",
+        "node_id": "0x0200",
+        "state": "normal",
+        "last_seen_text": "",
+        "coords_text": "46.9510°N 7.4365°E",
+        "battery_text": ""
+      }
+    }
+  ]
+}
