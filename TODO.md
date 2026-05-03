@@ -20,6 +20,22 @@ As of 2026-04-26 the ADR ledger runs 001–014. ADR-012 was superseded in part o
 - [ ] Order the wooden pole + stainless hose clamps for the garden relay (local hardware store).
 - [ ] Write a one-page desk-inventory note: which Pi model each of the 3 units is, which HAT has which bent pins, what's actually missing.
 
+## Doc review findings — close before writing firmware
+
+Six things the review flagged that are genuinely not yet in the docs or the lab. No ADR changes. No implementation. Just spec gaps and one stale line.
+
+- [ ] **Staleness thresholds are wrong.** The kiosk-lab and UI mockups use ad-hoc values (e.g. "stale if > 2 min"). Normal heartbeat cadence is 300–330 s, so a healthy tag would flag stale before the next expected frame. Fix: derive thresholds from heartbeat cadence — fresh = < 330 s, aging = < 660 s, stale = < 22 min, very stale = > 22 min. SOS mode separate: SOS stale = > 3 min (expected every 45–60 s). Document in [ARCHITECTURE.md §11](ARCHITECTURE.md); fix constants in `tools/sarcom-kiosk-lab/src/data.rs`.
+
+- [ ] **No-fix / SOS edge case is architecturally underspecified.** When a tag transitions from valid-fix to no-fix (e.g. SOS entry in a canyon), the architecture says it goes to the side list — but it does not say what happens to the existing map marker. Operator needs to see the last valid fix as a ghost/dashed marker, clearly labelled "last valid fix [time]", while the SOS banner and "no current fix" state show alongside it. Problem is: the UI read-model needs two distinct query results per node: `latest_report` (most recent row regardless of GPS state) and `latest_valid_fix` (most recent row with GPS_VALID=1). Define both in [ARCHITECTURE.md §11](ARCHITECTURE.md) before kiosk UI code hardens.
+
+- [ ] **Relay runtime duty-cycle enforcement has no firmware spec.** [ADR-014](decisions/ADR-014-duty-cycle-budget-as-gate.md) defines the design-time budget table. What the relay firmware should actually *do* when TX pressure approaches 1% is not written down anywhere. Needs a concrete rule in [ARCHITECTURE.md §9](ARCHITECTURE.md): rolling 1-hour airtime budget counter; SOS packets retry until queue expiry; heartbeat retransmits drop on budget overflow; self-announce drops first. Without this, firmware will implement something ad-hoc and inconsistent with the budget table.
+
+- [ ] **Clock-invalid scenario missing from kiosk-lab.** [ADR-011](decisions/ADR-011-gateway-time-source.md) requires a "clock not set" banner and suppression of all relative-time strings when RTC is unavailable at boot. The kiosk-lab has Normal / SOS / Stale / No Fix / Multi-Tag scenarios but nothing for this state. Add a `ClockInvalid` scenario: header shows "RTC NOT SET", all "X ago" strings replaced with "time unavailable", map still renders markers from DB ordering.
+
+- [ ] **README "Code: Not yet written" is now inaccurate.** The repo has `tools/sarcom-kiosk-lab`, `UX/`, `scripts/`. Fix the status row to: "Production firmware/gateway code not yet written. UX and tooling code exists under `tools/`."
+
+- [ ] **Archived mockup-studio TOML export silently drops nodes.** `tomlExport.ts` filters on `['tag', 'relay', 'gateway']` — misses `hiker` and `drone-relay`. Tool is archived so don't fix the code; add one line to `tools/sarcom-mockup-studio/ARCHIVED.md` that export output is stale and should not be used as config input.
+
 ## While hardware is in transit (1–2 weeks)
 
 - [ ] Stand up the Cargo workspace per [ARCHITECTURE.md §17](ARCHITECTURE.md). Crates (library-only): `protocol` (no_std, with optional `std` feature), `persistence` (std), `heltec-wireless-tracker-v2-bsp`. Binaries: `firmware/tag/`, `firmware/relay/` (both Xtensa), `gateway/` (aarch64 or armv7; the kiosk is a module at `gateway/src/ui/`, not a separate crate). `cargo check` green on all targets.
