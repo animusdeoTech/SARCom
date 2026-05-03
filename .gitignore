@@ -32,3 +32,20 @@ Thumbs.db
 
 # Obsidian local workspace
 .obsidian/
+
+# Rust build artifacts
+**/target/
+
+# Claude Code personal config (not project config)
+.claude/
+.mcp.json
+
+# Downloaded binaries
+scripts/pmtiles.exe
+
+# Tile data (can be large; regenerate with scripts/download_tiles.py)
+resources/tiles/
+
+# Mockup-studio output directories (tool is archived)
+tools/sarcom-mockup-studio/exports/
+tools/sarcom-mockup-studio/mockups/
