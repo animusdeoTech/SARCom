@@ -37,11 +37,20 @@ cargo build --release
 
 ## What you get
 
-Sidebar defaults to **300 px** so cadence-derived values like `self-ann
-14m ago` and `time unavailable` fit on one line. The `Edit → Layout`
-slider clamps to **280–420 px**; below 280 the kv rows automatically
-wrap the value to an indented second line rather than clipping past the
-sidebar edge.
+Sidebar defaults to **320 px**. The `Edit → Layout` slider clamps to
+**300–420 px**.
+
+INFRA, SYSTEM, and TAG DETAILS render as **full-width status cards**
+(the inner Frame is forced to `ui.available_width()` so the card
+background spans the sidebar instead of shrinking to text width).
+Inside each card, key/value status rows use a **compact two-column
+layout**: a fixed-width dim monospace key cell (~80 px) on the left, a
+flexible value cell on the right with `Label::wrap()` enabled, both
+left-aligned. Long values like `time unavailable` or `none on record`
+fall back to wrapping inside the value cell — no `right_to_left`
+layout, which was the original right-edge clipping source under
+`SidePanel` + `ScrollArea`. The HIKERS list rows stay inline (compact,
+short content with badges on the right).
 
 800×480-ish window (resizable) with:
 

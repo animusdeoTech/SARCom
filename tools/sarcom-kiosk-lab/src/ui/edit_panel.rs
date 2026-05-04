@@ -17,11 +17,12 @@ impl KioskLabApp {
 
             // ── Layout ────────────────────────────────────────────────────
             ui.collapsing("Layout", |ui| {
-                // Min 280: below this the INFRA / SYSTEM rows start clipping
-                // (kv helpers wrap to a second line, but we still need room
-                // for the indented value).
+                // Min 300: INFRA / SYSTEM rows are a fixed-key + flexible-value
+                // two-column layout that wraps long values inside the value cell,
+                // so 300 px is the practical floor where everything still reads
+                // cleanly without forcing a wrap on the common short values.
                 ui.add(
-                    egui::Slider::new(&mut self.sidebar_width, 280.0..=420.0).text("sidebar width"),
+                    egui::Slider::new(&mut self.sidebar_width, 300.0..=420.0).text("sidebar width"),
                 );
                 ui.checkbox(&mut self.show_track, "Show track");
                 ui.checkbox(&mut self.show_sighting_log, "Show sighting log");

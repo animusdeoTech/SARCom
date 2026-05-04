@@ -110,51 +110,54 @@ impl KioskLabApp {
                         .fill(egui::Color32::from_rgb(15, 22, 32))
                         .inner_margin(egui::Margin::symmetric(10.0, 8.0))
                         .show(ui, |ui| {
-                            ui.set_width(self.sidebar_width - 2.0);
-                            kv(ui, "ID", &format!("#{}", tag.node_id));
-                            kv_color(ui, "STATE", tag.state.label(), dot);
-                            kv(
+                            // Force the card to span the full sidebar width
+                            // — without this the Frame fill shrinks to the
+                            // longest kv row.
+                            ui.set_width(ui.available_width());
+                            kv_row(ui, "id", &format!("#{}", tag.node_id));
+                            kv_row_color(ui, "state", tag.state.label(), dot);
+                            kv_row(
                                 ui,
-                                "LAST SEEN",
+                                "last seen",
                                 &format_age_or_unavailable(tag.last_seen_secs, clock_valid),
                             );
-                            kv_color(
+                            kv_row_color(
                                 ui,
-                                "GPS",
-                                if tag.gps_valid { "FIX" } else { "NO FIX" },
+                                "gps",
+                                if tag.gps_valid { "fix" } else { "no fix" },
                                 if tag.gps_valid { GREEN } else { AMBER },
                             );
                             // Show last valid fix only when current GPS is invalid;
                             // otherwise the current marker is the answer.
                             if !tag.gps_valid {
                                 if let Some(age) = tag.last_valid_fix_age_secs {
-                                    kv(
+                                    kv_row(
                                         ui,
-                                        "LAST FIX",
+                                        "last fix",
                                         &format_age_or_unavailable(age, clock_valid),
                                     );
                                     if let Some(p) = tag.last_valid_fix_pos {
-                                        kv(ui, "  AT", &format!("{:.3}, {:.3}", p[0], p[1]));
+                                        kv_row(ui, "at", &format!("{:.5}, {:.5}", p[0], p[1]));
                                     }
                                 } else {
-                                    kv_color(ui, "LAST FIX", "none on record", TEXT_DIM);
+                                    kv_row_color(ui, "last fix", "none on record", TEXT_DIM);
                                 }
                             }
-                            kv_color(
+                            kv_row_color(
                                 ui,
-                                "SOS",
-                                if tag.sos { "ACTIVE" } else { "—" },
+                                "sos",
+                                if tag.sos { "active" } else { "—" },
                                 if tag.sos { RED } else { TEXT_DIM },
                             );
-                            kv_color(
+                            kv_row_color(
                                 ui,
-                                "BATTERY",
-                                if tag.battery_low { "LOW" } else { "OK" },
+                                "battery",
+                                if tag.battery_low { "low" } else { "ok" },
                                 if tag.battery_low { RED } else { GREEN },
                             );
                             // Current pos is meaningless when gps_valid=false; hide it.
                             if tag.gps_valid {
-                                kv(ui, "POS", &format!("{:.3}, {:.3}", tag.pos[0], tag.pos[1]));
+                                kv_row(ui, "pos", &format!("{:.5}, {:.5}", tag.pos[0], tag.pos[1]));
                             }
                         });
                 }
@@ -168,7 +171,7 @@ impl KioskLabApp {
                 .fill(egui::Color32::from_rgb(15, 22, 32))
                 .inner_margin(egui::Margin::symmetric(10.0, 6.0))
                 .show(ui, |ui| {
-                    ui.set_width(self.sidebar_width - 2.0);
+                    ui.set_width(ui.available_width());
                     ui.label(
                         egui::RichText::new(&self.sim.relay.label)
                             .color(ORANGE)
@@ -185,20 +188,16 @@ impl KioskLabApp {
                             } else {
                                 TEXT_DIM
                             };
-                            // Key already reads SELF-ANN; the value is just
-                            // the relay-cadence age. Don't repeat "self-ann"
-                            // in the value or the row goes >25 chars and the
-                            // 240–280 px sidebar clips.
-                            kv_color(ui, "SELF-ANN", &age_str, color);
+                            kv_row_color(ui, "self-ann", &age_str, color);
                         }
                         None => {
-                            kv_color(ui, "SELF-ANN", "no frame rx", TEXT_DIM);
+                            kv_row_color(ui, "self-ann", "no frame rx", TEXT_DIM);
                         }
                     }
-                    kv(
+                    kv_row(
                         ui,
-                        "POS",
-                        &format!("{:.3}, {:.3}", self.sim.relay.pos[0], self.sim.relay.pos[1]),
+                        "pos",
+                        &format!("{:.5}, {:.5}", self.sim.relay.pos[0], self.sim.relay.pos[1]),
                     );
                 });
 
@@ -210,19 +209,19 @@ impl KioskLabApp {
                 .fill(egui::Color32::from_rgb(15, 22, 32))
                 .inner_margin(egui::Margin::symmetric(10.0, 6.0))
                 .show(ui, |ui| {
-                    ui.set_width(self.sidebar_width - 2.0);
+                    ui.set_width(ui.available_width());
                     ui.label(
                         egui::RichText::new(&self.sim.gateway.label)
                             .color(GREEN)
                             .strong()
                             .size(11.0),
                     );
-                    kv_color(ui, "GATEWAY", "ONLINE", GREEN);
-                    kv_color(ui, "RADIO", "RX", GREEN);
-                    kv_color(
+                    kv_row_color(ui, "gateway", "online", GREEN);
+                    kv_row_color(ui, "radio", "rx", GREEN);
+                    kv_row_color(
                         ui,
-                        "RTC",
-                        if clock_valid { "OK" } else { "NOT SET" },
+                        "rtc",
+                        if clock_valid { "ok" } else { "not set" },
                         if clock_valid { GREEN } else { AMBER },
                     );
                 });
@@ -323,24 +322,29 @@ pub fn sidebar_header(ui: &mut egui::Ui, label: &str) {
         });
 }
 
-pub fn kv(ui: &mut egui::Ui, key: &str, val: &str) {
-    kv_color(ui, key, val, TEXT_BRIGHT);
+/// Width of the key column inside INFRA / SYSTEM / TAG DETAILS cards.
+/// Tuned to fit the longest current key ("self-ann", "last seen") plus
+/// a couple of pixels of breathing room at monospace 10 pt.
+const KV_KEY_COL_W: f32 = 80.0;
+const KV_GAP: f32 = 8.0;
+
+/// Compact two-column status row: dim monospace key in a fixed-width
+/// cell on the left, bright/coloured monospace value in a flexible cell
+/// on the right. Both cells are left-aligned. The value cell uses
+/// `Label::wrap()` so strings longer than the value cell break onto
+/// extra lines inside the cell instead of painting past the sidebar
+/// edge — no `right_to_left` layout, which was the original clipping
+/// source under `SidePanel` + `ScrollArea`.
+pub fn kv_row(ui: &mut egui::Ui, key: &str, val: &str) {
+    kv_row_color(ui, key, val, TEXT_BRIGHT);
 }
 
-/// Key/value row that gracefully handles long values.
-///
-/// - If `key`, a 12 px gap, and `val` all fit in `available_width()`, the
-///   row is a single line: key on the left, value right-aligned.
-/// - Otherwise the value wraps to an indented second line. We never let the
-///   value draw beyond the sidebar (the old `right_to_left` layout did).
-pub fn kv_color(ui: &mut egui::Ui, key: &str, val: &str, color: egui::Color32) {
-    let font = egui::FontId::monospace(10.0);
-    let key_w = monospace_width(ui.ctx(), key, &font);
-    let val_w = monospace_width(ui.ctx(), val, &font);
-    let avail = ui.available_width();
-    let gap_min = 12.0;
-    // 6 px slack absorbs egui's internal item-spacing in horizontal layouts.
-    let fits_one_line = key_w + gap_min + val_w + 6.0 <= avail;
+pub fn kv_row_color(ui: &mut egui::Ui, key: &str, val: &str, color: egui::Color32) {
+    let total_w = ui.available_width();
+    // Cap the key column at 40 % of the row in an unusually narrow card,
+    // so the value always has room to breathe.
+    let key_w = KV_KEY_COL_W.min(total_w * 0.4);
+    let val_w = (total_w - key_w - KV_GAP).max(40.0);
 
     let key_rich = egui::RichText::new(key)
         .color(TEXT_DIM)
@@ -352,28 +356,21 @@ pub fn kv_color(ui: &mut egui::Ui, key: &str, val: &str, color: egui::Color32) {
         .strong()
         .size(10.0);
 
-    if fits_one_line {
-        ui.horizontal(|ui| {
-            ui.label(key_rich);
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.label(val_rich);
-            });
-        });
-    } else {
-        ui.label(key_rich);
-        ui.horizontal(|ui| {
-            ui.add_space(10.0);
-            // wrap() lets values longer than the sidebar break across lines
-            // instead of being painted past the right edge.
-            ui.add(egui::Label::new(val_rich).wrap());
-        });
-    }
-}
-
-fn monospace_width(ctx: &egui::Context, text: &str, font: &egui::FontId) -> f32 {
-    ctx.fonts(|f| {
-        f.layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::WHITE)
-            .rect
-            .width()
-    })
+    ui.horizontal(|ui| {
+        ui.allocate_ui_with_layout(
+            egui::vec2(key_w, 0.0),
+            egui::Layout::left_to_right(egui::Align::TOP),
+            |ui| {
+                ui.label(key_rich);
+            },
+        );
+        ui.add_space(KV_GAP);
+        ui.allocate_ui_with_layout(
+            egui::vec2(val_w, 0.0),
+            egui::Layout::left_to_right(egui::Align::TOP),
+            |ui| {
+                ui.add(egui::Label::new(val_rich).wrap());
+            },
+        );
+    });
 }
