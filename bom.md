@@ -98,10 +98,9 @@ tags: [hardware, bom, shopping]
 
 These are NOT in the immediate cart. v0 runs behind WiFi with NTP at mom's place — no RTC needed yet. v1a is the first field deployment where the gateway has no internet.
 
-- [ ] **1× DS3231 RTC module** (I²C, ±2 ppm, ~€3). Connect to Pi I²C GPIO header for field deployment.
-- [ ] **1× CR2032 coin cell** for the RTC backup (order one regardless of whether the module ships with one).
+- [ ] **1× Raspberry Pi RTC Battery** (official, JST connector for Pi 5 RTC header — or LIR2032 + matching JST pigtail). Pi 5 has a built-in RTC; just needs the battery.
 
-Per [ADR-011](decisions/ADR-011-gateway-time-source.md). ADR-011 is unchanged — it applies to field deployment. For v0 desk prototyping, NTP over local WiFi is acceptable.
+Per [ADR-011](decisions/ADR-011-gateway-time-source.md). DS3231 external module removed — Pi 5 built-in RTC replaces it. For v0 desk prototyping, NTP over local WiFi is acceptable.
 
 ---
 
@@ -176,7 +175,7 @@ Gated on v1a passing. Do not add to cart until v1a acceptance criteria are met.
 19. Timber + fasteners for relay pole (after Fusion360 drawing is done)
 
 ### Deferred (not in this cart)
-- DS3231 RTC + CR2032 — buy at v1a prep
+- Raspberry Pi RTC Battery (JST, for Pi 5 built-in RTC) — buy at v1a prep
 
 ---
 

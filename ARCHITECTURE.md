@@ -356,7 +356,7 @@ The gateway is a Raspberry Pi (3B+ or 4) with a Dragino LoRa/GPS HAT (SX1276) an
 
 ### What the gateway does
 
-1. Read system time from the DS3231 RTC at boot (see [ADR-011](decisions/ADR-011-gateway-time-source.md)); optionally discipline the RTC from the Dragino HAT's Quectel L80-M39 GPS via `chrony`/`gpsd` when a fix is available
+1. Read system time from the Pi 5 built-in RTC at boot (see [ADR-011](decisions/ADR-011-gateway-time-source.md)); optionally discipline the RTC from the Dragino HAT's Quectel L80-M39 GPS via `chrony`/`gpsd` when a fix is available
 2. Listen continuously for LoRa packets via SX1276 over SPI (the gateway uses the same `lora-phy` crate as the tag/relay — it supports SX127x as well as SX126x, so there is no separate driver to write)
 3. Validate frame integrity (MAGIC, VER, TYPE, LEN, CRC-16/CCITT-FALSE)
 4. Parse the payload — one known type in v1: POSITION. Per [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md). Unknown VER or TYPE is dropped and logged.
@@ -611,7 +611,7 @@ Tag transmits sentinel-value packets every 5 s (`GPS_VALID=0`, lat/lon/alt senti
 
 Also in scope for v0 (so later work doesn't bog down on it):
 
-- DS3231 RTC wired to the Pi I²C bus and reading correctly; `hwclock --systohc` / `--hctosys` integrated into the Yocto boot sequence. See [ADR-011](decisions/ADR-011-gateway-time-source.md).
+- Pi 5 built-in RTC reading correctly with battery fitted to JST header; `hwclock --systohc` / `--hctosys` integrated into the Yocto boot sequence. See [ADR-011](decisions/ADR-011-gateway-time-source.md).
 - PMTiles-on-`walkers` kiosk spike on a laptop first, then on the Pi. Must render a small local `.pmtiles` before any other kiosk work lands. See [ADR-005](decisions/ADR-005-map-and-ui.md). If the spike fails on the Pi's GPU stack, this is the moment to fall back to `iced`/`slint` or write a custom MBTiles tile provider — not at v1.
 
 ### v0.5 — Gateway writes to SQLite; kiosk renders a marker
@@ -705,7 +705,7 @@ Pressure-treated wood, south-facing solar panel, pole anchoring to survive wind.
 Default bracket does not fit the Tracker V2 outline — see [ADR-003](decisions/ADR-003-relay-hardware.md). Mount via adhesive standoffs. Verify during first assembly.
 
 ### 12. Gateway time source
-Pi has no on-chip RTC and we explicitly have no NTP. Without the DS3231 module + coin cell from [ADR-011](decisions/ADR-011-gateway-time-source.md), `received_at` is unreliable across power cycles and every "last seen" string the kiosk renders is a lie. The RTC is a load-bearing component, not a convenience; absent RTC is a v1 blocker.
+Pi 5 has a built-in battery-backed RTC (no external module needed). Battery must be fitted to the JST header on the board. We explicitly have no NTP. Without the RTC battery from [ADR-011](decisions/ADR-011-gateway-time-source.md), `received_at` is unreliable across power cycles and every "last seen" string the kiosk renders is a lie. The RTC battery is a load-bearing component, not a convenience; unfitted RTC battery is a v1 blocker.
 
 ### 13. IPEX1.0 ↔ SMA antenna path
 Tracker V2 exposes LoRa on IPEX1.0 (u.FL); the Solar Kit bulkhead is SMA. The pigtail connecting the two is ordered via [bom.md](bom.md) but gender (female vs male bulkhead) must be verified on the shipped Solar Kit panel before antennas are fitted. Bench-check before wall-mounting.
@@ -780,7 +780,7 @@ lora-sar/
 | SQLite `UNIQUE INDEX idx_dedup ON sightings(tag_id, seq_nr)` → **removed; recent-window dedup only (24 h)** | Same bug as above — a permanent uniqueness constraint fights `seq_nr` wraparound |
 | CRC loosely described as "CRC-CCITT" → **CRC-16/CCITT-FALSE, fully specified (poly 0x1021, init 0xFFFF, no reflect, xorout 0x0000)** | Prevents implementation drift between tag / relay / gateway CRC libraries |
 | Relay queue policy read fixed POSITION byte offsets for unknown TYPE/VER → **TYPE-dispatched; unknown types forwarded as FIFO with hash-based echo suppression** | Forward-compatibility: future packet types don't get misinterpreted as if bytes 4–9 were a POSITION tag_id/seq_nr/flags |
-| Gateway had no time source described → **DS3231 RTC primary, GPS/PPS opportunistic** | A Pi with no NTP and no RTC boots with bogus time; every "last seen" string would be a lie after every power cycle. See [ADR-011](decisions/ADR-011-gateway-time-source.md) |
+| Gateway had no time source described → **Pi 5 built-in RTC primary (battery on JST header), GPS/PPS opportunistic** | A Pi with no NTP and no RTC boots with bogus time; every "last seen" string would be a lie after every power cycle. Pi 4 had no on-chip RTC; Pi 5 does. DS3231 external module removed. See [ADR-011](decisions/ADR-011-gateway-time-source.md) |
 | Kiosk tiles: MBTiles → **PMTiles** | `walkers` documents native `.pmtiles` support; MBTiles would require writing a custom tile provider. See [ADR-005](decisions/ADR-005-map-and-ui.md) |
 | v0.5 acceptance used sentinel coordinates as a placeholder map marker → **v0.5 uses a hardcoded valid test coordinate with `GPS_VALID=1`** | Contradicted §6/§11's own "never render sentinels as a marker" rule |
 | Gateway RSSI/SNR implied tag-link quality → **documented as last-hop only** | A relay-forwarded frame's RSSI describes relay→gateway, not tag→relay |
