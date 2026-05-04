@@ -46,6 +46,10 @@ LoRa SAR/
 ├── TODO.md                   ← ordered backlog
 ├── ARCHITECTURE.md           ← single-source architecture doc (v10, 2026-04-26)
 ├── bom.md                    ← bill of materials
+├── explainers/               ← presentation-friendly system explanations
+│   └── how-the-network-works.md
+├── operations/               ← operator / bring-up troubleshooting docs
+│   └── troubleshooting-guide.md
 │
 ├── decisions/                ← Architecture Decision Records
 │   ├── README.md             ← ADR index + status board
@@ -69,7 +73,7 @@ LoRa SAR/
     └── product-roadmap.md    ← calendar roadmap replaced by TODO.md
 ```
 
-Future folders (`architecture/`, `hardware/`, `software/`, `operations/`) will appear as we break out detail from `ARCHITECTURE.md`. For now, `ARCHITECTURE.md` is the single source of truth and the ADRs are the decision ledger.
+Future folders (`architecture/`, `hardware/`, `software/`) may appear as we break out detail from `ARCHITECTURE.md`. For now, `ARCHITECTURE.md` remains the single source of truth and the ADRs are the decision ledger.
 
 ## Read-first order (new contributor, 15 minutes)
 
@@ -81,3 +85,8 @@ Future folders (`architecture/`, `hardware/`, `software/`, `operations/`) will a
 6. `bom.md` — what to order
 
 Everything else is detail.
+
+## Presentation / operations docs
+
+- `explainers/how-the-network-works.md` — presentation-friendly network walkthrough for contributors, reviewers, and operator-adjacent readers.
+- `operations/troubleshooting-guide.md` — practical operator/developer troubleshooting reference for packet drops, map truth, clock/radio bring-up, and dedup behavior.
