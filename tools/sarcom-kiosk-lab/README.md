@@ -10,10 +10,23 @@ No browser, no npm, no Electron. Matches the production stack (Rust + egui).
 
 ## Run
 
+This tool is intentionally a **standalone Cargo workspace** — it is not a
+member of the SARCOM root workspace (which only carries `crates/protocol`).
+That keeps the kiosk lab's `eframe` dependency stack out of the firmware /
+gateway build graph. Run cargo commands either from inside the tool
+directory or with an explicit `--manifest-path`:
+
 ```powershell
 cd tools\sarcom-kiosk-lab
 cargo run
+
+# or, from the repo root:
+cargo check --manifest-path tools\sarcom-kiosk-lab\Cargo.toml
+cargo test  --manifest-path tools\sarcom-kiosk-lab\Cargo.toml
 ```
+
+`cargo test` from the root workspace will *not* pick this tool up — that
+is deliberate.
 
 Release build (no console window):
 
@@ -51,6 +64,9 @@ Switch via the combobox in the header:
 
 - **Click a tag** on the map or in the sidebar list to select it
 - **Drag any marker** (tag, relay, gateway) to reposition it
+  - For a no-fix tag that has a last valid fix, the visible marker *is*
+    the ghost — dragging it moves `last_valid_fix_pos`, not a current
+    position (a current position would be a lie when `gps_valid=false`).
 - **Edit panel** (header → Edit button):
   - Sidebar width slider
   - Show/hide track lines and sighting log

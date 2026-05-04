@@ -15,6 +15,12 @@ pub enum Freshness {
 /// SOS path: stale if last frame > 180 s (3× expected cadence).
 pub fn freshness_for_tag(age_secs: f32, sos: bool) -> Freshness {
     if sos {
+        // SOS only has two states in this lab model: Fresh (link healthy)
+        // and VeryStale (distress link stale). `VeryStale` here is reused
+        // as the colour bucket for "SOS stale", NOT the heartbeat
+        // very-stale meaning. If a future UI ever surfaces the freshness
+        // enum as user-facing label text, split this into a dedicated
+        // `Freshness::SosStale` variant first.
         if age_secs < 180.0 {
             Freshness::Fresh
         } else {
