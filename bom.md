@@ -11,120 +11,177 @@ tags: [hardware, bom, shopping]
 
 **Aligned to:** [ADR-002](decisions/ADR-002-tag-hardware.md), [ADR-003](decisions/ADR-003-relay-hardware.md), [ADR-004](decisions/ADR-004-gateway-platform.md), [ADR-011](decisions/ADR-011-gateway-time-source.md), [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md), [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md), dated 2026-04-22 / 2026-04-24 / 2026-04-25 / 2026-04-26.
 
-## Heltec (order from heltec.org DE warehouse)
+---
 
-- [ ] **3× Heltec Wireless Tracker V2** (ESP32-S3FN8 + SX1262 + UC6580 multi-constellation GNSS, 863–928 MHz variant, 28 dBm). 1 for primary tag, 1 for paal-relay (v1a), 1 reflashed as drone-pod (v1b). Per [ADR-002](decisions/ADR-002-tag-hardware.md), [ADR-003](decisions/ADR-003-relay-hardware.md), and [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md). *Note: the UC6580 is on-board — no external GNSS module needed.*
-- [ ] **1× Heltec Solar Kit for Dev-board** (IP67 enclosure ~178×178×35 mm, 5 W 6 V solar panel, charge controller, 1–4× 18650 holder, pre-reserved SMA bulkhead hole for external LoRa antenna). Per [ADR-003](decisions/ADR-003-relay-hardware.md).
+## Order 1 — Heltec DE warehouse (heltec.org)
 
-**Explicitly NOT ordering** (superseded by ADR-002 / ADR-003):
-- ~~WiFi LoRa 32 V4~~ — superseded
-- ~~V4 Expansion Kit~~ — superseded
-- ~~L76K GNSS module~~ — Wireless Tracker V2 has the UC6580 on-board
+- [ ] **10× Heltec Wireless Tracker V2** (ESP32-S3FN8 + SX1262 + UC6580 GNSS, **EU 863–870 MHz variant**, 28 dBm). 2 tags (v1a/v1b), 1 paal-relay (v1a), 1 drone-pod relay (v1b), 6 spares/future use. Per [ADR-002](decisions/ADR-002-tag-hardware.md), [ADR-003](decisions/ADR-003-relay-hardware.md), [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md). Product page: https://heltec.org/project/wireless-tracker-v2/
+  *UC6580 is on-board — no external GNSS module needed.*
+  *BLE commissioning interface planned for v1 — see ADR-006 update pending.*
 
-## Antennas + RF interconnect (CRITICAL — do not skip)
+- [ ] **1× Heltec Solar Kit for Dev-board** — order the **"LoRa + 2.4G"** variant (in stock as of 2026-05-04; 868 MHz single-LoRa variant is out of stock). The extra 2.4G SMA bulkhead is unused — plug or leave empty. IP67 enclosure ~178×178×35 mm, 5W 6V solar panel, charge controller, 18650 holder. Product page: https://heltec.org/project/solar-kit-for-dev-board-waterproof-enclosure-for-outdoor-meshtastic-meshcore/
+  **Verify at checkout:** does this variant include an IPEX1.0→SMA pigtail and/or 868 MHz antenna? If yes, remove items 1 and/or 2 from Order 2.
 
-The Tracker V2 exposes the SX1262 LoRa port on an **IPEX1.0 (u.FL)** connector. The Solar Kit enclosure has an **SMA bulkhead** hole in the wall. The onboard LDS ceramic antenna gets buried inside the IP67 box and is useless for the relay use case. So:
+**Heltec warehouse note:** use heltec.org and select the DE warehouse at checkout. Verify ship-from location before paying — unconfirmed reports of some SKUs shipping from CN manufacturing.
 
-- [ ] **1× IPEX1.0 → SMA female bulkhead pigtail**, ~15 cm. For the relay: Tracker V2 LoRa port → bulkhead of the Solar Kit enclosure. Verify gender against the Solar Kit panel (SMA female bulkhead ↔ SMA male antenna is the standard combo).
-- [ ] **1× 868 MHz external SMA antenna** for the relay (omnidirectional, ~3 dBi, half-wave). Mounted on the Solar Kit bulkhead. Not optional — the onboard LDS antenna is sealed inside the enclosure.
-- [ ] **1× 868 MHz half-wave SMA stubby antenna** for the Dragino HAT on the gateway Pi. The HAT does not ship with a suitable ETSI 868 antenna.
-- [ ] **Tag antennas:** the Tracker V2's onboard LDS antenna is usable for the pocket-carried tag. **If range is poor during bring-up**, add 1× IPEX1.0 → SMA pigtail + 1× stubby per tag. Defer this purchase until after v0.
+---
 
-## Gateway time source (CRITICAL for "last seen" not to lie)
+## Order 2 — Amazon.de (or Tinytronics.nl as fallback)
 
-A Pi with no internet and no RTC will boot with bogus system time. The kiosk renders "last seen X minutes ago" — without a real time source, that string lies after every power cycle. Per [ADR-011](decisions/ADR-011-gateway-time-source.md):
+### RF interconnect
 
-- [ ] **1× DS3231 RTC module** with battery holder (I2C, ±2 ppm, ~€3). Connect to the Pi's I2C bus on the GPIO header.
-- [ ] **1× CR2032 coin cell** for the RTC (some modules ship with one, many don't — order one regardless).
-- [ ] *Opportunistic:* the Dragino HAT's MTK3339 GPS can provide PPS-disciplined time when it has a fix. Useful, but not a substitute for the RTC.
+- [ ] **1× IPEX1.0 (u.FL) → SMA female bulkhead pigtail**, ~15 cm. Relay: Tracker V2 LoRa port → Solar Kit enclosure bulkhead. **Not included in the Solar Kit** (verified 2026-05-04).
+  Search: "u.FL IPEX to SMA female pigtail 15cm"
 
-## Batteries (local / Amazon / Tinytronics)
+- [ ] **4× 868 MHz SMA stubby antenna** (omnidirectional, ~2–3 dBi, half-wave), SMA male connector. One per Dragino HAT (3× Pi gateway) + 1 spare. **The Solar Kit includes its own 868 MHz antenna for the relay bulkhead** (verified 2026-05-04) — these four are for the Dragino HATs only. Cannot buy at a local hardware store — order online.
+  Search: "868MHz SMA antenna omnidirectional stub"
 
-Accounting: 2 tags × 1 cell + 1 relay × 2 cells = **4 consumed**. Add 2 real spares → order 6.
+### Batteries
 
-- [ ] **6× Samsung INR18650-25R** flat-top (or equivalent quality cell: Molicel P26A, LG HG2). 2 for the tags, 2 for the Solar Kit, 2 genuine spares.
+- [ ] **12× Samsung INR18650-25R flat-top** (or equivalent: Molicel P26A, LG HG2). Do not buy protected cells — the Solar Kit charge controller handles protection. 2 per tag, 2 per relay Solar Kit, 8 spares.
+  Search: "Samsung INR18650-25R flat top" on Amazon.de or nkon.nl (NKON ships from NL, better pricing for cells).
 
-## Tag SOS audible cue (per ADR-012)
+### Tag SOS audible cue
 
-Per [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md) (preserved through the ADR-013 rollback), the tag drives a piezo buzzer on a GPIO line for the duration of distress state — the last-meter audible cue for the human searcher.
+- [ ] **1× 3.3V active piezo buzzer**, low-current, GPIO-driveable directly from ESP32-S3 GPIO (~€1). Connects via jumper cable to a free GPIO during bring-up — no soldering needed for v0/v1a bench testing.
+  Search: "active piezo buzzer 3.3V arduino"
 
-- [ ] **1× 3.3 V active piezo buzzer**, low-current, GPIO-driveable directly from the ESP32-S3 (~€1, tag SOS audible cue per [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md)).
+### Relay mounting
 
-*Note: the Wireless Tracker V2 has its own battery input via the SH1.25-2 "battery" interface, which on the relay will be fed from the Solar Kit charge controller's battery bus — one charge path, not two. See [ADR-003](decisions/ADR-003-relay-hardware.md) §Consequences.*
+- [ ] **M2.5 self-adhesive PCB nylon standoffs** (pack of 10–20, ~6–10 mm height). Tracker V2 → Solar Kit inner wall.
+- [ ] **3M VHB double-sided tape** (small roll or strips). Extra hold on enclosure wall.
+- [ ] **M2.5 × 6 mm screws** (small pack, nylon or steel). For the standoffs.
+  Search: "M2.5 PCB standoffs adhesive nylon" + "M2.5 6mm screws"
 
-## Relay mounting workaround (CRITICAL — see ADR-003)
+### Pi + HAT + touchscreen fastening
 
-The Solar Kit's default bracket fits the V3 / V4 / T114 footprint — **not** the Wireless Tracker V2. The workaround is:
+- [ ] **M2.5 brass standoff + nut + screw assortment kit** (covers HAT-to-Pi, Pi-to-touchscreen back panel, M2.5×4 and M2.5×6 variants). Fixes the "missing screws" gap on all three Pi units.
+  Search: "M2.5 brass standoff assortment kit"
 
-- [ ] **M2.5 self-adhesive PCB standoffs** (4× minimum, ideally 6). Nylon, ~6–10 mm.
-- [ ] **3M VHB (Very High Bond) tape** for extra hold on the enclosure inner wall.
-- [ ] M2.5 × 6 mm screws (small pack) for fastening the Tracker V2 to the standoffs.
+### Desk development setup
 
-No 3D-printing. No machining. No "we'll figure it out."
+- [ ] **1× powered USB hub, 4–7 ports**, USB-A, externally powered. Connects keyboard, mouse, espflash cable(s), and debug serial — all from one hub on the bench. Anker or UGREEN recommended.
+  Search: "Anker powered USB hub 4 port"
 
-## Dragino + Pi fastening
+- [ ] **2× USB-C data cable**, 1 m, quality brand (Anker / Belkin). NOT charge-only — required for `espflash` to enumerate the ESP32-S3. Verify data capability on product page.
 
-- [ ] **M2.5 × 6 mm brass standoffs + screws** kit (for HAT-to-Pi and Pi-to-touchscreen). Buy a kit, not individual pieces — this is the "missing screws" gap.
-- [ ] **M2.5 × 4 mm screws** pack (short screws for display mount).
-- [ ] 40-pin M/F Dupont jumper wire set (workaround for any Dragino bent-pin that can't be straightened).
-- [ ] Precision tweezers (bent-pin straightening).
+- [ ] **1× USB-A to USB-C cable** (for Heltec boards that ship with micro-USB or older connectors — check board spec on arrival).
+
+- [ ] **Pi PSU(s)** — quantity and spec depends on Pi models. Write the desk-inventory note first (see TODO). Likely: 5V/3A USB-C for Pi 4, 5V/2.5A micro-USB for Pi 3B/3B+. Official Raspberry Pi PSU recommended to avoid undervolt throttling. Buy one per Pi that is missing a PSU.
+  Search: "Raspberry Pi 4 official PSU USB-C" / "Raspberry Pi 3 official PSU micro-USB"
+
+- [ ] **1× SD card reader** (USB-A, single slot). For writing Yocto images to the three microSD cards sequentially. Most laptops have one — only order if yours doesn't.
+
+- [ ] **1× Ethernet cable CAT6**, 2–3 m. Pi → router during initial bring-up (before WiFi config).
+
+### Storage + cooling
+
+- [ ] **3× microSD 32–64 GB High Endurance** (SanDisk Max Endurance or Samsung Pro Endurance). One per Pi. Do not reuse existing old SDs — they rot silently.
+  Search: "SanDisk Max Endurance 32GB microSD"
+
+- [ ] **1× passive heatsink kit** for the gateway Pi (aluminium blocks on SoC + RAM + PMIC). Yocto builds can run the Pi warm.
+
+### Measurement
+
+- [ ] **1× USB current meter** (Ruideng UM25C class, ~€15). Tag and relay power measurements during bring-up.
+  Search: "Ruideng UM25C USB power meter"
+
+### Tooling
+
 - [ ] PH0 + PH00 precision screwdriver set.
+- [ ] Fine tweezers (bent Dragino HAT pin straightening).
+- [ ] 40-pin M/F Dupont jumper wire set (GPIO workaround for bent pins; buzzer wiring during bench testing).
 
-## USB + cables
+---
 
-- [ ] 2× USB-C data cable (Anker / Belkin quality; NOT charge-only — needed for `espflash`).
-- [ ] 1× powered USB hub 4+ ports (for simultaneous flashing + debug + keyboard).
-- [ ] 1× Ethernet cable CAT6.
-- [ ] 1× official Raspberry Pi PSU. Verify Pi model first — 5V/3A USB-C for Pi 4, 5V/2.5A micro-USB for Pi 3B+.
+## Deferred — v1a prep (order when starting v1a field deployment)
 
-## Pi reliability
+These are NOT in the immediate cart. v0 runs behind WiFi with NTP at mom's place — no RTC needed yet. v1a is the first field deployment where the gateway has no internet.
 
-- [ ] **3× microSD 32–64 GB High/Max Endurance** (SanDisk Max Endurance or Samsung Pro Endurance). Six-year-old SDs rot silently — we assume none of the existing SDs survive.
-- [ ] Passive heatsink kit for the Pi (aluminium blocks on SoC + RAM + PMIC). Yocto images can run the Pi warm.
-- [ ] USB current meter (Ruideng UM25C class, ~€15). Used for tag and relay power measurements during bring-up.
+- [ ] **1× DS3231 RTC module** (I²C, ±2 ppm, ~€3). Connect to Pi I²C GPIO header for field deployment.
+- [ ] **1× CR2032 coin cell** for the RTC backup (order one regardless of whether the module ships with one).
 
-## Relay pole
+Per [ADR-011](decisions/ADR-011-gateway-time-source.md). ADR-011 is unchanged — it applies to field deployment. For v0 desk prototyping, NTP over local WiFi is acceptable.
 
-- [ ] **Wooden pole**, local hardware store. Spec: ~2.5 m height, ~7–10 cm diameter, pressure-treated for outdoor.
-- [ ] Stainless hose clamps (2–4×) for strapping the Solar Kit enclosure to the pole.
-- [ ] Optional: pole anchor (concrete block or ground spike) depending on garden ground.
+---
 
-## Software / image toolchain (no purchase — just noting the fact)
+## Relay pole — local build (not online order)
 
-- [ ] Yocto (`meta-raspberrypi` + `meta-rust`) build environment on the laptop. Per [ADR-004](decisions/ADR-004-gateway-platform.md). No Raspbian / Raspberry Pi OS.
-- [ ] `esp-rs` / `espup` toolchain for the `xtensa-esp32s3-none-elf` target. Per [ADR-001](decisions/ADR-001-firmware-language.md).
+The relay pole is a designed physical component, not a bought-off-the-shelf item. Off-the-shelf approaches (hose clamps, store-bought brackets) are explicitly rejected — this is a core product component.
+
+**Plan:**
+- Design in **Fusion360**: pole with a cantilevered mount protrusion for the Solar Kit enclosure, three-legged base structure, ground-stake tail of correct diameter.
+- Build at the **woodworking shop** under supervision.
+- Ground anchor: drill hole with hand drill, correct diameter for stake tail. No concrete required for garden v1a.
+
+*No hose clamps. No improvised strapping. Do it once, do it right.*
+
+Items needed (source locally from woodworking shop / hardware store):
+- Appropriate timber stock (pressure-treated, ~7–10 cm diameter or square section)
+- Drill bits (correct diameter for ground stake)
+- Fasteners for Solar Kit enclosure to mount protrusion (size TBD from Fusion360 drawing)
+
+---
+
+## Explicitly NOT ordering
+
+These are superseded or out of scope:
+
+- ~~WiFi LoRa 32 V4~~ — superseded by ADR-002/ADR-003
+- ~~V4 Expansion Kit~~ — superseded
+- ~~L76K GNSS module~~ — UC6580 is on-board
+- ~~Stainless hose clamps~~ — replaced by pole design approach
+- ~~Wooden pole from hardware store~~ — replaced by pole design approach
+- ~~Tag enclosure~~ — deferred; garden v1a doesn't need it; v1b (Terril Waterschei) will need a proper solution, designed then
+
+---
 
 ## v1b parking lot — do not order yet
 
-Per [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md), v1b is the drone-pod aerial overlay and is **gated on v1a passing**. The items below exist for v1b reference only and are intentionally **not** in the cart sanity-check list. Do not order with the v1a items.
+Gated on v1a passing. Do not add to cart until v1a acceptance criteria are met.
 
-- Optional barometer breakout: **BMP280 or BME280** (I²C, ~€2). For drone-pod relay altitude telemetry. Order only after v1a passes.
-- **1S LiPo for drone-pod**, ~500–800 mAh, with JST connector. Powers the drone-pod relay (a Tracker V2 with `ui_kind = "drone-relay"` in `nodes.toml`) independently of the drone's flight battery.
-- **Drone under-mount:** 3D-printed pod, zip-ties, or velcro strap — choice depends on the drone airframe. Mechanical detail finalised at v1b time.
+- Optional barometer: **BMP280 or BME280** (I²C, ~€2). Drone-pod altitude telemetry.
+- **1S LiPo ~500–800 mAh** with JST connector. Drone-pod relay independent power.
+- **UAV platform**: likely a PX4-equipped modular UAV with compatible accessories. Selection deferred to v1b design phase.
+- Drone-pod mount: 3D-printed pod or equivalent — designed at v1b time.
 
-These are listed for v1b reference only and are **NOT** in the cart sanity-check list. Do not order with the v1a items.
+---
 
 ## Cart sanity-check before you click buy
 
-One more pass, in order, so nothing falls through:
+### Heltec DE cart
+1. 10× Wireless Tracker V2 (EU 863–870 MHz variant)
+2. 1× Solar Kit for Dev-board (**LoRa + 2.4G variant**)
+   → Verify: pigtail included? 868 MHz antenna included? Remove Amazon items accordingly.
 
-1. 3× Wireless Tracker V2 (EU 863–928 MHz variant)
-2. 1× Solar Kit for Dev-board
-3. 1× IPEX1.0 → SMA female bulkhead pigtail (for the relay)
-4. 1× 868 MHz external SMA antenna (for the relay bulkhead)
-5. 1× 868 MHz SMA stubby antenna (for the Dragino HAT on the gateway)
-6. 6× Samsung INR18650-25R (or equivalent) — 18650 cells
-7. 1× DS3231 RTC module + 1× CR2032 coin cell
-8. 1× small piezo active buzzer (tag SOS audible cue)
-9. M2.5 self-adhesive PCB standoffs + 3M VHB tape + M2.5×6 screws (relay mounting)
-10. M2.5 brass standoff + screw kit (Pi + HAT + touchscreen)
-11. 2× USB-C data cable + 1× powered USB hub + 1× Ethernet + 1× official Pi PSU
-12. 3× microSD 32–64 GB High Endurance + heatsink kit + USB current meter
-13. Precision screwdriver set + fine tweezers + Dupont jumpers
-14. Wooden pole + stainless hose clamps (local hardware store, not Heltec cart)
+### Amazon.de cart
+3. 1× IPEX1.0 → SMA female pigtail ~15cm (**not** included in Solar Kit — confirmed)
+4. 4× 868 MHz SMA stubby antenna (Dragino HATs only — Solar Kit includes its own relay antenna)
+5. 12× 18650 quality cells (Samsung INR18650-25R or equivalent)
+6. 1× 3.3V active piezo buzzer
+7. M2.5 self-adhesive PCB standoffs + 3M VHB tape + M2.5×6 screws
+8. M2.5 brass standoff + nut + screw assortment kit
+9. 1× powered USB hub (externally powered, 4–7 ports)
+10. 2× USB-C data cable (verified data, not charge-only)
+11. Pi PSU(s) — quantity after desk-inventory note
+12. 1× Ethernet cable CAT6
+13. 3× microSD 32–64 GB High Endurance
+14. 1× passive heatsink kit (for gateway Pi)
+15. 1× USB current meter (Ruideng UM25C class)
+16. PH0 + PH00 precision screwdriver set
+17. Fine tweezers
+18. 40-pin M/F Dupont jumper set
+
+### Local / woodworking shop
+19. Timber + fasteners for relay pole (after Fusion360 drawing is done)
+
+### Deferred (not in this cart)
+- DS3231 RTC + CR2032 — buy at v1a prep
+
+---
 
 ## To record as items arrive
 
 - [ ] Total cost with dates and invoice references
-- [ ] Supplier for each item (Heltec DE / Amazon / Tinytronics.nl / Opencircuit.nl / local hardware / other)
-- [ ] Which items arrived and when — opens the natural "ready for assembly" checkpoint
+- [ ] Supplier for each item
+- [ ] Which items arrived and when — opens the "ready for assembly" checkpoint

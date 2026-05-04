@@ -29,7 +29,7 @@ Operational modes:
 
 1. **Forwarding (default, low power).** GNSS powered off. LoRa RX + validation + queue + CAD + TX only. Minimum CPU, minimum current. This is where the relay lives for years.
 2. **Commissioning.** Triggered on first boot, on an explicit reboot-to-commissioning signal (e.g., a magnet on a reed switch — works through the IP67 enclosure without opening it), or on BLE request. Powers GNSS on, waits for fix (timeout 90s), broadcasts a small number of self-`POSITION` packets carrying the surveyed coordinates (per [ADR-013](ADR-013-multi-hop-flood-via-packet-id.md); the `RELAY_INFO` packet type from ADR-012 is rolled back), powers GNSS off, returns to forwarding.
-3. **BLE maintenance.** **Future, not v1.** Service engineer stands next to the pole with a phone/laptop, connects over BLE, reads relay health (battery mV, recent RX count, last RSSI, GNSS fix age), optionally triggers a fresh commissioning broadcast. Explicitly out of v1 scope.
+3. **BLE maintenance.** **v1, not v0.** Service engineer stands next to the pole with a phone/laptop, connects over BLE, reads relay health (battery mV, recent RX count, last RSSI, GNSS fix age), optionally triggers a fresh commissioning broadcast. Implemented in v1 (after v0 desk prototype is working) — you cannot deploy a sealed solar relay in a field without a way to verify it is alive without opening the enclosure.
 
 ## Consequences
 
@@ -37,7 +37,7 @@ Operational modes:
 - Gateway parses `POSITION` and persists it in the single `tag_reports` table defined in [ARCHITECTURE.md §10](../ARCHITECTURE.md). Tags and relays both produce rows in `tag_reports`; presentation is distinguished by `nodes.toml` (`ui_kind` = `hiker` / `relay` / `drone-relay`). Dedup uses the recent-window `(node_id, seq_nr)` policy from [ADR-009](ADR-009-database-sqlite.md).
 - Kiosk map renders relays with a distinct marker style (pole icon vs. hiker dot).
 - **GNSS power control** via the Tracker V2's onboard gating. No external transistor, no extra GPIO.
-- **BLE maintenance is v2+.** Do not build runtime BLE advertising for maintenance into v1. Leave the firmware space for it, don't implement it.
+- **BLE maintenance is v1 (not v0, not v2+).** Implement after v0 desk prototype is working. The Wireless Tracker V2 has BLE hardware on the ESP32-S3 — no additional components needed. Minimum viable: battery mV, RX count, last RSSI, GNSS fix age, trigger commissioning.
 - **Commissioning trigger mechanism** is a small open question: magnet + reed switch is the leading candidate (works through sealed enclosure, cheap, robust). Final choice deferred to the relay bring-up ADR.
 
 ## Alternatives considered
