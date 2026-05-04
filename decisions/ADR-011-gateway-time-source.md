@@ -31,7 +31,7 @@ This ADR exists because an earlier pass through [ARCHITECTURE.md §15](../ARCHIT
 
 ## Decision
 
-**Primary: DS3231 I²C RTC module with coin cell, persistent across power loss. Secondary: opportunistic time from the Dragino HAT's MTK3339 GPS when it has a fix.**
+**Primary: DS3231 I²C RTC module with coin cell, persistent across power loss. Secondary: opportunistic time from the Dragino HAT's Quectel L80-M39 GPS when it has a fix.**
 
 ### Primary: DS3231 RTC
 
@@ -43,7 +43,7 @@ This ADR exists because an earlier pass through [ARCHITECTURE.md §15](../ARCHIT
 
 ### Secondary: opportunistic GPS-disciplined time
 
-- The Dragino HAT on the gateway carries an **MTK3339 GPS**. When it has a fix, its PPS (pulse-per-second) output can discipline system time with sub-second accuracy via `gpsd` + `chrony` (`refclock PPS ...`, `refclock SHM 0`).
+- The Dragino HAT on the gateway carries a **Quectel L80-M39 GPS** (confirmed from physical inspection, 2026-05-04). When it has a fix, its PPS (pulse-per-second) output can discipline system time with sub-second accuracy via `gpsd` + `chrony` (`refclock PPS ...`, `refclock SHM 0`).
 - Treat this as **opportunistic**, not primary. GPS fix reliability inside a mountain hut is uncertain — window placement, antenna view of sky, metal roof, snow load all affect it. The RTC must work without the GPS.
 - When GPS is available and time-converged, it is allowed to step the RTC (`hwclock --systohc`) so the RTC itself stays disciplined. When GPS is not available, system time runs free from the last RTC read.
 
@@ -56,7 +56,7 @@ This ADR exists because an earlier pass through [ARCHITECTURE.md §15](../ARCHIT
 ## Consequences
 
 - **BOM addition.** DS3231 module + CR2032 coin cell. Covered in [../bom.md](../bom.md).
-- **Yocto recipe addition.** `meta-raspberrypi` device-tree overlay for `i2c-rtc,ds3231`, `hwclock` integration in the boot sequence, `gpsd` + `chrony` packages with a `refclock` config for the MTK3339. Documented alongside [ADR-004](ADR-004-gateway-platform.md) during image build.
+- **Yocto recipe addition.** `meta-raspberrypi` device-tree overlay for `i2c-rtc,ds3231`, `hwclock` integration in the boot sequence, `gpsd` + `chrony` packages with a `refclock` config for the L80-M39. Documented alongside [ADR-004](ADR-004-gateway-platform.md) during image build.
 - **Commissioning step.** At first boot, after flashing the Yocto image to the SD card, the operator runs `date --set ...` followed by `hwclock --systohc` over SSH to prime the RTC. After that, the RTC retains time across power cycles via its coin cell.
 - **Failure modes to test during bring-up.**
   - Pull power with the coin cell in place → boot → verify the kernel reads the RTC and system time is within ±5 s of actual.

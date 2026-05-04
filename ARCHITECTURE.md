@@ -356,7 +356,7 @@ The gateway is a Raspberry Pi (3B+ or 4) with a Dragino LoRa/GPS HAT (SX1276) an
 
 ### What the gateway does
 
-1. Read system time from the DS3231 RTC at boot (see [ADR-011](decisions/ADR-011-gateway-time-source.md)); optionally discipline the RTC from the Dragino HAT's MTK3339 GPS via `chrony`/`gpsd` when a fix is available
+1. Read system time from the DS3231 RTC at boot (see [ADR-011](decisions/ADR-011-gateway-time-source.md)); optionally discipline the RTC from the Dragino HAT's Quectel L80-M39 GPS via `chrony`/`gpsd` when a fix is available
 2. Listen continuously for LoRa packets via SX1276 over SPI (the gateway uses the same `lora-phy` crate as the tag/relay — it supports SX127x as well as SX126x, so there is no separate driver to write)
 3. Validate frame integrity (MAGIC, VER, TYPE, LEN, CRC-16/CCITT-FALSE)
 4. Parse the payload — one known type in v1: POSITION. Per [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md). Unknown VER or TYPE is dropped and logged.
