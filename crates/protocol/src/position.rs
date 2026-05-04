@@ -62,12 +62,20 @@ pub fn decode_position(raw: &[u8]) -> Result<Position, FrameError> {
     let lon_e7 = i32::from_be_bytes([raw[14], raw[15], raw[16], raw[17]]);
     let alt_m = i16::from_be_bytes([raw[18], raw[19]]);
 
-    let all_sentinel = lat_e7 == NO_FIX_LAT_LON_SENTINEL
-        && lon_e7 == NO_FIX_LAT_LON_SENTINEL
-        && alt_m == NO_FIX_ALT_SENTINEL;
+    let lat_sentinel = lat_e7 == NO_FIX_LAT_LON_SENTINEL;
+    let lon_sentinel = lon_e7 == NO_FIX_LAT_LON_SENTINEL;
+    let alt_sentinel = alt_m == NO_FIX_ALT_SENTINEL;
+    let all_sentinel = lat_sentinel && lon_sentinel && alt_sentinel;
+    let any_sentinel = lat_sentinel || lon_sentinel || alt_sentinel;
 
-    // GPS_VALID and sentinel coordinates must agree
-    if flags.gps_valid() == all_sentinel {
+    // GPS_VALID=1: no coordinate may be a sentinel value.
+    // GPS_VALID=0: all three coordinates must be sentinel values.
+    // Any partial sentinel combination is invalid.
+    if flags.gps_valid() {
+        if any_sentinel {
+            return Err(FrameError::GpsValidSentinelMismatch);
+        }
+    } else if !all_sentinel {
         return Err(FrameError::GpsValidSentinelMismatch);
     }
 

@@ -221,3 +221,84 @@ fn gps_invalid_with_real_coords_rejected() {
         Err(FrameError::GpsValidSentinelMismatch)
     );
 }
+
+// ── partial sentinel rejection tests ─────────────────────────────────────────
+// GPS_VALID=1: even a single sentinel coordinate is invalid.
+// GPS_VALID=0: all three must be sentinel; any partial combination is invalid.
+
+#[test]
+fn gps_valid_lat_sentinel_only_rejected() {
+    let pos = Position {
+        flags: Flags(Flags::GPS_VALID_MASK),
+        lat_e7: NO_FIX_LAT_LON_SENTINEL,
+        lon_e7: 135_678_901,
+        alt_m: 1847,
+        ..heartbeat_pos()
+    };
+    assert_eq!(
+        decode_position(&encode_position(pos)),
+        Err(FrameError::GpsValidSentinelMismatch)
+    );
+}
+
+#[test]
+fn gps_valid_lon_sentinel_only_rejected() {
+    let pos = Position {
+        flags: Flags(Flags::GPS_VALID_MASK),
+        lat_e7: 471_234_567,
+        lon_e7: NO_FIX_LAT_LON_SENTINEL,
+        alt_m: 1847,
+        ..heartbeat_pos()
+    };
+    assert_eq!(
+        decode_position(&encode_position(pos)),
+        Err(FrameError::GpsValidSentinelMismatch)
+    );
+}
+
+#[test]
+fn gps_valid_alt_sentinel_only_rejected() {
+    let pos = Position {
+        flags: Flags(Flags::GPS_VALID_MASK),
+        lat_e7: 471_234_567,
+        lon_e7: 135_678_901,
+        alt_m: NO_FIX_ALT_SENTINEL,
+        ..heartbeat_pos()
+    };
+    assert_eq!(
+        decode_position(&encode_position(pos)),
+        Err(FrameError::GpsValidSentinelMismatch)
+    );
+}
+
+#[test]
+fn gps_invalid_latlon_sentinel_real_alt_rejected() {
+    // GPS_VALID=0 + lat/lon both sentinel but alt is real → partial, invalid
+    let pos = Position {
+        flags: Flags(0),
+        lat_e7: NO_FIX_LAT_LON_SENTINEL,
+        lon_e7: NO_FIX_LAT_LON_SENTINEL,
+        alt_m: 500,
+        ..heartbeat_pos()
+    };
+    assert_eq!(
+        decode_position(&encode_position(pos)),
+        Err(FrameError::GpsValidSentinelMismatch)
+    );
+}
+
+#[test]
+fn gps_invalid_alt_sentinel_real_latlon_rejected() {
+    // GPS_VALID=0 + alt sentinel but lat/lon are real → partial, invalid
+    let pos = Position {
+        flags: Flags(0),
+        lat_e7: 471_234_567,
+        lon_e7: 135_678_901,
+        alt_m: NO_FIX_ALT_SENTINEL,
+        ..heartbeat_pos()
+    };
+    assert_eq!(
+        decode_position(&encode_position(pos)),
+        Err(FrameError::GpsValidSentinelMismatch)
+    );
+}

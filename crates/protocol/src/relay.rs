@@ -4,18 +4,16 @@ use crate::seen_cache::SeenCache;
 
 /// Pure relay forwarding decision — no I/O, no hardware, no allocation.
 ///
+/// Accepts raw received bytes so the radio layer does not need to pre-filter
+/// length before calling relay logic.
+///
 /// Validation order per ARCHITECTURE.md §9 and ADR-013 §5:
-///   1. Decode + validate frame (CRC, MAGIC, VER, TYPE, LEN, flags, sentinel consistency)
+///   1. Decode + validate frame (length, CRC, MAGIC, VER, TYPE, LEN, flags, sentinels)
 ///   2. Check seen_cache for duplicate packet_id
 ///   3. Check for self-echo (node_id == my_node_id)
 ///   4. Insert into cache and return byte-identical frame for forwarding
-pub fn relay_decide(
-    raw: &[u8; FRAME_LEN],
-    my_node_id: u8,
-    now: u32,
-    cache: &mut SeenCache,
-) -> RelayDecision {
-    let pos = match decode_position(raw.as_slice()) {
+pub fn relay_decide(raw: &[u8], my_node_id: u8, now: u32, cache: &mut SeenCache) -> RelayDecision {
+    let pos = match decode_position(raw) {
         Ok(p) => p,
         Err(FrameError::CrcMismatch) => return RelayDecision::Drop(DropReason::CrcFail),
         Err(FrameError::UnknownType | FrameError::BadVersion) => {
@@ -36,8 +34,12 @@ pub fn relay_decide(
 
     cache.insert(pid, now);
 
+    // decode_position succeeded, so raw.len() == FRAME_LEN is guaranteed.
+    let mut frame_bytes = [0u8; FRAME_LEN];
+    frame_bytes.copy_from_slice(raw);
+
     RelayDecision::EnqueueForward {
         packet_id: pid,
-        frame_bytes: *raw,
+        frame_bytes,
     }
 }

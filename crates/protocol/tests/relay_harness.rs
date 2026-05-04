@@ -197,3 +197,25 @@ fn packet_id_fields() {
         }
     );
 }
+
+/// relay_decide rejects a frame shorter than FRAME_LEN as Malformed.
+#[test]
+fn relay_drops_short_frame() {
+    let short = [0xA5u8; 21]; // one byte too short
+    let mut cache = SeenCache::new();
+    assert_eq!(
+        relay_decide(&short, 2, 0, &mut cache),
+        RelayDecision::Drop(DropReason::Malformed)
+    );
+}
+
+/// relay_decide rejects a frame longer than FRAME_LEN as Malformed.
+#[test]
+fn relay_drops_long_frame() {
+    let long = [0xA5u8; 23]; // one byte too long
+    let mut cache = SeenCache::new();
+    assert_eq!(
+        relay_decide(&long, 2, 0, &mut cache),
+        RelayDecision::Drop(DropReason::Malformed)
+    );
+}
