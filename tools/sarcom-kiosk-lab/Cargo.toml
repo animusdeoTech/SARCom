@@ -3,6 +3,9 @@ name = "sarcom-kiosk-lab"
 version = "0.1.0"
 edition = "2021"
 
+# Standalone tool: not part of the SARCOM workspace at the repo root.
+[workspace]
+
 [dependencies]
 eframe = "0.29"
 serde = { version = "1", features = ["derive"] }

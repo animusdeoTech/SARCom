@@ -1,16 +1,15 @@
-use eframe::egui;
 use crate::app::KioskLabApp;
 use crate::data::NodeState;
 use crate::map::MapMode;
 use crate::ui::palette::{GREEN, TEXT_DIM};
+use eframe::egui;
 
 impl KioskLabApp {
     pub(crate) fn show_edit_panel(&mut self, ui: &mut egui::Ui, t: f64) {
         egui::ScrollArea::vertical().show(ui, |ui| {
-
             // ── Map Background ────────────────────────────────────────────
             ui.collapsing("Map Background", |ui| {
-                ui.radio_value(&mut self.map_mode, MapMode::FakeGrid,  "Fake grid");
+                ui.radio_value(&mut self.map_mode, MapMode::FakeGrid, "Fake grid");
                 ui.radio_value(&mut self.map_mode, MapMode::OsmVector, "OSM vector");
             });
 
@@ -18,9 +17,10 @@ impl KioskLabApp {
 
             // ── Layout ────────────────────────────────────────────────────
             ui.collapsing("Layout", |ui| {
-                ui.add(egui::Slider::new(&mut self.sidebar_width, 160.0..=400.0)
-                    .text("sidebar width"));
-                ui.checkbox(&mut self.show_track,        "Show track");
+                ui.add(
+                    egui::Slider::new(&mut self.sidebar_width, 160.0..=400.0).text("sidebar width"),
+                );
+                ui.checkbox(&mut self.show_track, "Show track");
                 ui.checkbox(&mut self.show_sighting_log, "Show sighting log");
             });
 
@@ -52,28 +52,38 @@ impl KioskLabApp {
                     .show_ui(ui, |ui| {
                         for &s in NodeState::all() {
                             if ui.selectable_value(&mut tag.state, s, s.label()).clicked() {
-                                tag.sos         = matches!(s, NodeState::Sos);
-                                tag.gps_valid   = !matches!(s, NodeState::NoFix);
+                                tag.sos = matches!(s, NodeState::Sos);
+                                tag.gps_valid = !matches!(s, NodeState::NoFix);
                                 tag.battery_low = matches!(s, NodeState::LowBattery);
                             }
                         }
                     });
 
-                ui.add(egui::Slider::new(&mut tag.last_seen_secs, 0.0..=1800.0)
-                    .text("last seen (s)"));
-                ui.checkbox(&mut tag.gps_valid,   "GPS valid");
-                ui.checkbox(&mut tag.sos,          "SOS active");
-                ui.checkbox(&mut tag.battery_low,  "Battery low");
+                ui.add(
+                    egui::Slider::new(&mut tag.last_seen_secs, 0.0..=1800.0).text("last seen (s)"),
+                );
+                ui.checkbox(&mut tag.gps_valid, "GPS valid");
+                ui.checkbox(&mut tag.sos, "SOS active");
+                ui.checkbox(&mut tag.battery_low, "Battery low");
             });
 
             ui.separator();
 
             // ── Save / Load ───────────────────────────────────────────────
             ui.collapsing("Save / Load", |ui| {
-                ui.label(egui::RichText::new(&self.layout_path).color(TEXT_DIM).monospace().size(10.0));
+                ui.label(
+                    egui::RichText::new(&self.layout_path)
+                        .color(TEXT_DIM)
+                        .monospace()
+                        .size(10.0),
+                );
                 ui.horizontal(|ui| {
-                    if ui.button("Save layout").clicked() { self.save_layout(t); }
-                    if ui.button("Load layout").clicked() { self.load_layout(t); }
+                    if ui.button("Save layout").clicked() {
+                        self.save_layout(t);
+                    }
+                    if ui.button("Load layout").clicked() {
+                        self.load_layout(t);
+                    }
                 });
                 ui.add_space(4.0);
                 ui.label(egui::RichText::new(
@@ -84,7 +94,11 @@ impl KioskLabApp {
             // ── Status ────────────────────────────────────────────────────
             if !self.status_msg.is_empty() && t < self.status_expire {
                 ui.separator();
-                ui.label(egui::RichText::new(&self.status_msg).color(GREEN).size(10.0));
+                ui.label(
+                    egui::RichText::new(&self.status_msg)
+                        .color(GREEN)
+                        .size(10.0),
+                );
             }
         });
     }
