@@ -185,10 +185,14 @@ impl KioskLabApp {
                             } else {
                                 TEXT_DIM
                             };
-                            kv_color(ui, "SELF-ANN", &format!("self-ann {}", age_str), color);
+                            // Key already reads SELF-ANN; the value is just
+                            // the relay-cadence age. Don't repeat "self-ann"
+                            // in the value or the row goes >25 chars and the
+                            // 240–280 px sidebar clips.
+                            kv_color(ui, "SELF-ANN", &age_str, color);
                         }
                         None => {
-                            kv_color(ui, "SELF-ANN", "no frame received", TEXT_DIM);
+                            kv_color(ui, "SELF-ANN", "no frame rx", TEXT_DIM);
                         }
                     }
                     kv(
@@ -320,40 +324,56 @@ pub fn sidebar_header(ui: &mut egui::Ui, label: &str) {
 }
 
 pub fn kv(ui: &mut egui::Ui, key: &str, val: &str) {
-    ui.horizontal(|ui| {
-        ui.label(
-            egui::RichText::new(key)
-                .color(TEXT_DIM)
-                .monospace()
-                .size(10.0),
-        );
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(
-                egui::RichText::new(val)
-                    .color(TEXT_BRIGHT)
-                    .monospace()
-                    .size(10.0),
-            );
-        });
-    });
+    kv_color(ui, key, val, TEXT_BRIGHT);
 }
 
+/// Key/value row that gracefully handles long values.
+///
+/// - If `key`, a 12 px gap, and `val` all fit in `available_width()`, the
+///   row is a single line: key on the left, value right-aligned.
+/// - Otherwise the value wraps to an indented second line. We never let the
+///   value draw beyond the sidebar (the old `right_to_left` layout did).
 pub fn kv_color(ui: &mut egui::Ui, key: &str, val: &str, color: egui::Color32) {
-    ui.horizontal(|ui| {
-        ui.label(
-            egui::RichText::new(key)
-                .color(TEXT_DIM)
-                .monospace()
-                .size(10.0),
-        );
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(
-                egui::RichText::new(val)
-                    .color(color)
-                    .monospace()
-                    .strong()
-                    .size(10.0),
-            );
+    let font = egui::FontId::monospace(10.0);
+    let key_w = monospace_width(ui.ctx(), key, &font);
+    let val_w = monospace_width(ui.ctx(), val, &font);
+    let avail = ui.available_width();
+    let gap_min = 12.0;
+    // 6 px slack absorbs egui's internal item-spacing in horizontal layouts.
+    let fits_one_line = key_w + gap_min + val_w + 6.0 <= avail;
+
+    let key_rich = egui::RichText::new(key)
+        .color(TEXT_DIM)
+        .monospace()
+        .size(10.0);
+    let val_rich = egui::RichText::new(val)
+        .color(color)
+        .monospace()
+        .strong()
+        .size(10.0);
+
+    if fits_one_line {
+        ui.horizontal(|ui| {
+            ui.label(key_rich);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(val_rich);
+            });
         });
-    });
+    } else {
+        ui.label(key_rich);
+        ui.horizontal(|ui| {
+            ui.add_space(10.0);
+            // wrap() lets values longer than the sidebar break across lines
+            // instead of being painted past the right edge.
+            ui.add(egui::Label::new(val_rich).wrap());
+        });
+    }
+}
+
+fn monospace_width(ctx: &egui::Context, text: &str, font: &egui::FontId) -> f32 {
+    ctx.fonts(|f| {
+        f.layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::WHITE)
+            .rect
+            .width()
+    })
 }

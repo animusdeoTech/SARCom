@@ -17,8 +17,11 @@ impl KioskLabApp {
 
             // ── Layout ────────────────────────────────────────────────────
             ui.collapsing("Layout", |ui| {
+                // Min 280: below this the INFRA / SYSTEM rows start clipping
+                // (kv helpers wrap to a second line, but we still need room
+                // for the indented value).
                 ui.add(
-                    egui::Slider::new(&mut self.sidebar_width, 160.0..=400.0).text("sidebar width"),
+                    egui::Slider::new(&mut self.sidebar_width, 280.0..=420.0).text("sidebar width"),
                 );
                 ui.checkbox(&mut self.show_track, "Show track");
                 ui.checkbox(&mut self.show_sighting_log, "Show sighting log");

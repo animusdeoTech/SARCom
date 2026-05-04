@@ -34,7 +34,7 @@ impl KioskLabApp {
             show_sighting_log: true,
             show_edit: false,
             edit_tag_idx: 0,
-            sidebar_width: 240.0,
+            sidebar_width: 300.0,
             drag_target: None,
             layout_path: "layout.json".into(),
             status_msg: String::new(),

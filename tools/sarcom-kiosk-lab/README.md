@@ -37,6 +37,12 @@ cargo build --release
 
 ## What you get
 
+Sidebar defaults to **300 px** so cadence-derived values like `self-ann
+14m ago` and `time unavailable` fit on one line. The `Edit → Layout`
+slider clamps to **280–420 px**; below 280 the kv rows automatically
+wrap the value to an indented second line rather than clipping past the
+sidebar edge.
+
 800×480-ish window (resizable) with:
 
 | Area | Description |
