@@ -68,6 +68,80 @@ If a suggestion starts with "let's just add a small web dashboard" or "let's use
 - **Build:** Cargo workspace. Binaries live under `firmware/{tag,relay}/` and `gateway/` (the kiosk is a module inside the gateway binary, not a separate crate). `espflash` for flashing. Yocto (`meta-rust` layer) for the Pi image. SCP for deploy during bring-up.
 - **Relevant skills:** `docx`/`pdf` only if the user explicitly asks for a printed report. There is no frontend-design work to do — we're not building a web frontend.
 
+## Rust doc sources
+
+Confirmed firmware lane: **Lane A — bare-metal `no_std`**, target `xtensa-esp32s3-none-elf`, `esp-hal` + Embassy. Lane B (`esp-idf-hal`, `esp-idf-svc`, FreeRTOS, `xtensa-esp32s3-espidf`) is **prohibited**. Any example or doc page that imports an `esp-idf-*` crate is wrong-lane and must be discarded.
+
+Risky crates — `lora-phy`, `embassy-executor` / `embassy-time` / `embassy-sync`, `esp-hal`, `walkers`, `egui` / `eframe`, `nmea` / `nmea0183` — must be looked up from the configured source in the table **before drafting code**, not after.
+
+Source order:
+
+1. **`cargo doc -p <crate>`** when the crate is pinned in `Cargo.lock` and `target/doc/<crate>/` exists — version-exact, offline, fastest.
+2. **Context7 MCP** for crates marked Context7 in the table below.
+3. **`github` MCP** for the crates the table routes there (`lora-phy`, `nmea`, walkers PMTiles specifics) — Context7 does not cover these.
+4. **`rust-analyzer` / `cargo check` / compiler diagnostics** are the **validation and repair layer**, used *after* a draft exists. They are not a doc-lookup source and must not be the first thing consulted.
+5. **Brave Search is never the source for Rust API docs.** If all configured sources fail, record the failure (in this file or a follow-up note) before falling back.
+
+Per-crate first lookup (verified 2026-05-06):
+
+| Crate | First source | Notes |
+|---|---|---|
+| `lora-phy` (lora-rs) | `github` MCP → `lora-rs/lora-rs` (`examples/`, `src/`) | Context7 has **no entry**. `/lora-rs/lora-rs` returns "not found"; `resolve-library-id` returns irrelevant LoRA-AI projects. **Reject anything from the archived `embassy-rs/lora-phy`.** |
+| `embassy-executor`, `embassy-time`, `embassy-sync` | Context7 `/embassy-rs/embassy` | Lane A only. Cross-check against `esp-hal` examples for correct timer-driver wiring on ESP32-S3. |
+| `esp-hal` | Context7 `/esp-rs/esp-hal` | Lane A confirmed. Version-pinned snapshots also exist (`/websites/espressif_projects_rust_esp-hal_1_0_0_*`) for matching a specific `Cargo.lock`. **Never `esp-idf-hal`.** |
+| `walkers` | Context7 `/podusowski/walkers` for basics, `github` MCP → `podusowski/walkers` for PMTiles | Context7 surfaces only the `HttpTiles` + OpenStreetMap path. PMTiles tile-source API is not indexed — read `walkers/examples/` and `walkers/src/sources/` directly. |
+| `egui` / `eframe` | Context7 `/emilk/egui` | Pin the version to whatever `eframe` resolves to in `Cargo.lock`; widget API moves between minor versions. |
+| `nmea` / `nmea0183` | `github` MCP → `AeroRust/nmea` (README + `src/lib.rs`) | Context7 indexes only the **C++ Arduino** library under the same name — wrong language. Switch to `cargo doc -p <crate>` once selected and pinned. |
+| Hardware datasheets | `resources/datasheets/` (when populated) | Deep chip-level reading deferred to bring-up. |
+
+**`lora-phy` preflight is mandatory.** Before editing any file that initialises, transmits, receives, performs CAD on, or configures the LoRa radio via `lora-phy`:
+
+- Read `resources/docs/lora-phy-preflight.md`.
+- Run the slash command `/rust_lora_phy_preflight` (defined in `.claude/commands/`).
+- Run `scripts/check-lora-phy-docs.ps1` for current pin/rustdoc status.
+- Produce the **preflight statement** (template lives in the preflight file) before any code change touches radio paths.
+- `rust-analyzer` and `cargo check` remain validation/repair only.
+
+### Rust doc lookup protocol
+
+Before writing or modifying Rust code that touches one of the risky crates, Claude must:
+
+1. Identify the crate(s) involved.
+2. State the selected source: local `cargo doc` if available; otherwise the configured source from the table above.
+3. Consult that source.
+4. Only then draft code.
+5. After drafting, use `rust-analyzer` / `cargo check` / compiler diagnostics as the validation and repair layer.
+
+If the configured source is missing, stale, wrong-language, or wrong-lane, do not guess. Record the failure and switch to the fallback listed in the table.
+
+## Rust API notes
+
+Patterns no doc lookup will catch on its own:
+
+- **Embassy task model.** `#[embassy_executor::task]` functions cannot take generic parameters and must not be invoked as a normal `async fn`. Spawn them via `spawner.spawn(task_fn(arg)).unwrap()`. For the entry point and timer/executor setup, use the version-matched `esp-hal` + Embassy example for ESP32-S3 — do not invent the macro name from memory. The exact macro (e.g. `#[esp_hal::main]`, `#[esp_rtos::main]`, or another) varies between `esp-hal` releases and is verified at the source consulted via the protocol above.
+- **`esp-hal` peripheral ownership.** Peripherals are typestate singletons consumed on use. The SX1262 SPI bus + chip-select GPIO must be passed through explicitly into `lora-phy`'s `RadioKind` impl — there is no global access. Constructing two SPI masters from the same `peripherals.SPI2` is a compile error.
+- **`lora-phy` `RadioKind` impl.** Ships with chip-specific structs (`Sx126x`, `Sx127x` and their config types) and a `RadioError` associated type. SX1262 (tag, relay) and SX1276 (gateway HAT) share the trait; only the config and pin wiring differ. Verify the trait surface against the `lora-rs/lora-rs` repo before drafting — context7 cannot.
+- **Lane boundary, hard.** No `esp-idf-hal`, no `esp-idf-svc`, no `std::thread` on MCU, no FreeRTOS, no `xtensa-esp32s3-espidf` target. If a generated snippet imports any of those, discard and re-source from Lane A.
+
+## Rust doc lookup smoke test
+
+Before any serious firmware or UI implementation session, Claude should run four dry-run stubs to prove the doc-lookup behaviour from `## Rust doc sources` actually works. The stubs are **not committed** and **not production code** — they are a behaviour check.
+
+The four dry runs:
+
+1. Embassy task skeleton with `Spawner` and `#[embassy_executor::task]`.
+2. `esp-hal` SPI ownership skeleton for the SX1262 — peripheral take, SPI master configuration, chip-select GPIO.
+3. `lora-phy` radio init / send skeleton — `RadioKind` impl wiring for SX1262.
+4. `walkers` PMTiles tile-source skeleton — local file source plugged into a `Map`.
+
+For each dry run, Claude must state in plain text:
+
+- Which crate was touched.
+- Which doc source was consulted (Context7, `github` MCP, or local `cargo doc`).
+- Whether any wrong-lane (`esp-idf-*`) or wrong-language (Arduino C++, etc.) source was rejected during the lookup.
+
+The smoke test is about proving the lookup behaviour, not about producing usable stubs. If a configured source is unavailable, the dry run is recorded as a failure with the reason — guessing past it is not allowed.
+
 ## What "done" looks like for v1
 
 Dot moves on the 7" touchscreen map as Pieter walks around his garden carrying a tag. Relay on a wooden pole in the garden, solar-powered, rebroadcasting packets. Gateway stores POSITION reports in `tag_reports` (SQLite) on its local Yocto Linux install and draws them live with a native Rust GUI. Zero internet required at any point. See [ARCHITECTURE.md §15](ARCHITECTURE.md) for the full v1 acceptance criteria.

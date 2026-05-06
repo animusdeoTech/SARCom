@@ -1,6 +1,7 @@
 ---
 title: "Spike — Reliable docs access for Rust firmware and UI work"
-status: open
+status: resolved
+resolved: 2026-05-06
 type: spike
 timebox: 0.5 day
 ---
@@ -152,24 +153,82 @@ A `## Rust doc sources` section added to `CLAUDE.md` containing:
 
 | Crate | First source | Notes |
 |---|---|---|
-| `lora-phy` | [TBD by spike] | Confirm `lora-rs/lora-rs`, not archived repo |
-| `embassy-*` | [TBD by spike] | Lane A only |
-| `esp-hal` | [TBD by spike] | Lane A only; not `esp-idf-hal` |
-| `walkers` | [TBD by spike] | |
-| `egui` / `eframe` | [TBD by spike] | |
-| `nmea` / `nmea0183` | [TBD by spike] | |
+| `lora-phy` | `github` MCP → `lora-rs/lora-rs` | Context7 has no entry. Reject any hit from archived `embassy-rs/lora-phy`. Switch to `cargo doc -p lora-phy` once pinned. |
+| `embassy-*` | Context7 `/embassy-rs/embassy` | Lane A only. |
+| `esp-hal` | Context7 `/esp-rs/esp-hal` | Lane A confirmed; pinned snapshots exist. Never `esp-idf-hal`. |
+| `walkers` | Context7 `/podusowski/walkers` + `github` MCP for PMTiles | Context7 only covers `HttpTiles`/OSM; PMTiles API needs the repo. |
+| `egui` / `eframe` | Context7 `/emilk/egui` | Pin the version to what `eframe` resolves to. |
+| `nmea` / `nmea0183` | `github` MCP → `AeroRust/nmea` | Context7 indexes only the C++ Arduino library — wrong language. |
 | Hardware datasheets | `resources/datasheets/` | Deep read deferred to bring-up |
 
 3. The non-obvious API patterns (embassy task model, esp-hal peripheral ownership, lora-phy RadioKind impl, lane boundary rule)
 
-## Decision note template
+## Decision note
 
 ```
-Date:
-Firmware lane: A (bare-metal, no_std) / B (ESP-IDF, std)
-Context7 coverage: [per-crate: ok / stale / wrong lane / missing]
-Fallback chosen: A / B / C / none needed
-CLAUDE.md sections added: Rust doc sources / Rust API notes
-Per-crate source table: [filled in]
+Date: 2026-05-06
+Firmware lane: A (bare-metal, no_std) — confirmed
+  Sources:
+    - ADR-001 §Decision: esp-hal + Embassy + lora-rs/lora-rs, no_std
+    - Cargo.toml workspace contains only `protocol`; no esp-idf-* crates anywhere
+    - tools/sarcom-kiosk-lab uses eframe 0.29 (host-side, std — not firmware)
+Context7 coverage:
+  - lora-phy:        MISSING (resolve returns LoRaWAN/LoRA-AI noise; /lora-rs/lora-rs → 404)
+  - embassy-*:       OK (/embassy-rs/embassy, plus dedicated executor page)
+  - esp-hal:         OK, Lane A confirmed (/esp-rs/esp-hal returns no_std/no_main examples
+                     and embassy-executor + esp-rtos integration)
+  - walkers:         PARTIAL (/podusowski/walkers covers HttpTiles + OSM; PMTiles not surfaced)
+  - egui / eframe:   OK (/emilk/egui, rich coverage)
+  - nmea / nmea0183: MISSING (only the C++ Arduino library is indexed, wrong language)
+Fallback chosen: B (Context7 + github MCP for the gaps), with `cargo doc -p` once
+  Cargo.lock pins the relevant crates. Path (a) cargo-doc is unusable today because
+  the firmware crates are not yet in the workspace; revisit when they land.
+CLAUDE.md sections added:
+  - ## Rust doc sources         (lane statement, lookup order, per-crate table)
+  - ## Rust API notes           (Embassy task model, esp-hal ownership,
+                                 lora-phy RadioKind, lane boundary)
+Per-crate source table: filled in (see CLAUDE.md ## Rust doc sources)
+Pass criteria status:
+  - Firmware lane confirmed unambiguously: PASS
+  - Context7 accurate for Priority 1–3 without web search: PARTIAL — Priority 1 (lora-phy)
+    failed and is routed to github MCP. Priority 2–3 pass.
+  - CLAUDE.md ## Rust API notes covers the four patterns + lane boundary: PASS
+  - CLAUDE.md ## Rust doc sources contains per-crate first-lookup table: PASS
+  - Setup reproducible in <15 min on a fresh session: PASS — all of it lives in CLAUDE.md
+    and the existing .mcp.json
+Fail criteria status:
+  - "Context7 resolves lora-phy to the archived embassy-rs/lora-phy repo": NOT TRIGGERED
+    (it does not resolve to that repo — it does not resolve at all, which is its own
+    failure but not the one named here)
+  - "Context7 returns Lane B docs for esp-hal queries": NOT TRIGGERED
+  - "All fallback options require >5 min after a version bump": NOT TRIGGERED
+    (github MCP is on-demand; cargo doc -p is once-per-version-bump)
+  - "No source can provide lora-phy RadioKind without web search": NOT TRIGGERED
+    (github MCP can read the repo source directly)
 Next action:
+  - When firmware crates are added to the workspace, run `cargo doc -p lora-phy -p nmea`
+    once and add a note to CLAUDE.md pointing future Claude at target/doc/.
+  - If walkers PMTiles work hits an API question that can't be answered from
+    walkers/examples/, file a small follow-up note rather than re-spiking.
 ```
+
+## Outcome
+
+The fail criterion on `lora-phy` was triggered in spirit (it's not in Context7 at all), but the structural answer holds: github MCP fills the gap, and the per-crate table in CLAUDE.md routes future sessions correctly without the user having to repeat themselves. The spike's H1 hypothesis (Context7 + targeted CLAUDE.md additions is good enough) is **accepted with one caveat** — Priority 1 is a github-MCP crate, not a Context7 crate, until lora-phy is indexed or pinned in Cargo.lock.
+
+## Post-resolution hardening
+
+Added 2026-05-06, after critique of the original resolution.
+
+- The original spike resolved doc **availability** — what to consult and where.
+- This addendum hardens Claude **behaviour** — that the configured source is actually consulted before drafting code for risky crates, not merely listed in CLAUDE.md.
+- H1 is accepted only **conditionally**: Claude must consult the configured source from the per-crate table before drafting code for any of the risky crates (`lora-phy`, `embassy-*`, `esp-hal`, `walkers`, `egui`/`eframe`, `nmea`/`nmea0183`).
+- LSP / `rust-analyzer` is explicitly demoted to **validation and repair**, not first lookup. The first revision of CLAUDE.md placed it at the top of the order, which contradicted §3 of this spike ("its role here is **not** to replace upfront doc access"). Fixed.
+- The lookup protocol (`CLAUDE.md ### Rust doc lookup protocol`) and smoke test (`CLAUDE.md ## Rust doc lookup smoke test`) are now part of the practical pass condition for any new firmware/UI implementation session. Without them the table is just a passive reference; with them it is enforced behaviour.
+- One specific claim was weakened: the original `## Rust API notes` asserted that the ESP32-S3 entry point uses `#[esp_rtos::main]` based on a Context7 snippet. That macro is version-dependent and was not verified against the project's `Cargo.lock` (no firmware crate exists yet). Replaced with a rule that defers the exact macro to the version-matched `esp-hal` example.
+- `lora-phy` is the highest-risk crate and is not covered by Context7. SARCOM now has a dedicated local preflight workflow:
+  - `resources/docs/lora-phy-preflight.md` — local truth pointer, lookup order, do-not-invent rules, preflight statement template
+  - `.claude/commands/rust_lora_phy_preflight.md` — slash command `/rust_lora_phy_preflight`
+  - `scripts/check-lora-phy-docs.ps1` — advisory PowerShell helper (always exits 0)
+
+  This reduces reliance on ad-hoc prompting. The workflow does not guarantee correctness, but it makes skipping source lookup visible and contrary to repo instructions: a session that drafts radio code without producing a preflight statement is now obviously noncompliant.
