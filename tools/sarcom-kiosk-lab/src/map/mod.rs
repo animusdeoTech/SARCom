@@ -19,9 +19,17 @@ impl KioskLabApp {
     pub(crate) fn show_map(&mut self, ui: &mut egui::Ui, t: f64) {
         let (response, painter) =
             ui.allocate_painter(ui.available_size(), egui::Sense::click_and_drag());
-        let mr = response.rect;
+        let outer = response.rect;
 
-        painter.rect_filled(mr, 0.0, MAP_BG);
+        painter.rect_filled(outer, 0.0, MAP_BG);
+
+        // Letterbox to a real-metre aspect so the map renders true 2D top-down
+        // rather than the latitude-stretched view a bare lon→x / lat→y mapping
+        // produces at ~51 °N. FakeGrid has no geography, so it keeps the full rect.
+        let mr = match self.map_mode {
+            MapMode::OsmVector => self.osm_map.fit_rect(outer),
+            MapMode::FakeGrid => outer,
+        };
 
         match self.map_mode {
             MapMode::FakeGrid => fake_grid::draw(&painter, mr),

@@ -28,7 +28,6 @@ enum WayKind {
     HighwayMajor,
     HighwayMinor,
     Water,
-    Forest,
 }
 
 struct Way {
@@ -48,6 +47,39 @@ impl OsmMap {
         parse(OSM_XML)
     }
 
+    /// Letterbox `outer` to a sub-rect whose aspect matches the geographic
+    /// area in real metres (i.e., longitude pre-multiplied by cos(mean_lat)).
+    /// This forces a true 2D top-down rendering — features are no longer
+    /// horizontally stretched by the rect's wider aspect at ~51 °N.
+    pub fn fit_rect(&self, outer: egui::Rect) -> egui::Rect {
+        let mean_lat = (self.bounds.min_lat + self.bounds.max_lat) * 0.5;
+        let cos_lat = mean_lat.to_radians().cos();
+        let geo_w = ((self.bounds.max_lon - self.bounds.min_lon) * cos_lat) as f32;
+        let geo_h = (self.bounds.max_lat - self.bounds.min_lat) as f32;
+        if geo_w <= 0.0 || geo_h <= 0.0 {
+            return outer;
+        }
+        let geo_aspect = geo_w / geo_h;
+        let outer_aspect = outer.width() / outer.height();
+        if outer_aspect > geo_aspect {
+            // outer is wider than geo — letterbox left/right
+            let w = outer.height() * geo_aspect;
+            let off = (outer.width() - w) * 0.5;
+            egui::Rect::from_min_size(
+                egui::pos2(outer.min.x + off, outer.min.y),
+                egui::vec2(w, outer.height()),
+            )
+        } else {
+            // outer is taller than geo — letterbox top/bottom
+            let h = outer.width() / geo_aspect;
+            let off = (outer.height() - h) * 0.5;
+            egui::Rect::from_min_size(
+                egui::pos2(outer.min.x, outer.min.y + off),
+                egui::vec2(outer.width(), h),
+            )
+        }
+    }
+
     pub fn draw(&self, painter: &egui::Painter, rect: egui::Rect) {
         let nodes = &self.nodes;
         let bounds = &self.bounds;
@@ -59,7 +91,6 @@ impl OsmMap {
 
         for way in self.ways.iter().filter(|w| w.closed) {
             let fill = match way.kind {
-                WayKind::Forest => egui::Color32::from_rgba_unmultiplied(28, 55, 28, 110),
                 WayKind::Water => egui::Color32::from_rgba_unmultiplied(25, 70, 130, 130),
                 _ => continue,
             };
@@ -134,11 +165,9 @@ fn classify(tags: &[(String, String)]) -> Option<WayKind> {
             "waterway" => return Some(WayKind::Water),
             "natural" => match v.as_str() {
                 "water" | "wetland" => return Some(WayKind::Water),
-                "wood" => return Some(WayKind::Forest),
                 _ => {}
             },
             "landuse" => match v.as_str() {
-                "forest" => return Some(WayKind::Forest),
                 "reservoir" | "basin" => return Some(WayKind::Water),
                 _ => {}
             },
