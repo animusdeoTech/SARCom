@@ -117,6 +117,34 @@ Matches [ARCHITECTURE.md §15 v1b](ARCHITECTURE.md). Per [ADR-013](decisions/ADR
 Explicitly NOT in v1 scope. Listed here so they don't rot in open tabs.
 
 - **Reception-log / coverage-analysis layer.** Per-hop RSSI/SNR for who-heard-what coverage science. Designed when v1 forwarding is working and the analysis question is concrete. Not part of v1 protocol. See [ADR-013 §10](decisions/ADR-013-multi-hop-flood-via-packet-id.md).
+- **Software-sim test track (parallel to H1 fake-tag).** Deferred — post-v1a, picked up after the H1 fake-tag RF path (per [`spikes/fake-position-injector-spike.md`](spikes/fake-position-injector-spike.md)) lands or is explicitly chosen. Source: the fake-tag spike currently flags H1 as the primary/default fake-tag RF path; software-sim is a separate, larger future investment with its own scoping needs.
+  - **Prerequisites to evaluate before scoping:**
+    - `crates/protocol` stable and host-runnable (encoder, CRC layer, `node_id` type exposed).
+    - Clear radio boundary in tag/relay logic so a host-side `MockRadio` or virtual radio can substitute for real `lora-phy` hardware during simulation.
+    - Host-runnable time/peripheral abstraction for firmware logic; do not assume a specific executor until scoped.
+    - Gateway receiver path pluggable to a virtual channel (e.g. `mpsc`) instead of only SPI to SX1276.
+  - **What this unlocks that H1 cannot:**
+    - Multi-node mesh tests at scale: N synthetic nodes, zero hardware.
+    - Deterministic packet loss / collision / relay-dropout injection.
+    - Invariant testing of dedup/forwarding behaviour across the mesh; property-based testing is a candidate, not yet a dependency decision.
+    - Full pipeline-style tests per commit: protocol → relay logic → gateway ingest → SQLite → kiosk-readable test DB.
+    - Per-developer local runs of the system model on a laptop.
+  - **Reuse from H1 design:**
+    - Scenario TOML format.
+    - Reserved test-only `node_id` range, subject to [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md) and protocol-crate type confirmation.
+    - Verification surface contracts: `tag_reports` row, gateway log, kiosk render / read-model check.
+  - **What this does NOT replace:**
+    - H1's coverage of the real SX1262 driver path.
+    - `lora-phy` SPI calls and radio init.
+    - Real IRQ/timing behaviour.
+    - Real walking-tag validation of GNSS, RF propagation, antenna/enclosure effects, and power behaviour.
+  - **First step when picked up:**
+    - Create a separate scoping spike.
+    - Confirm the radio trait/boundary shape in firmware.
+    - Pick a virtual-channel model.
+    - Decide whether invariant/property-style testing is worth introducing.
+    - Do not start with implementation work.
+  - **Cross-refs:** [`spikes/fake-position-injector-spike.md`](spikes/fake-position-injector-spike.md); [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md) (single packet type, dedup by `(node_id, seq_nr)`); [ADR-014](decisions/ADR-014-duty-cycle-budget-as-gate.md) (duty-cycle gate — does not gate pure-sim airtime, but sim scenarios should mirror RF cadences for parity).
 - BLE maintenance CLI on the relay (service engineer stands next to the pole with a phone/laptop, reads battery mV / RX count / last RSSI, triggers a fresh commissioning broadcast)
 - Phone-friendly read-only map view (a local HTTP server on the gateway, reached from a phone on the hut's WiFi)
 - Cloud sync of the SQLite tag_reports to a Postgres backend
