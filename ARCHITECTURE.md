@@ -690,7 +690,7 @@ Li-Ion loses 20–40% below 0°C. Real concern for alpine winter.
 Private-network syncwords are on-air equivalent (0x12 on SX1276 ≡ 0x1424 on SX1262). `lora-phy` handles SX1262; the Rust gateway driver must set 0x12 explicitly on the SX1276. Verify during v0.
 
 ### 7. Dragino HAT pin numbering
-Dragino docs use WiringPi numbers, not BCM. Verify against `rppal` before writing SPI glue.
+Dragino docs use WiringPi numbers, not BCM. Verify against `rpi-pal` before writing SPI glue. (`rpi-pal` is the maintained fork of the archived `rppal`; same API, drop-in, Pi 5 compatible — see dev log 2026-05-05.)
 
 ### 8. Native-Rust map tile rendering on Pi GPU
 `walkers` + `wgpu` on the Pi's graphics stack is unproven for this team. Prototype early so we can fall back to `iced` or `slint` if `egui`/`walkers` is flaky on the Pi.

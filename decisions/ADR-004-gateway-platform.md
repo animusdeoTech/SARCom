@@ -36,7 +36,7 @@ Hardware on hand (see [../hardware/desk-inventory.md](../hardware/desk-inventory
 - **Rust in Yocto** via `meta-rust` layer, Rust version pinned in the recipe.
 - **Single binary.** One Tokio async runtime, one process. LoRa RX loop, SQLite writer, and kiosk UI all in-process. No IPC, no dbus gymnastics. See [../software/repo-layout.md](../software/repo-layout.md) (planned; for now see [ARCHITECTURE.md §17](../ARCHITECTURE.md)).
 - **Systemd unit** `lora-sar.service`: `Restart=always`, autostarts on boot, runs as a non-root user with membership in the spi/gpio groups. The DSI touchscreen renders from first pixel.
-- **Dragino pin numbering gotcha.** Dragino docs use WiringPi numbering, not BCM. Verify against the physical 40-pin header and the Rust GPIO crate (`rppal`) before writing SPI/interrupt glue.
+- **Dragino pin numbering gotcha.** Dragino docs use WiringPi numbering, not BCM. Verify against the physical 40-pin header and the Rust GPIO crate (`rpi-pal`, the maintained fork of the archived `rppal` — same API, drop-in, Pi 5 compatible; swap recorded in `dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md`) before writing SPI/interrupt glue.
 - **Bent pins on the in-hand HATs:** straighten with precision tweezers before seating; documented in [../hardware/gateway-assembly.md](../hardware/gateway-assembly.md) (planned; for now see this ADR and [TODO.md](../TODO.md)).
 - **No HTTP server in v1.** The Pi exposes no network-facing endpoints. SSH is available for dev and disabled on production images.
 

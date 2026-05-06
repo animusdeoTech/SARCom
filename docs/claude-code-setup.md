@@ -58,7 +58,7 @@ Use for anything that lives on the public web:
 Use for Rust ecosystem library APIs:
 
 - Embassy crates (`embassy-executor`, `embassy-time`, `embassy-hal-*`)
-- `lora-phy`, `egui`, `walkers`, `tokio`, `sqlx`, `rusqlite`, `rppal`
+- `lora-phy`, `egui`, `walkers`, `tokio`, `sqlx`, `rusqlite`, `rpi-pal` (the maintained fork of the archived `rppal`)
 - Anything you would normally look up on docs.rs
 
 ### Prefer local sources over both when possible
