@@ -24,6 +24,8 @@ The failure mode is therefore not catastrophic single-event detachment, it is cr
 
 The production-grade question that must be answered before unattended deployment: does the unit retain board-to-enclosure mechanical fixation if the adhesive fully fails? In the current design, the answer is no.
 
+**Review trigger:** before the relay first leaves the garden. The 2026-05-06 handheld pivot does not promote this concern — the relay enclosure stays OEM Solar Kit per [ADR-003](decisions/ADR-003-relay-hardware.md) and the garden v1a deployment does not yet exercise multi-year alpine thermal cycling.
+
 ## 2. 18650 cold-charging — lithium plating below 0°C
 
 The BOM specifies Samsung INR18650-25R cells (or the equivalent Molicel P26A / LG HG2 fallbacks). ADR-003 wires one cell into the Heltec Solar Kit's onboard charge controller via the SH1.25-2 connector. The relay runs from this cell and is recharged opportunistically from the 5 W panel.
@@ -38,6 +40,10 @@ The realistic deployment scenario that exercises this: a Belgian-Alpine winter m
 
 The production-grade question: confirm the Solar Kit's low-temperature charge behaviour empirically (cold-bench test, NTC behaviour observation, or Heltec engineering response) before any unattended winter deployment. Until that is confirmed, the operational envelope of the relay must be treated as undefined for sub-zero charging.
 
+**Tag-side extension (per `dev-log/2026-05-06-doc-contradictions-and-blockers-audit.md` D11).** The same physics applies to the tag: it carries its own INR18650 charged via the Tracker V2's onboard PMIC over USB-C. The PoC use case ("tag in a pocket on a hike, charged at home overnight") is fine because indoor charging is well above 0°C. The failure surface opens with realistic adjacent scenarios — leaving a tag on a parked-car dashboard overnight in winter, or charging a tag that has just come in from sub-zero exposure without letting it warm. Operational note for the tag: do not charge a sub-zero tag; let it warm to room temperature first. A long-term fix is owned by [`spikes/tag-handheld-enclosure-spike.md`](spikes/tag-handheld-enclosure-spike.md) (cell strategy + service interval).
+
+**Review trigger:** at gateway power-architecture spike close. The 2026-05-06 handheld pivot **promotes this from the post-v1 risk register to v1-active scope** — the gateway now has its own battery pack with the same lithium-cold-charge physics. NTC cold-charge cutoff is mandatory in the design per [`spikes/gateway-handheld-power-architecture-spike.md`](spikes/gateway-handheld-power-architecture-spike.md); revisit this entry when that spike closes and fold its mitigations in or out.
+
 ## 3. IPEX1.0 (u.FL) connector mating-cycle and strain-relief envelope
 
 The Heltec Wireless Tracker V2 exposes its LoRa antenna and its GNSS antenna on IPEX1.0 (u.FL / MHF I) connectors. The BOM and ADR-003 specify an IPEX1.0→SMA female bulkhead pigtail that brings the LoRa antenna out to the Solar Kit's SMA bulkhead, where the external 868 MHz antenna mounts. This is a sound architecture; the constraint is on the IPEX side of the joint.
@@ -50,6 +56,8 @@ The failure modes are progressive: the centre contact backs out partially and im
 
 The production-grade question: how is the pigtail mechanically immobilised inside the enclosure so that the IPEX joint never sees axial pull or lateral peel load, and what service procedure prevents the joint from being disturbed during routine maintenance? Garden v1 deployment, where the assembly is mated once and the enclosure is sealed for the duration of the test, does not exercise this surface. Multi-year mountain deployment with any service interventions does.
 
+**Review trigger:** at gateway enclosure spike close. The 2026-05-06 handheld pivot **promotes this from the post-v1 risk register to v1-active scope** — the gateway now has its own external LoRa SMA pigtail through a custom 3D-printed shell, sharing the IPEX strain-relief problem class with the relay. Strain-relief approach (printed clamp / hot-glue / other) and bulkhead spec are owned by [`spikes/gateway-handheld-enclosure-spike.md`](spikes/gateway-handheld-enclosure-spike.md); revisit this entry when that spike closes.
+
 ## 4. Gateway SD-card / unannounced power-loss resilience
 
 [ADR-004](decisions/ADR-004-gateway-platform.md) specifies a Raspberry Pi running Yocto Linux as the gateway, with the [SQLite database](decisions/ADR-009-database-sqlite.md) in WAL mode on the SD card. Mains power at the hut is whatever the hut provides — at the Belgian garden v1 site that is consumer mains; at a mountain hut it is some combination of solar/wind/generator/mains, and the failure mode "someone unplugs the gateway, the breaker trips, the storm cuts the inverter" is realistic and recurring.
@@ -61,6 +69,8 @@ The relevant production-grade scenario for LoRa SAR is not loss of recent sighti
 The current v1 stack does not address this. The Yocto image is a default read-write rootfs, the SD card is consumer-grade, and there is no UPS or capacitor-backed clean-shutdown path between mains and the Pi. That is acceptable for a desk and a garden where re-imaging is a five-minute operation. It is not acceptable for a hut where the gateway is the only piece of the stack that anyone interacts with directly, and where a rootfs corruption means a non-functional system until somebody carries a freshly imaged card up the mountain.
 
 The production-grade question: what is the recovery path for an unannounced power loss to the gateway, and what fraction of unannounced power losses produces a non-bootable system? The hardening surface — read-only rootfs with a small writable partition for the SQLite database, A/B image with a known-good fallback, or a clean-shutdown UPS hat — is real engineering work that has not been scoped. The risk to capture today is that the digital side of the stack is being engineered for hut deployment while the bottom-of-stack appliance behaviour is still desk behaviour.
+
+**Review trigger:** at gateway runtime-task spike close. The 2026-05-06 handheld pivot **promotes this from the post-v1 risk register to v1-active scope** — battery operation makes clean-shutdown a daily concern, not a once-in-a-blue-moon mains-loss concern. The clean-shutdown sequence (low-battery from `power_monitor` → `shutdown_orchestrator` → flush WAL via `PRAGMA wal_checkpoint(TRUNCATE)` → drop BLE / CoT / kiosk → systemd shutdown) is owned by [`spikes/gateway-runtime-task-architecture-spike.md`](spikes/gateway-runtime-task-architecture-spike.md); revisit this entry when that spike closes.
 
 ## What this file is not
 
