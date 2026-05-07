@@ -373,7 +373,7 @@ SELF_ANNOUNCE len=22 node=2 seq=17
 
 ## 10. Gateway responsibilities
 
-The gateway is a handheld Pi-class SBC with a Dragino LoRa/GPS HAT (SX1276) and a touchscreen, running Yocto Linux. Substrate (Pi 4 / Pi 5 / CM5 / Zero 2W) and display class (size, orientation, panel) are open per [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md) (pending ADR-015). See [ADR-004](decisions/ADR-004-gateway-platform.md).
+The gateway is a handheld Pi-class SBC with a Dragino LoRa/GPS HAT (SX1276) and a touchscreen, running Yocto Linux. Substrate is **Pi 5** (the on-hand 3× Pi 4 Model B units are confirmed out of order — see [`dev-log/2026-05-07-pi4-dead-substrate-pivots-to-pi5.md`](dev-log/2026-05-07-pi4-dead-substrate-pivots-to-pi5.md)); CM5 and similar Pi-5-class options remain on the substrate-spike ranking. Display class (size, orientation, panel) is open per [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md) (pending ADR-015). See [ADR-004](decisions/ADR-004-gateway-platform.md).
 
 ### What the gateway does
 
