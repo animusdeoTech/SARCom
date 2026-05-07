@@ -45,7 +45,7 @@ Python is permitted for *host-side* scripts only — simulation, test vector gen
 - Single Cargo workspace holds every binary. Types live in one crate, used by all four surfaces.
 - Nightly Rust is required for the `xtensa-esp32s3-none-elf` target (Xtensa backend is not upstream in stable rustc). Pin a specific nightly snapshot for reproducibility.
 - Wireless Tracker V2 is not yet upstream in `esp-hal`. We will write and publish a `heltec-wireless-tracker-v2-bsp` crate. This is the planned portfolio contribution.
-- Cross-compilation: developer laptop compiles ESP32-S3 binaries via `espup`-managed toolchain, and Pi binaries via `aarch64-unknown-linux-gnu` (Pi 4) or `armv7-unknown-linux-gnueabihf` (Pi 3B+).
+- Cross-compilation: developer workstation compiles ESP32-S3 binaries via `espup`-managed toolchain, and Pi binaries via `aarch64-unknown-linux-gnu` (Pi 4) or `armv7-unknown-linux-gnueabihf` (Pi 3B+).
 - The kiosk UI is not in a browser. MapLibre/Leaflet/OpenLayers are off the table. See [ADR-005](ADR-005-map-and-ui.md).
 - No JavaScript runtime on the Pi. No Node. No npm.
 - BSP work and Yocto integration both have upfront costs. We accept them because the long-term story (one language, one toolchain, reproducible image) is worth it for an appliance.

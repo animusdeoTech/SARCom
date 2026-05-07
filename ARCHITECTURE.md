@@ -641,7 +641,7 @@ Tag transmits sentinel-value packets every 5 s (`GPS_VALID=0`, lat/lon/alt senti
 Also in scope for v0 (so later work doesn't bog down on it):
 
 - DS3231 RTC wired to the Pi I²C bus and reading correctly; `hwclock --systohc` / `--hctosys` integrated into the Yocto boot sequence. See [ADR-011](decisions/ADR-011-gateway-time-source.md).
-- PMTiles-on-`walkers` kiosk spike on a laptop first, then on the Pi. Must render a small local `.pmtiles` before any other kiosk work lands. See [ADR-005](decisions/ADR-005-map-and-ui.md). If the spike fails on the Pi's GPU stack, this is the moment to fall back to `iced`/`slint` or write a custom MBTiles tile provider — not at v1.
+- PMTiles-on-`walkers` kiosk spike on the dev workstation first, then on the Pi. Must render a small local `.pmtiles` before any other kiosk work lands. See [ADR-005](decisions/ADR-005-map-and-ui.md). If the spike fails on the Pi's GPU stack, this is the moment to fall back to `iced`/`slint` or write a custom MBTiles tile provider — not at v1.
 
 ### v0.5 — Gateway writes to SQLite; kiosk renders a marker
 

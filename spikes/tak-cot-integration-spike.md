@@ -92,7 +92,7 @@ Concrete code skeletons, message-template files, and integration testing methodo
 
 The ticket as written above is intentionally a survey across architectural decision (A), interop test (B), and semantic mapping (C). Surveying all three in one execution is too broad and risks turning into an interesting-defence-tech-encyclopedia rather than bewijsbaar technisch momentum. So before any of the broader open questions get touched, run the cheapest credible truth test:
 
-**Goal:** emit one hardcoded SARCOM-like tag position as CoT XML over UDP multicast `239.2.3.1:6969` from a Rust binary on a Pi (or even Pieter's laptop) and verify it appears as a marker on an ATAK Android client on the same LAN.
+**Goal:** emit one hardcoded SARCOM-like tag position as CoT XML over UDP multicast `239.2.3.1:6969` from a Rust binary on a Pi (or even Pieter's dev workstation) and verify it appears as a marker on an ATAK Android client on the same LAN.
 
 **Hard non-goals for Phase 1:**
 - TAK Server (FreeTAKServer or official) — multicast direct to client only
@@ -142,7 +142,7 @@ The ticket as written above is intentionally a survey across architectural decis
 
 ### Test-scope questions (affect the spike's own scope)
 
-14. **What rig do we test on?** Minimum: one Android phone with ATAK on the same WiFi as a Pi running the SARCOM gateway. Better: add FreeTAKServer on a second Pi (or a Docker container on a laptop) and test multi-client.
+14. **What rig do we test on?** Minimum: one Android phone with ATAK on the same WiFi as a Pi running the SARCOM gateway. Better: add FreeTAKServer on a second Pi (or a Docker container on the dev workstation OR a second Pi) and test multi-client.
 15. **What counts as "this works"?** A SARCOM tag's position appears on the ATAK map, updates within (5+1) minutes of the tag's emission, with a sensible icon, and the SOS state correctly renders as a distress event. Pieter's call on the precise pass criterion.
 
 ## Potential blockers

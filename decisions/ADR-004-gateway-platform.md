@@ -34,7 +34,7 @@ Hardware on hand (see [../hardware/desk-inventory.md](../hardware/desk-inventory
 ## Consequences
 
 - **Yocto upfront cost is paid now, once.** Payoff: a stripped, deterministic, single-purpose image; the kernel and rootfs pinned by commit; reproducible rebuilds. For an appliance that might run in a hut for years, this is the right baseline, and doing bring-up on Raspbian then re-porting to Yocto would mean paying the integration tax twice.
-- **Target triple:** `aarch64-unknown-linux-gnu` (Pi 4) or `armv7-unknown-linux-gnueabihf` (Pi 3B+). Cross-compile from the dev laptop.
+- **Target triple:** `aarch64-unknown-linux-gnu` (Pi 4) or `armv7-unknown-linux-gnueabihf` (Pi 3B+). Cross-compile from the dev workstation (Windows host).
 - **Rust in Yocto** via `meta-rust` layer, Rust version pinned in the recipe.
 - **Single binary.** One Tokio async runtime, one process. LoRa RX loop, SQLite writer, and kiosk UI all in-process. No IPC, no dbus gymnastics. See [../software/repo-layout.md](../software/repo-layout.md) (planned; for now see [ARCHITECTURE.md §17](../ARCHITECTURE.md)).
 - **Systemd unit** `lora-sar.service`: `Restart=always`, autostarts on boot, runs as a non-root user with membership in the spi/gpio groups. The DSI touchscreen renders from first pixel.

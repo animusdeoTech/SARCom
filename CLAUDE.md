@@ -63,6 +63,7 @@ Note: outbound LAN-bounded CoT/TAK export under the pending ADR-016 gate (WiFi +
 - Values physical plug-and-play. Will pay for a board that drops into a solar kit rather than 3D-print a bracket. Will NOT skimp on software correctness.
 - Physical deployment is 50% of the project. The enclosure/mount/power story is a first-class concern, not a v2 polish item.
 - Is building this for himself, learning, and portfolio. Not selling anything. Quality > speed.
+- **Dev machine: Windows home PC (desktop).** Not a laptop. The cross-compile / kiosk spike / espflash / Yocto-cross / `cargo check` workflow runs on a Windows desktop. References in the doc set to "the dev laptop" or "on a laptop first" are stale and being retired — see [`dev-log/2026-05-08-dev-machine-correction.md`](dev-log/2026-05-08-dev-machine-correction.md) (this retirement).
 
 ## Tools this project uses
 

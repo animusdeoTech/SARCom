@@ -74,7 +74,7 @@ tags: [hardware, bom, shopping]
 - [ ] **1× Raspberry Pi 5 official 27W USB-C-PD PSU (5V/5A).** Pi 5 needs the upgraded supply; the on-hand Pi 4s are out of order (2026-05-07 — see [`dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](dev-log/2026-05-07-pi4-retirement-substrate-decision.md)) so legacy 5V/3A and micro-USB PSUs are no longer applicable. Order alongside whichever Pi 5 RAM variant the substrate spike picks.
   Search: "Raspberry Pi 5 official 27W PSU USB-C"
 
-- [ ] **1× SD card reader** (USB-A, single slot). For writing Yocto images to the three microSD cards sequentially. Most laptops have one — only order if yours doesn't.
+- [ ] **1× SD card reader** (USB-A, single slot). For writing Yocto images to the three microSD cards sequentially. Order one if your dev workstation does not have a built-in SD slot.
 
 - [ ] **1× Ethernet cable CAT6**, 2–3 m. Pi → router during initial bring-up (before WiFi config).
 
@@ -100,7 +100,7 @@ tags: [hardware, bom, shopping]
 
 ## Deferred — v1a prep (order when starting v1a field deployment)
 
-These are NOT in the immediate cart. v0 desk bring-up runs against the laptop's manually-set system clock; the DS3231 + CR2032 only become load-bearing at v1a, when the gateway moves into field deployment and there is no operator-set clock to lean on. Per [ADR-011](decisions/ADR-011-gateway-time-source.md), no NTP at any deployment stage — the DS3231 + opportunistic GPS-PPS path is the only sanctioned time source, and CLAUDE.md's "Do NOT re-open" list explicitly closes the WiFi-NTP door.
+These are NOT in the immediate cart. v0 desk bring-up runs against the dev workstation's manually-set system clock; the DS3231 + CR2032 only become load-bearing at v1a, when the gateway moves into field deployment and there is no operator-set clock to lean on. Per [ADR-011](decisions/ADR-011-gateway-time-source.md), no NTP at any deployment stage — the DS3231 + opportunistic GPS-PPS path is the only sanctioned time source, and CLAUDE.md's "Do NOT re-open" list explicitly closes the WiFi-NTP door.
 
 - [ ] **1× DS3231 RTC module** (I²C, ±2 ppm, ~€3). Connect to Pi I²C GPIO header for field deployment.
 - [ ] **1× CR2032 coin cell** for the RTC backup (order one regardless of whether the module ships with one).

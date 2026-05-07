@@ -125,7 +125,7 @@ Naming the sections that need editing. **No edit text drafted here.** Phase B / 
 ### `bom.md`
 
 - line 12 (alignment list): drop ADR-012 from "Aligned to", or replace with "ADR-012 (buzzer + non-goals only; rest superseded by ADR-013/014)" (dev-log A12 / audit row c).
-- line 99 ("Deferred — v1a prep" preface): rewrite the "v0 runs behind WiFi with NTP at mom's place — no RTC needed yet" sentence so it does not re-open the closed NTP door (dev-log A4 / audit row b). Recommended replacement language: "v0 desk bring-up runs against the laptop's manually-set system clock; the DS3231 + CR2032 only become load-bearing at v1a when the gateway moves into field deployment. Per ADR-011, no NTP at any deployment stage."
+- line 99 ("Deferred — v1a prep" preface): rewrite the "v0 runs behind WiFi with NTP at mom's place — no RTC needed yet" sentence so it does not re-open the closed NTP door (dev-log A4 / audit row b). Recommended replacement language: "v0 desk bring-up runs against the dev workstation's manually-set system clock; the DS3231 + CR2032 only become load-bearing at v1a when the gateway moves into field deployment. Per ADR-011, no NTP at any deployment stage."
 - Gateway hardware section: substrate (Pi 5 + Dragino HAT + 5" panel, or pending ADR-015 outcome) replaces the prior 7" DSI cart. Footnote-cite this audit close + pending ADR-015.
 - "Explicitly NOT ordering": already lists "stainless hose clamps" / "wooden pole from hardware store" / "Fusion 360 designed three-legged base + ground-stake". This stays as the source of truth for the pole-hardware contradiction; ADR-003 + TODO.md align to it.
 
