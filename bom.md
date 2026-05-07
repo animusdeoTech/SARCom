@@ -9,7 +9,9 @@ tags: [hardware, bom, shopping]
 
 **Purpose:** the versioned shopping list. Source of truth for "what do we buy" and "what did we already buy." When in doubt, this doc wins over any other list.
 
-**Aligned to:** [ADR-002](decisions/ADR-002-tag-hardware.md), [ADR-003](decisions/ADR-003-relay-hardware.md), [ADR-004](decisions/ADR-004-gateway-platform.md), [ADR-011](decisions/ADR-011-gateway-time-source.md), [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md), [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md), dated 2026-04-22 / 2026-04-24 / 2026-04-25 / 2026-04-26.
+**Aligned to:** [ADR-002](decisions/ADR-002-tag-hardware.md), [ADR-003](decisions/ADR-003-relay-hardware.md), [ADR-004](decisions/ADR-004-gateway-platform.md), [ADR-011](decisions/ADR-011-gateway-time-source.md), [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md) (buzzer + non-goals only; rest superseded by [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md) / [ADR-014](decisions/ADR-014-duty-cycle-budget-as-gate.md)), [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md), [ADR-014](decisions/ADR-014-duty-cycle-budget-as-gate.md), dated 2026-04-22 / 2026-04-24 / 2026-04-25 / 2026-04-26. Cascading 2026-05-06 handheld pivot per [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md); gateway substrate + display + battery + enclosure are open pending ADR-015 / ADR-016 / ADR-017 (working titles).[^pivot]
+
+[^pivot]: 2026-05-06 form-factor pivot — see [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md). Three new ADRs proposed: ADR-015 (handheld substrate + form factor; supersedes-in-part ADR-004; refines-in-part ADR-005/006/007), ADR-016 (base-mode export gate; supersedes-in-part ADR-008), ADR-017 (custom 3D-printed waterproof enclosures for gateway and tag; refines-in-part ADR-002).
 
 ---
 
@@ -17,7 +19,7 @@ tags: [hardware, bom, shopping]
 
 - [ ] **10× Heltec Wireless Tracker V2** (ESP32-S3FN8 + SX1262 + UC6580 GNSS, **EU 863–870 MHz variant**, 28 dBm). 2 tags (v1a/v1b), 1 paal-relay (v1a), 1 drone-pod relay (v1b), 6 spares/future use. Per [ADR-002](decisions/ADR-002-tag-hardware.md), [ADR-003](decisions/ADR-003-relay-hardware.md), [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md). Product page: https://heltec.org/project/wireless-tracker-v2/
   *UC6580 is on-board — no external GNSS module needed.*
-  *BLE commissioning interface planned for v1 — see ADR-006 update pending.*
+  *BLE commissioning is v1 per [ADR-006](decisions/ADR-006-relay-has-gnss.md) (audit-close 2026-05-07 resolves the prior ARCHITECTURE.md / TODO.md drift on the v1-vs-v2+ question on the v1 side). Topology is gateway-as-BLE-central + relay/tag-as-peripherals (no phone in v1) per [`spikes/ble-commissioning-scope-spike.md`](spikes/ble-commissioning-scope-spike.md); kiosk-side flow per [`spikes/ble-gateway-ui-flow-spike.md`](spikes/ble-gateway-ui-flow-spike.md). The on-board ESP32-S3 BLE radio is the peer; no separate BLE module to order.*
 
 - [ ] **1× Heltec Solar Kit for Dev-board** — order the **"LoRa + 2.4G"** variant (in stock as of 2026-05-04; 868 MHz single-LoRa variant is out of stock). The extra 2.4G SMA bulkhead is unused — plug or leave empty. IP67 enclosure ~178×178×35 mm, 5W 6V solar panel, charge controller, 18650 holder. Product page: https://heltec.org/project/solar-kit-for-dev-board-waterproof-enclosure-for-outdoor-meshtastic-meshcore/
   **Verify at checkout:** does this variant include an IPEX1.0→SMA pigtail and/or 868 MHz antenna? If yes, remove items 1 and/or 2 from Order 2.
@@ -55,7 +57,9 @@ tags: [hardware, bom, shopping]
 
 ### Pi + HAT + touchscreen fastening
 
-- [ ] **M2.5 brass standoff + nut + screw assortment kit** (covers HAT-to-Pi, Pi-to-touchscreen back panel, M2.5×4 and M2.5×6 variants). Fixes the "missing screws" gap on all three Pi units.
+> **Pending ADR-015.** The 2026-05-06 pivot makes the gateway a handheld portable with a custom 3D-printed waterproof enclosure (pending ADR-017) and a battery + USB-C charging path (pending ADR-016 export gate). Pi class (4 vs 5 vs CM5 vs Zero 2W) and display class (size, orientation, panel) are open per [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md); battery topology + protections + signal contract are open per [`spikes/gateway-handheld-power-architecture-spike.md`](spikes/gateway-handheld-power-architecture-spike.md); enclosure mechanicals + bulkhead inventory are open per [`spikes/gateway-handheld-enclosure-spike.md`](spikes/gateway-handheld-enclosure-spike.md). The standoff-kit line below still applies for desk bring-up; specific Pi PSU / SD / heatsink / display / battery / enclosure SKUs are not committed to here.
+
+- [ ] **M2.5 brass standoff + nut + screw assortment kit** (covers HAT-to-Pi, plus generic mechanical work; the prior "Pi-to-touchscreen back panel" assumption no longer holds — handheld enclosure standoffs are pending ADR-017). Fixes the "missing screws" gap on all three Pi units.
   Search: "M2.5 brass standoff assortment kit"
 
 ### Desk development setup
@@ -96,12 +100,12 @@ tags: [hardware, bom, shopping]
 
 ## Deferred — v1a prep (order when starting v1a field deployment)
 
-These are NOT in the immediate cart. v0 runs behind WiFi with NTP at mom's place — no RTC needed yet. v1a is the first field deployment where the gateway has no internet.
+These are NOT in the immediate cart. v0 desk bring-up runs against the laptop's manually-set system clock; the DS3231 + CR2032 only become load-bearing at v1a, when the gateway moves into field deployment and there is no operator-set clock to lean on. Per [ADR-011](decisions/ADR-011-gateway-time-source.md), no NTP at any deployment stage — the DS3231 + opportunistic GPS-PPS path is the only sanctioned time source, and CLAUDE.md's "Do NOT re-open" list explicitly closes the WiFi-NTP door.
 
 - [ ] **1× DS3231 RTC module** (I²C, ±2 ppm, ~€3). Connect to Pi I²C GPIO header for field deployment.
 - [ ] **1× CR2032 coin cell** for the RTC backup (order one regardless of whether the module ships with one).
 
-Per [ADR-011](decisions/ADR-011-gateway-time-source.md). ADR-011 is unchanged — it applies to field deployment. For v0 desk prototyping, NTP over local WiFi is acceptable.
+Per [ADR-011](decisions/ADR-011-gateway-time-source.md). ADR-011 is unchanged.
 
 ---
 
