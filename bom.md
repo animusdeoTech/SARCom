@@ -21,7 +21,7 @@ tags: [hardware, bom, shopping]
   *UC6580 is on-board — no external GNSS module needed.*
   *BLE commissioning is v1 per [ADR-006](decisions/ADR-006-relay-has-gnss.md) (audit-close 2026-05-07 resolves the prior ARCHITECTURE.md / TODO.md drift on the v1-vs-v2+ question on the v1 side). Topology is gateway-as-BLE-central + relay/tag-as-peripherals (no phone in v1) per [`spikes/ble-commissioning-scope-spike.md`](spikes/ble-commissioning-scope-spike.md); kiosk-side flow per [`spikes/ble-gateway-ui-flow-spike.md`](spikes/ble-gateway-ui-flow-spike.md). The on-board ESP32-S3 BLE radio is the peer; no separate BLE module to order.*
 
-- [ ] **1× Heltec Solar Kit for Dev-board** — order the **"LoRa + 2.4G"** variant (in stock as of 2026-05-04; 868 MHz single-LoRa variant is out of stock). The extra 2.4G SMA bulkhead is unused — plug or leave empty. IP67 enclosure ~178×178×35 mm, 5W 6V solar panel, charge controller, 18650 holder. Product page: https://heltec.org/project/solar-kit-for-dev-board-waterproof-enclosure-for-outdoor-meshtastic-meshcore/
+- [x] **2× Heltec Solar Kit for Dev-board** — ordered as part of Heltec #110639 on 2026-05-05 (per [`dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md`](dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md); A6 reconcile 2026-05-07). Second kit is v1b drone-pod / fleet-inventory spare, not v1a critical path. **"LoRa + 2.4G"** variant (in stock as of 2026-05-04; 868 MHz single-LoRa variant is out of stock). The extra 2.4G SMA bulkhead is unused — plug or leave empty. IP67 enclosure ~178×178×35 mm, 5W 6V solar panel, charge controller, 18650 holder. Product page: https://heltec.org/project/solar-kit-for-dev-board-waterproof-enclosure-for-outdoor-meshtastic-meshcore/
   **Verify at checkout:** does this variant include an IPEX1.0→SMA pigtail and/or 868 MHz antenna? If yes, remove items 1 and/or 2 from Order 2.
 
 **Heltec warehouse note:** use heltec.org and select the DE warehouse at checkout. Verify ship-from location before paying — unconfirmed reports of some SKUs shipping from CN manufacturing.
@@ -155,7 +155,7 @@ Gated on v1a passing. Do not add to cart until v1a acceptance criteria are met.
 
 ### Heltec DE cart
 1. 10× Wireless Tracker V2 (EU 863–870 MHz variant)
-2. 1× Solar Kit for Dev-board (**LoRa + 2.4G variant**)
+2. 2× Solar Kit for Dev-board (**LoRa + 2.4G variant**) — ordered as part of Heltec #110639 (2026-05-05); second kit is v1b drone-pod / fleet-inventory spare.
    → Verify: pigtail included? 868 MHz antenna included? Remove Amazon items accordingly.
 
 ### Amazon.de cart
