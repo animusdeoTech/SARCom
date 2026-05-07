@@ -121,7 +121,6 @@ Rows committed:
   Dragino HAT schematic:      ___
   DS3231:                     ___
   Pi 5 + RP1:                 ___
-  Pi 4:                       ___
   Pi Touch Display 2 (5"):    ___
   Battery cell:               pending — upstream: power spike
   Buzzer:                     ___

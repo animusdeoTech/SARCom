@@ -52,8 +52,8 @@ Those are downstream questions that only matter after the answer to the question
 Captured in `dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md`. Summary:
 
 - **`rppal` archived 2025-07-01.** Maintained successor is `rpi-pal` (drop-in fork, Pi 5 compatible). Doc swap already applied across CLAUDE.md, ARCHITECTURE.md §X.7, ADR-004, docs/claude-code-setup.md.
-- **Pi 5's RP1 chip routes GPIO/SPI/UART through PCIe.** This is materially different from Pi 4's direct memory-mapped peripherals. Old assumptions about GPIO-chip mapping (`gpiochip0`) and UART config (`enable_uart=1`) do not hold.
-- **The Dragino LoRa/GPS HAT is officially documented as Pi 2 / Pi 3 compatible only.** Pi 4 is community-validated working. Pi 5 is undocumented by Dragino. Hardware uses standard SPI + GPIO + UART so should be electrically compatible — but "should" is doing a lot of work in that sentence.
+- **Pi 5's RP1 chip routes GPIO/SPI/UART through PCIe.** Historical note: this differs from earlier Pi-class direct-mapped peripherals — GPIO-chip mapping (`gpiochip0`) and UART config (`enable_uart=1`) do not carry over. Technical detail in [`../dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md`](../dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md).
+- **The Dragino LoRa/GPS HAT is officially documented as Pi 2 / Pi 3 compatible only.** Pi 5 is undocumented by Dragino, but the 40-pin header + standard SPI + GPIO + UART make it electrically compatible. We are the canary on Pi 5 + this HAT.
 - **GPIO interrupt mode on Pi 5 is reportedly flaky** for SX1262 LoRa HATs (RadioLib issue #1200). Polled RX is the documented fallback.
 - **Some old Dragino LoRa/GPS HAT revisions have an SPI CS routing defect** — chip-select wired to physical pin 22 (BCM GPIO 25) instead of pin 24 (CE0). Affected boards need software CS via GPIO 25.
 - **The `protocol` crate parser is already validated** by 22 unit tests against frozen canonical vectors (heartbeat, SOS) per TODO.md. Bytes-to-struct decoding is not in scope of this spike — only bytes-from-radio-to-program-buffer is.
@@ -107,7 +107,7 @@ Each blocker below has a likelihood guess and a fallback. Likelihoods are gut-fe
 
 - **B1. All 3 HATs have the GPIO 25 CS defect.** *Likelihood: medium.* All three units are old enough to plausibly be affected revisions. **Fallback:** software CS via GPIO 25 in our Rust binary. `lora-phy` accepts an explicit `OutputPin` for CS — not a code rewrite, just an extra parameter.
 - **B2. Bent pins on the HATs damaged a critical signal.** *Likelihood: low.* TODO.md mentions bent pins; we don't yet know which pins. **Fallback:** straighten or reflow; if a HAT is unusable Pieter still has 2 more.
-- **B3. Pi 5 + Dragino HAT have undocumented physical incompatibility.** *Likelihood: low.* The 40-pin header is electrically unchanged on Pi 5. But we have no public reports of *anyone* running this HAT on Pi 5 — we'd be the canary. **Fallback:** order a Pi 4 2 GB and proceed there; Pi 4 is community-confirmed working. Pi 4 is end-of-life-ish but adequate for v1.
+- **B3. Pi 5 + Dragino HAT have undocumented physical incompatibility.** *Likelihood: low.* The 40-pin header is electrically unchanged on Pi 5. But we have no public reports of *anyone* running this HAT on Pi 5 — we'd be the canary. **Fallback:** re-open [`gateway-handheld-substrate-spike.md`](gateway-handheld-substrate-spike.md) to consider CM5 or Zero 2W as alternative substrates; Pi 4 is retired per [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md) and is NOT a fallback option.
 
 ### Stack
 
@@ -123,7 +123,7 @@ Each blocker below has a likelihood guess and a fallback. Likelihoods are gut-fe
 
 ### Project-shape
 
-- **B10. The Kiwi gateway-stack order has not been placed yet (as of 2026-05-05 14:00 local).** *Likelihood: blocker if not addressed.* This spike cannot start without the Pi hardware. Either the order goes in or we re-scope to use existing hardware (Pi Zero 2W? a borrowed Pi 4? there is no decision yet).
+- **B10. The Pi 5 procurement decision has not been placed yet (as of 2026-05-07).** *Likelihood: blocker if not addressed.* This spike cannot start without the gateway substrate hardware. Either the order goes in or we re-scope to use a Pi-5-class alternative (e.g. Pi Zero 2W as the only on-hand-compatible alternative; full ranking owned by [`gateway-handheld-substrate-spike.md`](gateway-handheld-substrate-spike.md)). Pi 4 is retired and is not a substitute path — see [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md).
 - **B11. Architectural pivot to WiFi+cloud floated by Pieter on 2026-05-05.** **RESOLVED 2026-05-06.** The pivot landed as "local-first handheld gateway with opportunistic base-mode export" — not WiFi+cloud, but adds conditional outbound LAN CoT/TAK gated on power-good + WiFi-stable + manual enable. ADR-008 amendment is the `tak-cot-integration-spike.md` thread, not this one. This spike is no longer at risk of being moot.
 
 ## What "answered" looks like for this spike
@@ -138,7 +138,7 @@ This ticket is closed when we can answer **yes or no** with documented evidence 
 
 If the answer is **yes**: open the gateway-crate skeleton epic and proceed.
 
-If the answer is **no**: write a follow-up ticket describing exactly which layer failed, propose a fallback (Pi 4 host? alternative SX1276 crate? different HAT?), and only then make a path-forward decision.
+If the answer is **no**: write a follow-up ticket describing exactly which layer failed, propose a fallback (alternative SX1276 crate? different HAT?), and only then make a path-forward decision. Substrate alternatives (CM5, Zero 2W, Pi 5 + USB SX1276) are owned by [`gateway-handheld-substrate-spike.md`](gateway-handheld-substrate-spike.md), not improvised here.
 
 ## Out of scope for this ticket
 
