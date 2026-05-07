@@ -9,16 +9,41 @@ tags: [todo, backlog]
 
 Ordered by blocking dependency, not by calendar. Top = work on this next. If something is blocked, it lives in "Blocked" at the bottom until unblocked.
 
-As of 2026-04-26 the ADR ledger runs 001–014. ADR-012 was superseded in part on 2026-04-26 by ADR-013 (multi-hop flood via packet_id dedup — one wire packet type, no role enum, no SIGHTING) and ADR-014 (duty-cycle budget table as mandatory protocol gate). The v1a/v1b split, tag SOS buzzer, and non-goals list from ADR-012 survive. Next phase is **ordering hardware** and **standing up the Rust workspace** while it ships. Phase boundaries below map 1:1 to the v0 / v0.5 / v1a / v1b acceptance gates in [ARCHITECTURE.md §15](ARCHITECTURE.md).
+As of 2026-04-26 the ADR ledger runs 001–014. ADR-012 was superseded in part on 2026-04-26 by ADR-013 (multi-hop flood via packet_id dedup — one wire packet type, no role enum, no SIGHTING) and ADR-014 (duty-cycle budget table as mandatory protocol gate). The v1a/v1b split, tag SOS buzzer, and non-goals list from ADR-012 survive. Phase boundaries below map 1:1 to the v0 / v0.5 / v1a / v1b acceptance gates in [ARCHITECTURE.md §15](ARCHITECTURE.md).
+
+**2026-05-06 form-factor pivot.** Gateway is now a handheld portable Rust device with a touchscreen, battery + USB-C charging, custom 3D-printed waterproof enclosure, and an ADR-016-gated outbound LAN CoT/TAK export path. Three new ADRs proposed (ADR-015 substrate + form factor; ADR-016 export gate; ADR-017 enclosures). Until those land, items below cite "(pending ADR-015)" / "(pending ADR-016)" parentheticals where the pre-pivot text named a fixed-kiosk substrate or banned outbound network calls categorically. See [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md) for the per-file edit checklist this section folds in, and the open-spikes block immediately below for the active research lanes.[^pivot]
+
+[^pivot]: 2026-05-06 form-factor pivot — see [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md). Three new ADRs proposed: ADR-015 (handheld substrate + form factor; supersedes-in-part ADR-004; refines-in-part ADR-005/006/007), ADR-016 (base-mode export gate; supersedes-in-part ADR-008), ADR-017 (custom 3D-printed waterproof enclosures for gateway and tag; refines-in-part ADR-002).
 
 ## Right now (this week)
 
 - [x] Finalise [bom.md](bom.md) with Heltec DE cart sanity-checked against ADR-002 / ADR-003 / ADR-011 SKUs
-- [ ] **Place the Heltec order** — per the "Cart sanity-check" list in [bom.md](bom.md): 3× Wireless Tracker V2 (EU 863–928 MHz variant; 2 tag + 1 relay), 1× Solar Kit for Dev-board, **1× IPEX1.0 → SMA female bulkhead pigtail**, **1× 868 MHz external SMA antenna** (for the relay's Solar Kit bulkhead), **1× 868 MHz SMA stubby antenna** (for the Dragino HAT). Per [ADR-002](decisions/ADR-002-tag-hardware.md) and [ADR-003](decisions/ADR-003-relay-hardware.md).
-- [ ] **Place the parallel (Amazon / Tinytronics) order** — **6× Samsung INR18650-25R** or equivalent (2 tag + 2 relay + 2 spares; see [bom.md](bom.md) §Batteries), **1× DS3231 RTC module + 1× CR2032 coin cell** (per [ADR-011](decisions/ADR-011-gateway-time-source.md)), **1× small piezo active buzzer** (~€1; tag SOS audible cue per [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md)), M2.5 self-adhesive PCB standoffs + 3M VHB tape + M2.5×6 screws (relay mounting workaround per [ADR-003](decisions/ADR-003-relay-hardware.md) §Consequences), M2.5 brass standoff + screw kit (Pi + HAT + touchscreen).
+- [x] **Heltec order #110639 shipped 2026-05-05** — 10× Wireless Tracker V2 (EU 863–870 MHz variant) + 2× Solar Kit for Dev-board, ETA roughly 2026-05-19 → 2026-06-02, $403.40 via Bancontact (per [`dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md`](dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md)). Pigtails + antennas were also on the cart; verify on receipt.
+- [ ] **Place the parallel (Amazon / Tinytronics) order** — **6× Samsung INR18650-25R** or equivalent (2 tag + 2 relay + 2 spares; see [bom.md](bom.md) §Batteries), **1× DS3231 RTC module + 1× CR2032 coin cell** (per [ADR-011](decisions/ADR-011-gateway-time-source.md)), **1× small piezo active buzzer** (~€1; tag SOS audible cue per [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md) — buzzer survives the ADR-013 rollback), M2.5 self-adhesive PCB standoffs + 3M VHB tape + M2.5×6 screws (relay mounting workaround per [ADR-003](decisions/ADR-003-relay-hardware.md) §Consequences), M2.5 brass standoff + screw kit (Pi + HAT + touchscreen).
 - [ ] Place the desk-hygiene order: PH0 + PH00 precision screwdriver set, 40-pin M/F Dupont jumper set, fine tweezers, 2× quality USB-C data cables (not charge-only), 1× powered USB hub, 3× High Endurance microSD 32–64 GB, 1× CAT6 Ethernet, 1× official Pi PSU (verify 5V/3A USB-C vs 5V/2.5A micro-USB against the Pi model), Pi heatsink kit, USB current meter.
-- [ ] Order the wooden pole + stainless hose clamps for the garden relay (local hardware store).
-- [ ] Write a one-page desk-inventory note: which Pi model each of the 3 units is, which HAT has which bent pins, what's actually missing.
+- [ ] **Garden relay pole** — designed Fusion 360 three-legged base + ground-stake per [bom.md](bom.md) §"Relay pole — local build". No hose clamps, no improvised strapping. Print + woodwork at the local shop. (ADR-003's "u-bolts or stainless hose clamps" wording is stale and is being routed back through ADR-003 separately; the BOM is the source of truth here per the audit close.)
+- [ ] **Power-on test the 3× Pi 4 Model B units** against a known-good PSU + micro-HDMI display + SD card. Record working / non-working in `hardware/pi{1,2,3kiosk}/specs.md`. The Kiwi Pi 5 + 5" cart is *not* a procurement decision until these results land (per dev-log A10 reframed).
+- [ ] **Inspect the 3× Dragino HAT silkscreen revisions** for the GPIO 25 CS-routing defect flagged in [`spikes/gateway-rx-bringup-spike.md`](spikes/gateway-rx-bringup-spike.md) B1. Record per-unit rev in `hardware/pi{1,2,3kiosk}/specs.md` (per dev-log D3).
+- [ ] Write a one-page desk-inventory note: Pi model + HAT rev + bent-pin status + missing parts per unit.
+
+## Open spikes (handheld pivot)
+
+The 2026-05-06 pivot opened a research lane, not a decision. Each spike below is enumeration-only at open and converts to a decision-note + follow-up at close. None of them edits ADRs inline.
+
+- [ ] [`spikes/handheld-pivot-doc-audit-spike.md`](spikes/handheld-pivot-doc-audit-spike.md) — **closed 2026-05-07** ([`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md)). Cascading non-ADR doc edits in flight.
+- [ ] [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md) — substrate ranking (Pi 5 / Pi 5+USB / CM5 / Pi 4 / Zero 2W); feeds ADR-015. Blocked until the Pi 4 power-on test above resolves.
+- [ ] [`spikes/gateway-handheld-power-architecture-spike.md`](spikes/gateway-handheld-power-architecture-spike.md) — battery topology + protections + signal contract (POWER_GOOD, BATTERY_STATE, CHARGE_STATE, THERMAL_STATE, SHUTDOWN_REQUEST); feeds ADR-015 + ADR-016.
+- [ ] [`spikes/gateway-handheld-enclosure-spike.md`](spikes/gateway-handheld-enclosure-spike.md) — IP target, material, sealing strategy, bulkhead inventory; feeds ADR-017.
+- [ ] [`spikes/tag-handheld-enclosure-spike.md`](spikes/tag-handheld-enclosure-spike.md) — pocket form factor, SOS button physical type, buzzer port, tag identity surface; feeds ADR-017 + ADR-002 annex.
+- [ ] [`spikes/ble-commissioning-scope-spike.md`](spikes/ble-commissioning-scope-spike.md) — gateway-as-central / relay+tag-as-peripheral topology, just-works + commissioning-window auth, write allow-list; firmware-side contract.
+- [ ] [`spikes/ble-gateway-ui-flow-spike.md`](spikes/ble-gateway-ui-flow-spike.md) — UI-side flow for the same: long-press marker → Relay Health modal (verdict + live state + recent activity + actions drawer); preserves ADR-007 read-only map.
+- [ ] [`spikes/tak-cot-integration-spike.md`](spikes/tak-cot-integration-spike.md) — outbound LAN CoT/TAK export under the ADR-016 gate; Phase 1 multicast experiment runs in parallel with v1a firmware bring-up.
+- [ ] [`spikes/gateway-runtime-task-architecture-spike.md`](spikes/gateway-runtime-task-architecture-spike.md) — task split + channel contracts + clean-shutdown semantics; allocates `cot_gate` / `cot_emitter` / `power_monitor` / `wifi_monitor` / `ble_central` / `shutdown_orchestrator` task slots.
+- [ ] [`spikes/fake-position-injector-spike.md`](spikes/fake-position-injector-spike.md) — synthetic POSITION source for e2e relay/gateway testing; the `node_id` width example needs the u8 / u32 fix (dev-log A11).
+- [ ] [`spikes/pmtiles-walkers-spike.md`](spikes/pmtiles-walkers-spike.md) — display-class retarget for the handheld panel + walkers' PMTiles tile-source verification on the chosen Pi GPU.
+- [ ] [`spikes/duty-cycle-measurement-workflow-spike.md`](spikes/duty-cycle-measurement-workflow-spike.md) — ADR-014 enforcement workflow; unchanged by the pivot.
+- [ ] [`spikes/datasheet-source-of-truth-inventory-spike.md`](spikes/datasheet-source-of-truth-inventory-spike.md) — central inventory the substrate + enclosure spikes cite; unchanged by the pivot.
+- [ ] [`spikes/physical-fabrication-brief-spike.md`](spikes/physical-fabrication-brief-spike.md) — Fusion 360 brief that ADR-017 commits to.
 
 ## Doc review findings — close before writing firmware
 
@@ -44,8 +69,8 @@ Six things the review flagged that are genuinely not yet in the docs or the lab.
 - [ ] Define the gateway's `nodes.toml` schema: `node_id` → `label` + `ui_kind` (`hiker` / `relay` / `drone-relay`). Document in [ARCHITECTURE.md §11](ARCHITECTURE.md). Per [ADR-013 §9](decisions/ADR-013-multi-hop-flood-via-packet-id.md).
 - [ ] Pick and pin `esp-hal`, Embassy, and `lora-phy` versions. Use `lora-phy` **from `lora-rs/lora-rs`** (the `embassy-rs/lora-phy` repo is archived). Record exact commit hashes for reproducibility. Note `lora-phy` will be used on the **gateway** too — it supports SX127x as well as SX126x.
 - [ ] Install the `esp-rs` / `espup` toolchain for the `xtensa-esp32s3-none-elf` target; verify a minimal blink builds.
-- [ ] First Yocto image experiment: build a minimal image with `meta-raspberrypi` + `meta-rust`, boot it on one of the Pis, verify the touchscreen comes up. Add a device-tree overlay for `i2c-rtc,ds3231` and wire `hwclock --hctosys` into the boot path per [ADR-011](decisions/ADR-011-gateway-time-source.md).
-- [ ] Kiosk UI spike: `egui` + `walkers` hello-world rendering a **local `.pmtiles` archive** (per [ADR-005](decisions/ADR-005-map-and-ui.md)) on a laptop first, then on the Pi. If PMTiles does not render on the Pi's GPU stack, the fallback is writing a custom MBTiles tile provider — this must be resolved before any other kiosk work lands.
+- [ ] First Yocto image experiment: build a minimal image with `meta-raspberrypi` + `meta-rust`, boot it on one of the Pis (Pi class open per pending ADR-015 — `meta-raspberrypi` Pi 5 support landed in scarthgap, so target scarthgap or later regardless of which class wins), verify the touchscreen comes up (display class open per pending ADR-015). Add a device-tree overlay for `i2c-rtc,ds3231` and wire `hwclock --hctosys` into the boot path per [ADR-011](decisions/ADR-011-gateway-time-source.md).
+- [ ] Kiosk UI spike: `egui` + `walkers` hello-world rendering a **local `.pmtiles` archive** (per [ADR-005](decisions/ADR-005-map-and-ui.md)) on a laptop first, then on the Pi. Display-class retarget for a handheld panel is owned by [`spikes/pmtiles-walkers-spike.md`](spikes/pmtiles-walkers-spike.md) (pending ADR-015). If PMTiles does not render on the Pi's GPU stack, the fallback is writing a custom MBTiles tile provider — this must be resolved before any other kiosk work lands.
 - [ ] `persistence` crate first draft: single core table `tag_reports` matching [ARCHITECTURE.md §10](ARCHITECTURE.md) per [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md) — `seq_nr` as u32-in-INTEGER, **no permanent UNIQUE dedup index**, recent-window dedup via `INSERT ... WHERE NOT EXISTS` keyed by `(node_id, seq_nr)`. (Tags and relays both produce rows here; presentation distinguished by `nodes.toml`.) A future reception-log table for per-hop RSSI/SNR coverage analysis is explicitly out of v1 — see [ADR-013 §10](decisions/ADR-013-multi-hop-flood-via-packet-id.md).
 
 ## v0 — when hardware arrives (three nodes talking on the desk)
@@ -55,10 +80,10 @@ Matches [ARCHITECTURE.md §15 v0](ARCHITECTURE.md). Goal: gateway stdout shows a
 - [ ] First-boot smoke test on a Wireless Tracker V2 over USB-C — verify `espflash board-info` sees it, flash a blink.
 - [ ] Tag bring-up: NMEA from UC6580 reaches the MCU; LoRa TX fires sentinel frames on 868.1 MHz; packet visible on an SDR or second Tracker V2 in RX.
 - [ ] Relay bring-up: RX from tag on 868.1 MHz, validation (MAGIC / VER / TYPE / LEN / CRC-16/CCITT-FALSE), seen_cache lookup on `(node_id, seq_nr)`, byte-identical rebroadcast on the same channel. Per [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md) §5.
-- [ ] Gateway bring-up: RX from relay on the Dragino HAT (via `lora-phy` on SX1276), parse, stdout print — **no DB yet** at v0.
+- [ ] Gateway bring-up: RX from relay on the Dragino HAT (via `lora-phy` on SX1276), parse, stdout print — **no DB yet** at v0. (Polled RX is the v1a default per the Pi 5 / RP1 dev-log finding; interrupt-driven RX is deferred. Pi class itself is open per pending ADR-015.)
 - [ ] DS3231 RTC wired to the Pi I²C bus; verify the kernel reads it across a power cycle and the coin-cell path works.
-- [ ] Mount the relay: adhesive PCB standoffs + 3M VHB in the Solar Kit enclosure, IPEX1.0→SMA pigtail from the Tracker V2 LoRa port to the Solar Kit bulkhead, external 868 MHz antenna fitted, solar lead into the Solar Kit charge controller, 18650 pack to Tracker V2 battery input, seal the enclosure.
-- [ ] Straighten the Dragino HAT pins, fit the HAT to the chosen Pi, mount the Pi to the touchscreen back panel.
+- [ ] Mount the relay: adhesive PCB standoffs + 3M VHB in the Solar Kit enclosure, IPEX1.0→SMA pigtail from the Tracker V2 LoRa port to the Solar Kit bulkhead, external 868 MHz antenna fitted, solar lead into the Solar Kit charge controller, 18650 pack to Tracker V2 battery input, seal the enclosure. (Relay enclosure stays OEM Solar Kit per [ADR-003](decisions/ADR-003-relay-hardware.md); the gateway and tag get custom 3D-printed shells under pending ADR-017.)
+- [ ] Straighten the Dragino HAT pins, fit the HAT to the chosen Pi (substrate + form factor open per pending ADR-015 — the prior "fit the HAT to the touchscreen back panel" wording is no longer the working assumption).
 
 ## v0.5 — gateway writes to SQLite, kiosk renders a marker
 
@@ -73,7 +98,7 @@ Matches [ARCHITECTURE.md §15 v0.5](ARCHITECTURE.md). Goal: a dot appears on the
 
 Matches [ARCHITECTURE.md §15 v1a](ARCHITECTURE.md). Per [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md): one wire packet type (POSITION), packet_id dedup, no role byte. Tag + 1 relay + gateway physically; protocol multi-hop-capable from day one.
 
-- [ ] Garden deployment: relay on the wooden pole, gateway indoors near the window, tag in the pocket with real GNSS.
+- [ ] Garden deployment: relay on the designed pole, gateway carried by the operator (or placed near a window during early bring-up — handheld substrate per pending ADR-015), tag in the pocket with real GNSS.
 - [ ] Relay rebroadcasts received POSITIONs by `packet_id`, dedup'd locally on `(node_id, seq_nr)` with 60 s expiry.
 - [ ] Gateway dedup'd writes to `tag_reports`.
 - [ ] Kiosk shows the dot moving as the user walks, with correct "last seen X ago" timestamps from the RTC-disciplined clock; node icon and label come from `nodes.toml`.
@@ -81,7 +106,7 @@ Matches [ARCHITECTURE.md §15 v1a](ARCHITECTURE.md). Per [ADR-013](decisions/ADR
 - [ ] Tag emits a buzzer pulse pattern on entering SOS state and falls silent on exit. Bench-verify before garden test.
 - [ ] Deliberate SOS trigger (bench switch if the button isn't wired yet) flips marker to red within `DISTRESS_WINDOW` and clears correctly.
 - [ ] Duty-cycle behaviour matches [ARCHITECTURE.md §13](ARCHITECTURE.md) within ±10% measured.
-- [ ] Entire stack has never touched the internet during the test.
+- [ ] Entire stack has never touched the internet during the test on the LoRa side. The base-mode CoT/TAK export path (pending ADR-016) is OFF by default — explicitly verify it does not emit unless WiFi + external power + manual opt-in are all true.
 
 ## v1b — two-relay chained garden test (drone-pod overlay)
 
@@ -108,9 +133,9 @@ Matches [ARCHITECTURE.md §15 v1b](ARCHITECTURE.md). Per [ADR-013](decisions/ADR
 
 ## Blocked
 
-- [ ] SOS button wiring — waiting on a decision for which GPIO on the Tracker V2 + button type (tactile momentary vs. latched vs. magnetic)
-- [ ] Commissioning trigger mechanism — leading candidate is magnet + reed switch (works through sealed IP67 enclosure), final choice deferred to relay bring-up
-- [ ] Field deployment in real mountains — blocked on garden v1a passing (v1b drone overlay desirable but not required for mountain field deployment)
+- [ ] SOS button wiring — waiting on a decision for which GPIO on the Tracker V2 + button type. **Physical button choice (sealed tactile vs. silicone membrane vs. magnetic) is owned by [`spikes/tag-handheld-enclosure-spike.md`](spikes/tag-handheld-enclosure-spike.md)** per the audit close + dev-log D8; GPIO assignment is unblocked separately and can be picked tentatively now to avoid blocking tag firmware bring-up.
+- [ ] Commissioning trigger mechanism — leading candidate is magnet + reed switch (works through sealed IP67 enclosure for the relay; the gateway-side equivalent is owned by [`spikes/gateway-handheld-enclosure-spike.md`](spikes/gateway-handheld-enclosure-spike.md) — sealed tactile button vs. magnet+reed). Final choice deferred to relay bring-up.
+- [ ] Field deployment in real mountains — blocked on garden v1a passing (v1b drone overlay desirable but not required for mountain field deployment).
 
 ## Deferred (v2+)
 
@@ -145,8 +170,8 @@ Explicitly NOT in v1 scope. Listed here so they don't rot in open tabs.
     - Decide whether invariant/property-style testing is worth introducing.
     - Do not start with implementation work.
   - **Cross-refs:** [`spikes/fake-position-injector-spike.md`](spikes/fake-position-injector-spike.md); [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md) (single packet type, dedup by `(node_id, seq_nr)`); [ADR-014](decisions/ADR-014-duty-cycle-budget-as-gate.md) (duty-cycle gate — does not gate pure-sim airtime, but sim scenarios should mirror RF cadences for parity).
-- BLE maintenance CLI on the relay (service engineer stands next to the pole with a phone/laptop, reads battery mV / RX count / last RSSI, triggers a fresh commissioning broadcast)
-- Phone-friendly read-only map view (a local HTTP server on the gateway, reached from a phone on the hut's WiFi)
+- ~~BLE maintenance CLI on the relay~~ — **moved to v1** per [ADR-006](decisions/ADR-006-relay-has-gnss.md); contradiction A2 resolved on the v1 side. Topology is gateway-as-central + relay/tag-as-peripherals (no phone in v1) per [`spikes/ble-commissioning-scope-spike.md`](spikes/ble-commissioning-scope-spike.md); UI flow per [`spikes/ble-gateway-ui-flow-spike.md`](spikes/ble-gateway-ui-flow-spike.md). The original phone/laptop-as-BLE-peer formulation stays out of v1.
+- ~~Phone-friendly read-only map view (a local HTTP server on the gateway, reached from a phone on the hut's WiFi)~~ — **partially superseded** by the pending ADR-016 outbound-LAN CoT/TAK export path. Phones running ATAK / iTAK / WinTAK on the same WiFi will see SARCOM tag positions through that export; the gateway does **not** host an inbound HTTP server (ADR-008 categories (a)/(b)/(c) stay closed). A native phone-app or in-house phone-friendly HTTP UI remains v2+.
 - Cloud sync of the SQLite tag_reports to a Postgres backend
 - Downlink control (gateway → tag commands): cadence change, SOS escalation
 - HMAC per packet, key management, tile auth
