@@ -94,7 +94,7 @@ Working list, refined during the spike:
 ## Fail criteria
 
 - IP65 cannot be reached at hobby-FDM print precision in v1 — drop to IP54 explicitly and update the operating-procedure note ("rain protection requires a bag/pouch").
-- Heat path for Pi 5 in a sealed shell cannot dissipate peak load without exceeding cell-pack thermal limits — fall back to Pi 4 / CM5 / Zero 2W in the substrate spike, or accept thermal throttling under peak as a v1 constraint.
+- Heat path for Pi 5 in a sealed shell cannot dissipate peak load without exceeding cell-pack thermal limits — fall back to CM5 / Zero 2W in the substrate spike, or accept thermal throttling under peak as a v1 constraint. (Pi 4 retired 2026-05-07.)
 - Display window seal cannot pass capacitive touch through the chosen window thickness — change material (e.g. thinner glass insert) or accept a press-fit window with a non-touch UI fallback (pivot away from touchscreen as the only input — would require ADR-007 amendment, flag explicitly).
 
 ## Fallback / next action

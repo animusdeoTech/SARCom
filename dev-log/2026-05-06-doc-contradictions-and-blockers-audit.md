@@ -97,7 +97,10 @@ The order shipped on 2026-05-05 (dev log). The README row is 11 days stale. Fix:
 >
 > **Decision #3 from the audit-question batch ("Accept 5" now and cascade docs") is retracted.** No ADR-015 is needed. No cascade is needed.
 
-### A10. Gateway hardware: docs say Pi 3B+/4; dev log raised Pi 5 as a *possibility* (not as substrate) — **REFRAMED 2026-05-06**
+### A10. Gateway hardware: docs say Pi 3B+/4; dev log raised Pi 5 as a *possibility* (not as substrate) — **REFRAMED 2026-05-06; RESOLVED 2026-05-07**
+
+> **RESOLVED 2026-05-07:** Pi 4s tested out of order; Pi 5 path is live. See [`2026-05-07-pi4-retirement-substrate-decision.md`](2026-05-07-pi4-retirement-substrate-decision.md). The Kiwi-cart procurement decision is no longer speculative.
+
 
 - `decisions/ADR-004-gateway-platform.md`: "Raspberry Pi (3B+ or 4, whichever has healthy ports and a working SD slot)".
 - `ARCHITECTURE.md` §10 / §16: "Raspberry Pi (3B+ or 4)".
@@ -301,6 +304,7 @@ If you only fix five things this week, in priority order:
 3. **A2 + B6** — pick: BLE-in-v1 or BLE-in-v2+, then update *one* of (ARCHITECTURE.md §9 + TODO.md "Deferred") or (ADR-006 §3 + CLAUDE.md + bom.md). Same-day work. *Decision captured 2026-05-06: BLE-in-v1; ARCHITECTURE.md + TODO.md edit.*
 4. **A6 + A7 + A8** — three stale status rows that all flow from "the Heltec order shipped on 2026-05-05". Fix as one editing pass on README, TODO.md, and BOM. Same-day work.
 5. **A10 (reframed)** — power-on test on the 3× Pi 4s. The "Pi 4s are bricked" claim is the load-bearing premise behind the whole Pi 5 / Kiwi-cart conversation; it has never been verified. Record the result in `hardware/pi{1,2,3kiosk}/specs.md`. This single check decides whether the Kiwi cart is even relevant.
+   **RESOLVED 2026-05-07:** Pi 4s tested out of order; Pi 5 path is live. See [`2026-05-07-pi4-retirement-substrate-decision.md`](2026-05-07-pi4-retirement-substrate-decision.md). The Kiwi-cart procurement decision is no longer speculative.
 
 ~~5. A9 — close the 5-vs-7 inch question.~~ **Retracted 2026-05-06.** No 5" display exists; not a live deviation. Re-opens only if (a) Pi 4s confirmed dead, (b) Kiwi cart placed, (c) Pieter chooses 5" Touch Display 2 over the on-hand 7" DSI.
 

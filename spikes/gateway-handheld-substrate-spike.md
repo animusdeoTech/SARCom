@@ -23,13 +23,15 @@ The hardware envelope of a **handheld** is materially different from a wall kios
 
 This spike is **survey + decide on the substrate shape**, not implement bring-up. RX bring-up is the existing `gateway-rx-bringup-spike.md`; that spike is now downstream of this one.
 
+**Pi 4 retired 2026-05-07.** All three on-hand Pi 4 Model B units tested out of order; substrate is no longer Pi-4-vs-Pi-5. The spike is **unblocked** (the dev-log audit A10 follow-up is resolved), and the H0 fallback is no longer Pi 4 — see updated H0 below. Candidates are Pi 5 / Pi 5 + USB SX1276 / CM5 / Zero 2W. See [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md).
+
 ## Hypothesis / research question
 
 **H1.** Pi 5 (4 GB) + Dragino LoRa/GPS HAT (SX1276 + L80 M39 GNSS) + a 5" DSI panel + USB-C-PD charging is a viable handheld substrate, with the constraints that (a) the LoRa SMA bulkhead through the enclosure stays the production antenna path, (b) Pi 5 onboard WiFi/BLE work acceptably with a plastic-walled enclosure (no metal Faraday cage), and (c) one of the 3 on-hand Dragino HATs survives a Pi 5 + RP1 + polled-RX bring-up without a defect that forces a different HAT.
 
 **H2.** Pi 5 onboard WiFi/BLE through a sealed plastic enclosure is too lossy for reliable BLE commissioning at arm's length. Mitigation: add a USB BLE/WiFi dongle with an external whip, or move to a CM5 + carrier with explicit IPEX-to-bulkhead antenna paths.
 
-**H0.** Pi 5 thermals or HAT-fit issues kill the substrate. Fall back to Pi 4 (one of the 3 on-hand units, contingent on at least one being non-bricked per dev-log audit A10) and accept the reduced compute headroom.
+**H0.** Pi 5 thermals or HAT-fit issues kill the substrate. Fall back to CM5 (compute) or Zero 2W (compute floor) and accept reduced compute headroom; if neither survives the envelope, re-scope the runtime targets explicitly. (Pre-2026-05-07 H0 was "fall back to Pi 4 contingent on A10"; Pi 4 is retired — see [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md).)
 
 ## Scope fence
 
@@ -43,17 +45,18 @@ This spike is **survey + decide on the substrate shape**, not implement bring-up
 
 ### Substrate options (must rank, must give reason)
 
-1. **Pi 5 (4 GB) + Dragino HAT + 5" DSI + USB-C-PD** — current pivot framing. Verify GPIO / SPI / UART pinout via RP1, whether the Dragino HAT physically clears a 5" DSI ribbon, and what changes vs Pi 4 documentation.
+1. **Pi 5 (4 GB) + Dragino HAT + 5" DSI + USB-C-PD** — current pivot framing. Verify GPIO / SPI / UART pinout via RP1, whether the Dragino HAT physically clears a 5" DSI ribbon.
 2. **Pi 5 (4 GB) + USB SX1276 dongle (no HAT) + 5" DSI** — sidesteps HAT-on-Pi-5 risk, costs a USB port and an antenna pigtail. Note feasible USB SX1276 modules (RAK, etc.) without committing to a SKU.
 3. **CM5 + carrier board + 5" DSI + Dragino HAT (or equivalent SX1276 module)** — adds engineering overhead but unlocks explicit antenna routing (CM5 carriers expose IPEX onboard) and a more compact PCB stack inside a handheld shell.
-4. **Pi 4 (2 GB / 4 GB) + Dragino HAT + 5" DSI + USB-C-PD** — fallback; community-validated HAT path, lower thermal envelope. Contingent on dev-log audit A10 follow-up (verify the on-hand Pi 4s are not bricked).
-5. **Pi Zero 2 W + USB SX1276 + 5" DSI** — smallest substrate. Likely too compute-light for `egui` + `walkers` + `lora-phy` + `tokio` + SQLite + BLE + WiFi monitor + CoT emitter; record as out-of-envelope unless surprising data appears.
+4. **Pi Zero 2 W + USB SX1276 + 5" DSI** — smallest substrate. Likely too compute-light for `egui` + `walkers` + `lora-phy` + `tokio` + SQLite + BLE + WiFi monitor + CoT emitter; record as out-of-envelope unless surprising data appears.
+
+(Historical: a Pi 4 + Dragino HAT option was carried in earlier drafts as a "community-validated HAT path, lower thermal envelope" fallback. It was retired 2026-05-07 — the on-hand Pi 4s tested out of order; new Pi 4 acquisition is not on the table. See [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md).)
 
 For each option, list:
 - physical envelope (max length × width × height with HAT, DSI, battery, antennas)
 - power draw idle / peak; what that implies for the battery spike
-- onboard radios available (Pi 5: WiFi 5 + BT 5.0; Pi 4: WiFi 5 + BT 5.0; CM5: depends on variant; Zero 2 W: WiFi 4 + BT 4.2)
-- antenna situation: onboard PCB antenna (Pi 5/4) vs IPEX (CM4/5 with carrier); what survives the plastic enclosure
+- onboard radios available (Pi 5: WiFi 5 + BT 5.0; CM5: depends on variant; Zero 2 W: WiFi 4 + BT 4.2)
+- antenna situation: onboard PCB antenna (Pi 5) vs IPEX (CM5 with carrier); what survives the plastic enclosure
 - HAT mechanical/electrical fit risks (RP1 differences, SPI clock cap, GPIO 25 CS routing defect on some Dragino revisions per `gateway-rx-bringup-spike.md` B1)
 - DSI 5" panel availability and orientation (portrait vs landscape; ribbon length)
 - realistic cost envelope (vendor-checked at scoping, not pre-locked)
@@ -61,7 +64,7 @@ For each option, list:
 ### IO / signal verification (Pi 5 specific)
 
 - SPI on Pi 5 via RP1: clock rate cap behavior, default driver path under Linux 6.x, `linux-embedded-hal` + `rpi-pal` interaction.
-- UART for L80 M39 GNSS NMEA on Pi 5: which `/dev/ttyAMA*` or `/dev/ttyS*` is wired through `dtparam=uart0` cleanup; differs from Pi 4.
+- UART for L80 M39 GNSS NMEA on Pi 5: which `/dev/ttyAMA*` or `/dev/ttyS*` is wired through `dtparam=uart0` cleanup. (The pre-2026-05-07 wording "differs from Pi 4" is preserved as historical context in `dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md`; Pi 4 itself is retired.)
 - I²C for DS3231 RTC (per ADR-011): bus availability after the HAT is seated; whether the Dragino HAT blocks the I²C pins or passes them through.
 - GPIO interrupt mode flakiness on Pi 5 RP1 (RadioLib #1200) — the gateway-rx-bringup spike already names this; restate the implication for substrate choice (polled RX is the v1a default).
 
@@ -95,13 +98,13 @@ For each option, list:
 
 - If H1 holds: write ADR-004 amendment ticket; downstream spikes (power, enclosure, runtime) proceed against the chosen substrate.
 - If H2 (BLE-through-shell fails): document the dongle path; BLE commissioning spike inherits the constraint.
-- If H0 (Pi 5 fails): Pi 4 fallback contingent on A10 follow-up. Re-cost the handheld; the enclosure spike re-bounds for Pi 4 form factor.
+- If H0 (Pi 5 fails): fall back to CM5 / Zero 2W per updated H0 above. Re-cost the handheld; the enclosure spike re-bounds for the chosen fallback form factor. (Pi 4 is retired and not a fallback — see [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md).)
 
 ## Decision note template
 
 ```
 Date:
-Recommended substrate: option ___ (Pi 5 / Pi 5+USB / CM5 / Pi 4 / Zero 2W)
+Recommended substrate: option ___ (Pi 5 / Pi 5+USB / CM5 / Zero 2W)
 Rationale (one paragraph):
 
 Substrate ranking:
@@ -109,7 +112,6 @@ Substrate ranking:
   2. ___ — ...
   3. ___ — ...
   4. ___ — ...
-  5. ___ — ...
 
 Pi 5 IO verification (or fallback):
   SPI / RP1: state, source:

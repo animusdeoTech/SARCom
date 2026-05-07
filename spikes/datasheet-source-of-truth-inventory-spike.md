@@ -59,7 +59,7 @@ This spike commits the inventory list, the resolved-vs-pending status per row, t
 | Dragino LoRa GPS HAT | schematic | `resources/datasheets/dragino_lora_gps_hat_schematic.pdf` | present / missing | SPI CS routing (incl. GPIO 25 defect identification), header pinout, L80 wiring |
 | DS3231 | datasheet | `resources/datasheets/DS3231_datasheet.pdf` | present / missing | I²C register map, alarm pins, aging offset |
 | Raspberry Pi 5 | board datasheet + RP1 datasheet | `resources/datasheets/raspberry_pi_5_datasheet.pdf` + `resources/datasheets/RP1.pdf` | present / missing | SPI/UART/GPIO/I²C peripheral routing, RP1 differences from Pi 4 |
-| Raspberry Pi 4 | board datasheet | `resources/datasheets/raspberry_pi_4_datasheet.pdf` | present / missing | fallback substrate per substrate spike |
+| Raspberry Pi 4 | board datasheet | `resources/datasheets/raspberry_pi_4_datasheet.pdf` | present / missing | (retired 2026-05-07; not a substrate candidate; preserved for history only) |
 | Pi Touch Display 2 (5") | panel datasheet + DSI cable pinout | `resources/datasheets/pi_touch_display_2_5in.pdf` | pending-part-selection | candidate 5" panel; pivots if substrate spike chooses something else |
 | Battery cell — pending part selection | datasheet | `resources/datasheets/battery_cell_TBD.pdf` | pending-part-selection | charge/discharge windows, NTC characteristic; chemistry/SKU chosen by `spikes/gateway-handheld-power-architecture-spike.md` |
 | Tag piezo buzzer | datasheet | `resources/datasheets/buzzer.pdf` | present / missing | drive voltage, current, resonance, GPIO compatibility |

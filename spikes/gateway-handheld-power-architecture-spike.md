@@ -79,7 +79,7 @@ This spike scopes the topology, the protections, the signals, and the runtime me
 - `tak-cot-integration-spike.md`: `POWER_GOOD` is the gate; this spike defines the signal contract.
 - `gateway-runtime-task-architecture-spike.md`: a `power_monitor` task reads `POWER_GOOD`/`BATTERY_STATE`/`CHARGE_STATE`/`THERMAL_STATE`; this spike specifies the inputs.
 - `gateway-handheld-enclosure-spike.md`: battery placement / vent / serviceability; this spike says how big the cell envelope is and whether it's user-replaceable.
-- `gateway-handheld-substrate-spike.md`: Pi 5 5V/5A peak is the dominant load; CM5 / Pi 4 / Zero 2W shift the envelope.
+- `gateway-handheld-substrate-spike.md`: Pi 5 5V/5A peak is the dominant load; CM5 / Zero 2W shift the envelope. (Pi 4 retired 2026-05-07 — not a candidate.)
 - `production-concerns.md` §2 (cold charge) and §4 (clean-shutdown rootfs/SQLite): this spike pulls both into v1 scope.
 
 ## Pass criteria
@@ -92,7 +92,7 @@ This spike scopes the topology, the protections, the signals, and the runtime me
 
 ## Fail criteria
 
-- No topology survives the energy-budget arithmetic for both ≥4 h typical and ≥1 h peak with a credible cell envelope — re-scope the runtime targets explicitly with the user; the handheld may need to accept ≥2 h typical, or the substrate may need to drop from Pi 5 to Pi 4 / Zero 2W.
+- No topology survives the energy-budget arithmetic for both ≥4 h typical and ≥1 h peak with a credible cell envelope — re-scope the runtime targets explicitly with the user; the handheld may need to accept ≥2 h typical, or the substrate may need to drop from Pi 5 to CM5 / Zero 2W.
 - USB-C-PD source negotiation cannot deliver enough power into the chosen topology to charge while running at peak — explicitly accept "charge-only-while-idle" as a v1 constraint in the decision note.
 - Cold-charge cutoff cannot be implemented without a custom IC selection; declare cold-charge an explicit out-of-envelope warning for v1 and add a "do not charge below 0°C" operational note (mirrors the same outcome as `production-concerns.md` §2 for the relay).
 

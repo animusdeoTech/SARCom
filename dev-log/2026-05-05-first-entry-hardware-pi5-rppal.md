@@ -9,6 +9,8 @@ corrections:
 
 # Dev log — 2026-05-05
 
+> **STATUS UPDATE 2026-05-07:** The Pi 4 verification step referenced repeatedly in this entry is RESOLVED — all three Pi 4 Model B units tested out of order. Findings 1 + 3 ("conditional on Pi 5 being acquired") are now LIVE; Pi 5 is the working substrate candidate. See [`2026-05-07-pi4-retirement-substrate-decision.md`](2026-05-07-pi4-retirement-substrate-decision.md). The body below is preserved as historical context — do NOT re-derive from it that Pi 4 is on the table.
+
 First entry. From now on, sessions that produce non-trivial findings, decisions, or follow-ups should land here as dated entries — easier to grep through later than scattered chat history, and easier to extract into ADRs / TODO items / spikes when patterns crystallise.
 
 ## Context

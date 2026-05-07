@@ -43,6 +43,8 @@ If a suggestion starts with "let's just add a small web dashboard" or "let's use
 
 Note: outbound LAN-bounded CoT/TAK export under the pending ADR-016 gate (WiFi + external power + manual opt-in) is **not** the same shape as a "small web dashboard" or an NTP call. It is read-only, outbound-only, RFC1918 / link-local / multicast-only, and silent unless all gate inputs are true. The dashboard / cloud / phone-app / NTP doors remain closed.
 
+> **Pi 4 substrate is retired (2026-05-07).** All three on-hand Pi 4 Model B units tested out of order; substrate is now Pi 5 (variant TBD per [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md)). Do NOT propose a Pi 4 power-on test. Do NOT list Pi 4 as a substrate candidate. See [`dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](dev-log/2026-05-07-pi4-retirement-substrate-decision.md).
+
 ## Always read these first, in this order
 
 1. `README.md` — project status at a glance, folder structure

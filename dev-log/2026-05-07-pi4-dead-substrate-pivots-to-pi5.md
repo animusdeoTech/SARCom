@@ -7,6 +7,8 @@ session-trigger: "Pieter pushed back: Pi 4 power-on test result is settled, not 
 
 # Pi 4 verdict — out of order; substrate is Pi 5
 
+> **Superseded by [`2026-05-07-pi4-retirement-substrate-decision.md`](2026-05-07-pi4-retirement-substrate-decision.md) (same day, canonical entry).** This file remains as historical record of the same verdict; the canonical entry is the one to read and link.
+
 ## What is settled
 
 All three on-hand Raspberry Pi 4 Model B units (`hardware/pi1`, `hardware/pi2`, `hardware/pi3kiosk`) have been **tested by Pieter and confirmed out of order**. None boots cleanly against a known-good PSU + display + SD card.

@@ -11,6 +11,8 @@ tags: [decision, gateway, rpi, dragino, yocto, kiosk]
 **Status:** Accepted
 **Date:** 2026-04-22
 
+**Status update 2026-05-07:** Superseded-in-part by ADR-015 (handheld pivot — see [`../dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](../dev-log/2026-05-07-handheld-pivot-doc-audit-close.md)). The §Decision body's Pi 3B+/4 substrate is factually retired (Pi 4s tested out of order 2026-05-07 — see [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md)). The Yocto + Dragino + single-binary stance survives. ADR-015 will formalise the supersession.
+
 ## Context
 
 In this project (per [ADR-008](ADR-008-no-cloud-no-downlink.md) and [ADR-007](ADR-007-touchscreen-primary-ui.md)), the gateway is **also** the operator workstation. It is not a transit node between the field and some cloud. It must:

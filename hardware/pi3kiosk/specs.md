@@ -1,5 +1,7 @@
 # Pi3kiosk — specs
 
+**Status: OUT OF ORDER (tested 2026-05-07).** This unit is retired from the gateway substrate candidate set. See [`../../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../../dev-log/2026-05-07-pi4-retirement-substrate-decision.md).
+
 **Role:** production gateway kiosk (this is the one that goes in the hut)
 
 ## Board

@@ -71,8 +71,8 @@ tags: [hardware, bom, shopping]
 
 - [ ] **1× USB-A to USB-C cable** (for Heltec boards that ship with micro-USB or older connectors — check board spec on arrival).
 
-- [ ] **Pi PSU(s)** — quantity and spec depends on Pi models. Write the desk-inventory note first (see TODO). Likely: 5V/3A USB-C for Pi 4, 5V/2.5A micro-USB for Pi 3B/3B+. Official Raspberry Pi PSU recommended to avoid undervolt throttling. Buy one per Pi that is missing a PSU.
-  Search: "Raspberry Pi 4 official PSU USB-C" / "Raspberry Pi 3 official PSU micro-USB"
+- [ ] **1× Raspberry Pi 5 official 27W USB-C-PD PSU (5V/5A).** Pi 5 needs the upgraded supply; the on-hand Pi 4s are out of order (2026-05-07 — see [`dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](dev-log/2026-05-07-pi4-retirement-substrate-decision.md)) so legacy 5V/3A and micro-USB PSUs are no longer applicable. Order alongside whichever Pi 5 RAM variant the substrate spike picks.
+  Search: "Raspberry Pi 5 official 27W PSU USB-C"
 
 - [ ] **1× SD card reader** (USB-A, single slot). For writing Yocto images to the three microSD cards sequentially. Most laptops have one — only order if yours doesn't.
 

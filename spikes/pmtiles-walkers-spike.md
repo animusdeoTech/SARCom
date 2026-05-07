@@ -64,7 +64,7 @@ Do not blindly bump egui across kiosk-lab to satisfy walkers. Record the cost; b
 
 ## Hypotheses
 
-**H1 (keep):** `egui + walkers` renders a local `.pmtiles` file smoothly enough on both Windows and Raspberry Pi (Pi 5 per pivot, fallback Pi 4 per substrate spike) for a **5" handheld panel at 1280×720 landscape** (working candidate: Pi Touch Display 2 5") with markers, pan, and zoom, at finger-friendly touch-target sizes (≥9 mm hit areas).
+**H1 (keep):** `egui + walkers` renders a local `.pmtiles` file smoothly enough on both Windows and Raspberry Pi (Pi 5 per substrate-spike close) for a **5" handheld panel at 1280×720 landscape** (working candidate: Pi Touch Display 2 5") with markers, pan, and zoom, at finger-friendly touch-target sizes (≥9 mm hit areas).
 
 **H0 (fallback):** PMTiles via walkers is too fragile, too slow, or too much glue code on the Pi GPU stack. We fall back to one of the fallback options below.
 
