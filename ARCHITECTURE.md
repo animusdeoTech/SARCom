@@ -9,6 +9,10 @@ tags: [architecture, system, overview]
 
 **Version 10.** Version 10 rolls back ADR-012's role enum and SIGHTING in favour of the simpler shape decided in [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md): one packet type (POSITION), packet_id-based dedup as the entire loop-prevention mechanism, no path tracking on the wire. [ADR-014](decisions/ADR-014-duty-cycle-budget-as-gate.md) introduces a mandatory duty-cycle budget table (§13). Coverage / science telemetry is deferred to a future ADR. The v1a/v1b scope split, tag buzzer, and non-goals list from ADR-012 survive the rollback.
 
+> **2026-05-06 form-factor pivot.** The gateway moves from "fixed Pi + 7" DSI on a wall- or shelf-mount at a mountain hut" to "handheld portable Rust device with a touchscreen, battery + USB-C charging, custom 3D-printed waterproof enclosure, and an ADR-016-gated outbound LAN CoT/TAK export path." Sectional edits below cite "(pending ADR-015)" / "(pending ADR-016)" / "(pending ADR-017)" parentheticals where the pre-pivot text named a fixed-kiosk substrate or a categorical no-outbound-network stance. See [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md) for the per-file edit checklist and ADR-ledger verdicts. ADRs themselves are not edited here.[^pivot]
+
+[^pivot]: 2026-05-06 form-factor pivot — see [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md). Three new ADRs proposed: ADR-015 (handheld substrate + form factor; supersedes-in-part ADR-004; refines-in-part ADR-005/006/007), ADR-016 (base-mode export gate; supersedes-in-part ADR-008), ADR-017 (custom 3D-printed waterproof enclosures for gateway and tag; refines-in-part ADR-002).
+
 > Long-term plan is to decompose this into `architecture/{system-overview, sighting-model, protocol, operational-modes, non-goals}.md` per the [README](README.md). For now this is the consolidated source of truth.
 
 ---
@@ -19,17 +23,19 @@ This system exists to do three things:
 
 1. **Track a person's location** on a hiking trail or mountain environment by producing periodic sightings.
 2. **Allow the person to send a distress signal** (SOS) when something has gone wrong.
-3. **Show on a map**, on a touchscreen at the mountain hut, where each hiker is or was last seen, and when.
+3. **Show on a map**, on a handheld touchscreen carried by the operator, where each hiker is or was last seen, and when. The mountain hut is one possible deployment site, not the only one (pending ADR-015).
 
 Intended users: rangers, mountain hut staff, trail operators, rescue-adjacent personnel — people who need a simple operational picture at a glance: where were hikers last seen, how stale is that, and is anyone signalling distress.
 
-The system is a **low-bandwidth safety telemetry network, local-only**. It produces sightings, not live tracks. The fundamental data primitive is a sighting:
+The system is a **low-bandwidth safety telemetry network, local-first**. It produces sightings, not live tracks. The fundamental data primitive is a sighting:
 
 > *"Tag X was heard at time T, with state S, and position P (if a GPS fix was available)."*
 
 A no-fix sighting is still useful — it proves the tag was alive and in radio range at time T.
 
-The deployment scenario: mountain terrain, internet is scarce, power is limited, weather is hostile. Relays sit on exposed poles. The gateway sits at a mountain hut and is also the operator workstation. **There is no server, no cloud, no external dashboard.** A snowstorm taking WiFi down does not take the system down.
+The deployment scenario: mountain terrain, internet is scarce, power is limited, weather is hostile. Relays sit on exposed poles. The gateway is carried by the operator (or, when convenient, set down somewhere with a power source) and is also the operator workstation. **There is no internet-hosted server, no cloud, no external dashboard.** Outbound LAN-bounded CoT/TAK export to TAK-compatible clients on the same WiFi is the one network surface the gateway can have, and only when WiFi + external power + manual opt-in are all present (pending ADR-016). A snowstorm taking WiFi down silences that export path; the LoRa-side telemetry path keeps working.[^export-gate]
+
+[^export-gate]: Base-mode CoT/TAK export under pending ADR-016 is the **one** layer that depends on WiFi. WiFi gone → export path silent → everything else still works. The system property "WiFi loss does not take the system down" still holds; it is just narrower in scope (the LoRa-side telemetry path) than the pre-pivot wording suggested. See [`spikes/tak-cot-integration-spike.md`](spikes/tak-cot-integration-spike.md) and [`spikes/gateway-handheld-power-architecture-spike.md`](spikes/gateway-handheld-power-architecture-spike.md) for the gate predicate.
 
 ---
 
@@ -59,7 +65,7 @@ Future extensions (cloud sync, mobile map, downlink control, BLE relay maintenan
 
 ## 3. System concept
 
-A hiker carries a small Wireless Tracker V2 (tag). It acquires a GNSS fix, broadcasts a 22-byte `POSITION` frame over LoRa, goes back to sleep. Fire-and-forget — the tag does not know whether anyone heard it. A solar-powered Wireless Tracker V2 (relay) on a wooden pole receives, validates, queues, and rebroadcasts packets toward the gateway. The gateway is a Raspberry Pi with a Dragino LoRa/GPS HAT and a 7" touchscreen, installed at the mountain hut. The gateway receives the packet, persists it in a local SQLite file, and draws a dot on the map that the hut staff sees. **That is the whole system.**
+A hiker carries a small Wireless Tracker V2 (tag, pending ADR-017 enclosure). It acquires a GNSS fix, broadcasts a 22-byte `POSITION` frame over LoRa, goes back to sleep. Fire-and-forget — the tag does not know whether anyone heard it. A solar-powered Wireless Tracker V2 (relay) on a designed garden pole (Fusion 360 three-legged base + ground-stake per [bom.md](bom.md); relay enclosure stays OEM Solar Kit per [ADR-003](decisions/ADR-003-relay-hardware.md)) receives, validates, queues, and rebroadcasts packets toward the gateway. The gateway is a handheld Rust device built on a Pi-class SBC with a Dragino LoRa/GPS HAT and a touchscreen, in a custom 3D-printed waterproof enclosure with a battery + USB-C charging path (substrate / display / battery / enclosure pending ADR-015 / ADR-017). The gateway receives the packet, persists it in a local SQLite file, and draws a dot on the map the operator sees. **That is the whole system.**
 
 One received packet from any relay, or from the tag directly, is sufficient. There is no minimum infrastructure requirement beyond a single radio path from tag to gateway.
 
@@ -71,25 +77,40 @@ One received packet from any relay, or from the tag directly, is sufficient. The
                     LoRa 868 MHz              LoRa 868 MHz
 ┌──────────────┐  ┌──────────────┐          ┌──────────────────────┐
 │     TAG      │─▶│    RELAY     │─ ─ ─ ─ ─▶│       GATEWAY        │
-│ Heltec       │  │ Heltec       │          │  Raspberry Pi        │
-│ Wireless     │  │ Wireless     │          │  + Dragino LoRa HAT  │
-│ Tracker V2   │  │ Tracker V2   │          │  + 7" DSI touchscreen│
+│ Heltec       │  │ Heltec       │          │  Pi-class SBC +      │
+│ Wireless     │  │ Wireless     │          │  Dragino LoRa HAT +  │
+│ Tracker V2   │  │ Tracker V2   │          │  handheld touchscreen│
 │ + 18650      │  │ + Solar Kit  │          │  Yocto Linux         │
-│ ESP32-S3     │  │ + 2×18650    │          │  ┌────────────────┐  │
-│ SX1262 +     │  │ ESP32-S3     │          │  │ Rust binary:    │  │
-│ UC6580 GNSS  │  │ SX1262 +     │          │  │ LoRa RX loop    │  │
-└──────────────┘  │ UC6580 GNSS  │          │  │ SQLite writer   │  │
-                  └──────────────┘          │  │ Kiosk UI (egui  │  │
-   tag can also                              │  │ + walkers, no   │  │
-   be heard directly by gateway              │  │ browser)        │  │
-                                             │  └────────────────┘  │
-                                             └──────────────────────┘
-
-                                              no arrow leaves here
-                                              (no cloud, no server)
+│ ESP32-S3     │  │ + 2×18650    │          │  battery + USB-C     │
+│ SX1262 +     │  │ ESP32-S3     │          │  ┌────────────────┐  │
+│ UC6580 GNSS  │  │ SX1262 +     │          │  │ Rust binary:    │  │
+│ + custom     │  │ UC6580 GNSS  │          │  │ LoRa RX loop    │  │
+│ 3D shell     │  └──────────────┘          │  │ SQLite writer   │  │
+│ (ADR-017)    │                            │  │ Kiosk UI (egui  │  │
+└──────────────┘  tag can also be           │  │ + walkers, no   │  │
+                  heard directly by gateway │  │ browser)        │  │
+                                            │  │ BLE central     │  │
+                                            │  │ (commissioning) │  │
+                                            │  │ CoT/TAK emitter │  │
+                                            │  │ (gated, off by  │  │
+                                            │  │ default)        │  │
+                                            │  └────────────────┘  │
+                                            └─────────┬────────────┘
+                                                      ┊
+                                                      ┊  WiFi + power-good
+                                                      ┊  + manual opt-in:
+                                                      ┊  CoT/TAK to LAN
+                                                      ┊  (pending ADR-016;
+                                                      ┊   silent by default)
+                                                      ▼
+                                              ATAK / iTAK / WinTAK on
+                                              same LAN; no internet-bound
+                                              arrow ever leaves here
+                                              (no cloud, no server,
+                                              no inbound surface)
 ```
 
-Tag broadcasts. Any node that hears it acts on it. Relays rebroadcast over LoRa. The gateway's Rust binary receives via SPI from the SX1276 on the Dragino HAT, writes to SQLite, and the same binary renders a live map to the touchscreen. **Nothing leaves the Pi.**
+Tag broadcasts. Any node that hears it acts on it. Relays rebroadcast over LoRa. The gateway's Rust binary receives via SPI from the SX1276 on the Dragino HAT, writes to SQLite, and the same binary renders a live map to the touchscreen. **The LoRa-side telemetry path is fully local.** The dashed `CoT/TAK to LAN` arrow is the one place an outbound network packet can leave the gateway, and only when all three gate inputs are true (pending ADR-016). It is RFC1918 / link-local / multicast-only — never internet-routed — and it is read-only, outbound-only; the gateway never accepts inbound network traffic.
 
 ---
 
@@ -101,14 +122,14 @@ The mission requires coverage over a large mountain area with no cellular infras
 - **No power on the trail.** Every component must survive unattended.
 - **Hostile environment.** Rain, snow, condensation, lightning, thermal cycling, animal damage.
 - **Sparse, delayed data is acceptable.** A sighting every 5 minutes is operationally useful.
-- **Graceful degradation is essential.** A relay dies, another path works. The gateway loses the internet… except in this architecture the gateway doesn't *have* the internet. That whole category of failure is eliminated.
+- **Graceful degradation is essential.** A relay dies, another path works. The gateway loses the internet… except in this architecture the LoRa-side telemetry path doesn't *need* the internet. That whole category of failure is eliminated for the LoRa side; the optional CoT/TAK export under pending ADR-016 is the one path that does need WiFi, and turns off when WiFi is gone.
 
 This leads to:
 
 - **Self-contained packets** — any single receiver is sufficient, relays are stateless for payload.
 - **Dumb-but-disciplined relays** — RAM queue, SOS priority, CAD before TX. Simple enough to bolt to a pole and forget; not so blind it wastes airtime.
 - **Gateway as the terminal node AND the workstation.** Complexity stops at the gateway.
-- **Local-only data.** No gateway-to-cloud arrow means no class of "backhaul is down" failure modes.
+- **Local-first data.** No internet-bound arrow means no class of "cloud backhaul is down" failure modes; outbound LAN CoT/TAK under pending ADR-016 is bounded to RFC1918 / link-local / multicast destinations and silenced by default.
 
 Complexity flows downhill toward the user. The user is five metres from the kiosk, not a thousand kilometres away in a datacentre.
 
@@ -352,7 +373,7 @@ SELF_ANNOUNCE len=22 node=2 seq=17
 
 ## 10. Gateway responsibilities
 
-The gateway is a Raspberry Pi (3B+ or 4) with a Dragino LoRa/GPS HAT (SX1276) and a 7" DSI touchscreen, running Yocto Linux. See [ADR-004](decisions/ADR-004-gateway-platform.md).
+The gateway is a handheld Pi-class SBC with a Dragino LoRa/GPS HAT (SX1276) and a touchscreen, running Yocto Linux. Substrate (Pi 4 / Pi 5 / CM5 / Zero 2W) and display class (size, orientation, panel) are open per [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md) (pending ADR-015). See [ADR-004](decisions/ADR-004-gateway-platform.md).
 
 ### What the gateway does
 
@@ -368,9 +389,15 @@ The gateway does not distinguish "directly heard" from "via relay" — that info
 
 ### What the gateway does NOT do
 
-- No HTTP server
-- No outbound network calls
-- No POST to any external endpoint
+Pending ADR-016 splits the network surface into four categories:
+
+- **(a) No inbound network surface.** No HTTP server. No SSH publicly accessible (dev-only). No service that accepts a TCP connection from anywhere. Closed.
+- **(b) No internet-bound network calls.** No POST to any external endpoint. No phone-home. No NTP — see [ADR-011](decisions/ADR-011-gateway-time-source.md). Closed.
+- **(c) No cloud-hosted dependency.** No external service the gateway needs to reach to function. No third-party API, no auth provider, no telemetry sink. Closed.
+- **(d) Outbound LAN multicast / unicast under explicit gate.** This is the **new** surface introduced under pending ADR-016: CoT/TAK to TAK-compatible clients on the same WiFi LAN. The emitter task fires only when WiFi is associated + has-default-gateway + has-DHCP-lease, AND `POWER_GOOD` from the power-monitor task is true (external power present, battery not in critical state), AND a config-file flag explicitly opts in. Destinations are validated to be RFC1918 / link-local / multicast in code, not by trust. Cadence and message format follow [`spikes/tak-cot-integration-spike.md`](spikes/tak-cot-integration-spike.md). The gateway does not accept any inbound CoT.
+
+And, unchanged across the pivot:
+
 - No ACK back to relays
 - No downlink to tags
 - No alert escalation (no SMS, no Telegram, no email) — alerts show on the map, nothing more
@@ -432,7 +459,7 @@ The Dragino HAT has an SX1276 (1-byte syncword, 0x12 private). The Heltec boards
 
 See [ADR-005](decisions/ADR-005-map-and-ui.md) and [ADR-007](decisions/ADR-007-touchscreen-primary-ui.md).
 
-Native Rust, single fullscreen process, running as a module of the gateway binary (not a separate crate — see §17). Starting library bet: `egui` + `walkers`. Offline **PMTiles** archive bundled in the Yocto image (per [ADR-005](decisions/ADR-005-map-and-ui.md); `walkers` documents native `.pmtiles` support, so no custom tile provider is written unless the kiosk spike fails). No Chromium, no browser, no web.
+Native Rust, single fullscreen process on the handheld touchscreen, running as a module of the gateway binary (not a separate crate — see §17). Starting library bet: `egui` + `walkers`. Offline **PMTiles** archive bundled in the Yocto image (per [ADR-005](decisions/ADR-005-map-and-ui.md); `walkers` documents native `.pmtiles` support, so no custom tile provider is written unless the kiosk spike fails). No Chromium, no browser, no web. Display class (size, orientation, panel) is open per pending ADR-015 — the prior "7" DSI 1024×600 wall- or shelf-mount" assumption no longer holds for a handheld; retarget owned by [`spikes/pmtiles-walkers-spike.md`](spikes/pmtiles-walkers-spike.md). The read-only-map invariant from [ADR-007](decisions/ADR-007-touchscreen-primary-ui.md) is preserved by [`spikes/ble-gateway-ui-flow-spike.md`](spikes/ble-gateway-ui-flow-spike.md): commissioning interaction lives inside an explicit modal opened from a marker by deliberate gesture, not on the map itself.
 
 ### Node presentation via `nodes.toml`
 
@@ -579,7 +606,9 @@ Coverage area goes dark. Tags and relays keep transmitting and forwarding — th
 
 ### WiFi dies (the snowstorm scenario)
 
-Nothing happens. The system does not use WiFi for anything in v1. The relays on poles keep running. The gateway keeps receiving. The kiosk keeps drawing. **This is the headline design property of the local-only architecture.**
+The LoRa-side telemetry path is unaffected. The relays on poles keep running. The gateway keeps receiving. The kiosk keeps drawing. **This is the headline design property of the local-first architecture.**
+
+The one exception: the optional CoT/TAK export under pending ADR-016 silences when WiFi is gone (it is gated on WiFi association + power-good + manual opt-in; if WiFi drops, the gate closes and the emitter task stops). Phones running ATAK / iTAK / WinTAK on the same LAN therefore stop receiving updates until WiFi is back. This is a narrowing of the pre-pivot "WiFi loss does not take the system down" wording: the property still holds for the LoRa-side telemetry path, which is the load-bearing one. The export path is auxiliary and explicitly off by default.
 
 ### Tag battery dies
 
@@ -629,7 +658,7 @@ Also in scope for v0.5:
 
 **Goal:** *"Walk around the garden with the tag; the dot moves on the touchscreen; the relay rebroadcasts on solar."*
 
-Tag with real GPS (UC6580) and a piezo buzzer on a GPIO line, solar-powered relay on a garden pole, gateway at the kitchen window, kiosk showing live position. Single packet type on the wire (POSITION); single forwarding hop physically exercised but the protocol is multi-hop-capable from day one. Per [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md). No internet required.
+Tag with real GPS (UC6580) and a piezo buzzer on a GPIO line, solar-powered relay on the designed garden pole, gateway carried by the operator (or placed near a window during early bring-up — handheld substrate per pending ADR-015), kiosk showing live position. Single packet type on the wire (POSITION); single forwarding hop physically exercised but the protocol is multi-hop-capable from day one. Per [ADR-013](decisions/ADR-013-multi-hop-flood-via-packet-id.md). No internet required on the LoRa side; the optional CoT/TAK export under pending ADR-016 stays OFF by default during the v1a acceptance test.
 
 **Hard gates:**
 
@@ -708,7 +737,16 @@ Default bracket does not fit the Tracker V2 outline — see [ADR-003](decisions/
 Pi has no on-chip RTC and we explicitly have no NTP. Without the DS3231 module + coin cell from [ADR-011](decisions/ADR-011-gateway-time-source.md), `received_at` is unreliable across power cycles and every "last seen" string the kiosk renders is a lie. The RTC is a load-bearing component, not a convenience; absent RTC is a v1 blocker.
 
 ### 13. IPEX1.0 ↔ SMA antenna path
-Tracker V2 exposes LoRa on IPEX1.0 (u.FL); the Solar Kit bulkhead is SMA. The pigtail connecting the two is ordered via [bom.md](bom.md) but gender (female vs male bulkhead) must be verified on the shipped Solar Kit panel before antennas are fitted. Bench-check before wall-mounting.
+Tracker V2 exposes LoRa on IPEX1.0 (u.FL); the Solar Kit bulkhead is SMA. The pigtail connecting the two is ordered via [bom.md](bom.md) but gender (female vs male bulkhead) must be verified on the shipped Solar Kit panel before antennas are fitted. Bench-check before fitting.
+
+### 14. Handheld gateway battery + cold-charge envelope
+Pending ADR-015 puts the gateway on a battery + USB-C-PD charging path. The same lithium-cold-charge physics that drives `production-concerns.md` §2 for the relay 18650 applies to the gateway pack. Topology + protections + signal contract owned by [`spikes/gateway-handheld-power-architecture-spike.md`](spikes/gateway-handheld-power-architecture-spike.md); cold-charge cutoff via NTC is mandatory in the design, not optional. Runtime targets (≥4 h typical, ≥1 h peak) are working hypotheses, not committed numbers — bench measurement is part of the spike's pass criteria.
+
+### 15. 3D-printed enclosure IP rating + IPEX strain relief on the gateway
+Pending ADR-017 commits the gateway to a custom 3D-printed waterproof shell. IP target (65 / 67 / 54-fallback), material (PETG vs ASA), display window seal, USB-C bulkhead, and antenna bulkhead choices are open per [`spikes/gateway-handheld-enclosure-spike.md`](spikes/gateway-handheld-enclosure-spike.md). The gateway's external LoRa SMA pigtail through the printed shell shares the IPEX strain-relief problem class with the relay's pigtail (`production-concerns.md` §3); both promote into v1-active scope under the pivot.
+
+### 16. Pi-class onboard BLE/WiFi attenuation through a plastic shell
+The handheld gateway's commissioning surface (BLE central) and base-mode export gate (WiFi monitor) both rely on the SBC's onboard radios behind a 3D-printed plastic wall. PETG/ASA at 3–4 mm thickness should attenuate 2.4 GHz only modestly, but with a metallic battery cell on the same side of the antenna, detuning is plausible. Bench-measure RSSI degradation per [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md) before committing the substrate. If through-shell BLE fails arm's-length commissioning, an external USB BLE/WiFi dongle with a whip becomes the path, and [`spikes/ble-gateway-ui-flow-spike.md`](spikes/ble-gateway-ui-flow-spike.md) inherits the constraint.
 
 ---
 
