@@ -11,9 +11,11 @@ Onboarding note for any Claude instance entering this project — chat, Claude C
 
 ## What this project is
 
-LoRa-based Search & Rescue telemetry network. GPS tags → solar LoRa relays → Pi gateway with a 7" touchscreen showing a live read-only map. For mountain hut staff. **Fully offline. No cloud. No phone app. No downlink. Pure uplink.** If connectivity exists, the system ignores it; if it doesn't, nothing changes.
+LoRa-based Search & Rescue telemetry network. GPS tags → solar LoRa relays → handheld Rust gateway with a touchscreen showing a live read-only map. Carried by hut staff or rescue-adjacent operators; the mountain hut is one possible deployment site, not the only one. **Local-first. No cloud. No phone app. No inbound network. Pure uplink on the LoRa side.** Outbound LAN-bounded CoT/TAK export is a v1 feature gated on WiFi + external power + manual opt-in (pending ADR-016); when any gate input is false the export path is silent and nothing else changes.[^pivot]
 
 For the full picture see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+[^pivot]: 2026-05-06 form-factor pivot — see [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md). Three new ADRs proposed: ADR-015 (handheld substrate + form factor; supersedes-in-part ADR-004; refines-in-part ADR-005/006/007), ADR-016 (base-mode export gate; supersedes-in-part ADR-008), ADR-017 (custom 3D-printed waterproof enclosures for gateway and tag; refines-in-part ADR-002). The accepted ADR ledger below reads as it does today; supersession headers will land when those ADRs are written.
 
 ## Do NOT re-open these decisions without explicit reason
 
@@ -26,7 +28,7 @@ These are **Accepted** in `decisions/`, dated 2026-04-22 (ADR-001 through ADR-00
 - **Kiosk UI:** native Rust GUI. `egui` + `walkers` is the starting bet; `iced` and `slint` are the fallbacks. Offline tiles are **PMTiles**, not MBTiles (`walkers` supports `.pmtiles` natively). No browser, no WebView, no Chromium, no MapLibre, no Leaflet, no Tauri. See [ADR-005](decisions/ADR-005-map-and-ui.md).
 - **Relay GNSS:** on the board (UC6580), used only during commissioning and maintenance. OFF during normal forwarding. BLE maintenance CLI is **v1 (not v0, not v2+)** — you cannot deploy a sealed solar relay without a way to verify it is alive on-site. See [ADR-006](decisions/ADR-006-relay-has-gnss.md).
 - **Touchscreen is the only UI:** read-only map, no login, no modals, no settings screens, no CRUD. See [ADR-007](decisions/ADR-007-touchscreen-primary-ui.md).
-- **No cloud, no downlink.** No internet-hosted server. No REST API. No WebSocket. No phone app. No commands from gateway to tag. Pure uplink. No NTP — not even if WiFi is available. See [ADR-008](decisions/ADR-008-no-cloud-no-downlink.md).
+- **No cloud, no downlink.** No internet-hosted server. No REST API. No WebSocket. No phone app. No commands from gateway to tag. Pure uplink on the LoRa side. No NTP — not even if WiFi is available. See [ADR-008](decisions/ADR-008-no-cloud-no-downlink.md). (Pending ADR-016 splits the wording into four categories — no inbound surface, no internet-bound calls, no cloud-hosted dependency, *and* outbound LAN multicast/unicast under explicit gate. Categories one through three stay closed; the fourth is the new addition for base-mode CoT/TAK export. The NTP door stays closed under ADR-011 regardless.)
 - **Database:** SQLite (WAL mode), single file. Not PostgreSQL. Not DuckDB. Not a K/V store. Dedup is recent-window (24 h), not a permanent UNIQUE index. `seq_nr` is `u32` on the wire. See [ADR-009](decisions/ADR-009-database-sqlite.md).
 - **SOS encoding:** same band as heartbeat (868.1 MHz, sub-band M), SOS is a flag bit in `POSITION`, cadence is jittered. No separate SOS frequency in v1 — it created a phase-lock bug. See [ADR-010](decisions/ADR-010-sos-encoding.md).
 - **Gateway time source:** DS3231 I²C RTC module with CR2032 coin cell is primary; Dragino HAT Quectel L80-M39 GPS/PPS is opportunistic. No NTP. See [ADR-011](decisions/ADR-011-gateway-time-source.md).
@@ -38,6 +40,8 @@ These are **Accepted** in `decisions/`, dated 2026-04-22 (ADR-001 through ADR-00
 - **Tag-side buzzer for SOS only.** Relays do not have buzzers as search beacons — that draws the searcher to the wrong location. From [ADR-012](decisions/ADR-012-node-roles-and-sighting-semantics.md), preserved.
 
 If a suggestion starts with "let's just add a small web dashboard" or "let's use Python for the gateway" or "let's use React for the map" or "let's put SOS on a separate frequency for more range" or "let's just NTP the clock when WiFi is around" or "let's let the gateway compute the relay's position" or "let's auto-detect aerial role from altitude" or "let's add a homing beacon" or "let's add direction finding" or "let's put a buzzer on the relay" or "let's put SOS on the aviation distress band" or "let's add a FORWARD envelope with path tracking" or "let's record per-hop RSSI in the packet" or "let's add a role byte to distinguish hiker from relay" or "let's split into CH_TAG and CH_FWD channels" or "let's defer multi-hop to v2" — stop. That door is closed. Re-read the ADRs.
+
+Note: outbound LAN-bounded CoT/TAK export under the pending ADR-016 gate (WiFi + external power + manual opt-in) is **not** the same shape as a "small web dashboard" or an NTP call. It is read-only, outbound-only, RFC1918 / link-local / multicast-only, and silent unless all gate inputs are true. The dashboard / cloud / phone-app / NTP doors remain closed.
 
 ## Always read these first, in this order
 
@@ -62,7 +66,7 @@ If a suggestion starts with "let's just add a small web dashboard" or "let's use
 
 - **Language:** Rust everywhere. `no_std` on MCU (tag, relay), `std` on the gateway/kiosk. Python only for one-off scripts.
 - **MCU firmware:** `esp-hal`, Embassy async executor, [`lora-phy`](https://github.com/lora-rs/lora-rs) (from `lora-rs/lora-rs` — the older `embassy-rs/lora-phy` is archived), an NMEA parser (likely `nmea0183` or similar). Nightly Rust for the `xtensa-esp32s3-none-elf` target (via `espup` / `esp-rs`).
-- **Gateway / kiosk:** Rust on Yocto Linux, `linux-embedded-hal` for SPI to the Dragino SX1276, the **same `lora-phy` crate** (it supports SX127x as well as SX126x — no separate gateway radio driver to write), `rppal` for GPIO, `gpsd` + `chrony` for opportunistic GPS-disciplined time, `tokio` for async, `rusqlite` or `sqlx` for SQLite.
+- **Gateway / kiosk:** Rust on Yocto Linux, `linux-embedded-hal` for SPI to the Dragino SX1276, the **same `lora-phy` crate** (it supports SX127x as well as SX126x — no separate gateway radio driver to write), `rpi-pal` for GPIO (the maintained fork of the archived `rppal`; same API, drop-in, Pi 5 compatible — see [`dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md`](dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md)), `gpsd` + `chrony` for opportunistic GPS-disciplined time, `tokio` for async, `rusqlite` or `sqlx` for SQLite. Substrate (Pi class + display class + battery + enclosure) is open pending ADR-015.
 - **UI:** native Rust GUI, `egui` + `walkers` (starting bet). Offline **PMTiles** bundled in the Yocto image.
 - **Shared crates:** one `protocol` crate (`no_std` with optional `std`, used by tag, relay, gateway) and one `persistence` crate (`std`-only, owns the SQLite schema and queries, used by the gateway binary).
 - **Build:** Cargo workspace. Binaries live under `firmware/{tag,relay}/` and `gateway/` (the kiosk is a module inside the gateway binary, not a separate crate). `espflash` for flashing. Yocto (`meta-rust` layer) for the Pi image. SCP for deploy during bring-up.
@@ -144,4 +148,4 @@ The smoke test is about proving the lookup behaviour, not about producing usable
 
 ## What "done" looks like for v1
 
-Dot moves on the 7" touchscreen map as Pieter walks around his garden carrying a tag. Relay on a wooden pole in the garden, solar-powered, rebroadcasting packets. Gateway stores POSITION reports in `tag_reports` (SQLite) on its local Yocto Linux install and draws them live with a native Rust GUI. Zero internet required at any point. See [ARCHITECTURE.md §15](ARCHITECTURE.md) for the full v1 acceptance criteria.
+Dot moves on the handheld gateway's touchscreen map as Pieter walks around his garden carrying a tag. Relay on a designed garden pole (Fusion 360 three-legged base + ground-stake per `bom.md`), solar-powered, rebroadcasting packets. Gateway stores POSITION reports in `tag_reports` (SQLite) on its local Yocto Linux install and draws them live with a native Rust GUI. Zero internet required at any point on the LoRa side; outbound CoT/TAK export is silent unless WiFi + external power + manual opt-in are all present (pending ADR-016). See [ARCHITECTURE.md §15](ARCHITECTURE.md) for the full v1 acceptance criteria. Display class, substrate, and enclosure shape are open pending ADR-015 / ADR-017.
