@@ -46,6 +46,8 @@ ADR-006 is Accepted. Per CLAUDE.md's own rules, ARCHITECTURE.md and TODO.md drif
 
 Three positions in three docs. The BOM is the most recent and most considered, so it is probably the true intent. Fix: update ADR-003's checklist with a "Superseded in part" note pointing at the BOM pole-design approach, and remove the hose-clamps line from TODO.md "Right now". Or write ADR-015 if you want the woodworking-shop pole as a real decision.
 
+**RESOLVED 2026-05-08.** The three-way contradiction collapses by retiring **both** prior approaches (wooden-pole-and-hose-clamps **and** Fusion-360-designed-pole) for v0/v1/v2. Mount path is an off-the-shelf plastic tripod + Solar-Kit-to-tripod adapter; selection owned by [`../spikes/physical-fabrication-brief-spike.md`](../spikes/physical-fabrication-brief-spike.md). See [`2026-05-08-relay-mount-tripod-decision.md`](2026-05-08-relay-mount-tripod-decision.md). ADR-003 §Decision body is preserved as history with a Status banner pointing at the dev-log; an ADR-003 amendment ticket is the named follow-up once the spike picks the tripod + adapter.
+
 ### A4. v0 time source: BOM allows NTP-on-WiFi, ADR-008 + ADR-011 + CLAUDE.md forbid it
 
 - `bom.md` "Deferred — v1a prep": "These are NOT in the immediate cart. **v0 runs behind WiFi with NTP at mom's place — no RTC needed yet.** v1a is the first field deployment where the gateway has no internet."

@@ -109,21 +109,16 @@ Per [ADR-011](decisions/ADR-011-gateway-time-source.md). ADR-011 is unchanged.
 
 ---
 
-## Relay pole — local build (not online order)
+## Relay tripod + Solar Kit adapter (selection per spike)
 
-The relay pole is a designed physical component, not a bought-off-the-shelf item. Off-the-shelf approaches (hose clamps, store-bought brackets) are explicitly rejected — this is a core product component.
+The relay mount for v0 / v1 / v2 is an **off-the-shelf plastic tripod** with a standard mount thread, plus a printed/machined adapter between the tripod head and the Heltec Solar Kit enclosure. Selection (tripod model + adapter material + mount thread + dimensions + load rating + folded length) is owned by [`spikes/physical-fabrication-brief-spike.md`](spikes/physical-fabrication-brief-spike.md). **No SKUs are committed here** — the spike picks the parts.
 
-**Plan:**
-- Design in **Fusion360**: pole with a cantilevered mount protrusion for the Solar Kit enclosure, three-legged base structure, ground-stake tail of correct diameter.
-- Build at the **woodworking shop** under supervision.
-- Ground anchor: drill hole with hand drill, correct diameter for stake tail. No concrete required for garden v1a.
+Wooden-pole + Fusion-360 designed-pole approaches are retired for v0/v1/v2 — see [`dev-log/2026-05-08-relay-mount-tripod-decision.md`](dev-log/2026-05-08-relay-mount-tripod-decision.md). [ADR-003](decisions/ADR-003-relay-hardware.md)'s relay-hardware decision (Tracker V2 + Solar Kit + adhesive PCB standoffs + 3M VHB) is unchanged.
 
-*No hose clamps. No improvised strapping. Do it once, do it right.*
-
-Items needed (source locally from woodworking shop / hardware store):
-- Appropriate timber stock (pressure-treated, ~7–10 cm diameter or square section)
-- Drill bits (correct diameter for ground stake)
-- Fasteners for Solar Kit enclosure to mount protrusion (size TBD from Fusion360 drawing)
+Placeholder line items (selection per spike, not committed):
+- Plastic tripod with standard 1/4"-20 or 3/8" head thread (load rating + folded length + operating-temp envelope per spike)
+- Solar-Kit-to-tripod adapter (printed for prototype; production material + screw thread per spike)
+- Anti-rotation feature for the adapter (per spike)
 
 ---
 
@@ -134,8 +129,9 @@ These are superseded or out of scope:
 - ~~WiFi LoRa 32 V4~~ — superseded by ADR-002/ADR-003
 - ~~V4 Expansion Kit~~ — superseded
 - ~~L76K GNSS module~~ — UC6580 is on-board
-- ~~Stainless hose clamps~~ — replaced by pole design approach
-- ~~Wooden pole from hardware store~~ — replaced by pole design approach
+- ~~Stainless hose clamps~~ — retired 2026-05-08 (see [`dev-log/2026-05-08-relay-mount-tripod-decision.md`](dev-log/2026-05-08-relay-mount-tripod-decision.md)); off-the-shelf plastic tripod + adapter replaces this approach. Selection per [`spikes/physical-fabrication-brief-spike.md`](spikes/physical-fabrication-brief-spike.md).
+- ~~Wooden pole from hardware store~~ — retired 2026-05-08 (same dev-log); off-the-shelf plastic tripod + adapter replaces this approach.
+- ~~Fusion 360 designed three-legged base + ground-stake~~ — retired 2026-05-08 (same dev-log); off-the-shelf plastic tripod + adapter replaces this approach. Selection per [`spikes/physical-fabrication-brief-spike.md`](spikes/physical-fabrication-brief-spike.md).
 - ~~Tag enclosure~~ — deferred; garden v1a doesn't need it; v1b (Terril Waterschei) will need a proper solution, designed then
 
 ---

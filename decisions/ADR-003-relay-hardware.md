@@ -13,6 +13,8 @@ tags: [decision, hardware, relay, heltec, wireless-tracker-v2, solar]
 **Date:** 2026-04-22
 **Supersedes:** the 2026-04-19 version of this ADR, which specified the WiFi LoRa 32 V4 + L76K.
 
+**Mount-path note (2026-05-08):** the §Decision and Order-checklist pole language ("u-bolts or stainless hose clamps" + "pressure-treated wooden pole, ~2.5 m") is **factually retired for v0/v1/v2**. The mount path moves to an off-the-shelf plastic tripod + Solar-Kit-to-tripod adapter — selection owned by [`../spikes/physical-fabrication-brief-spike.md`](../spikes/physical-fabrication-brief-spike.md). Relay hardware (Tracker V2 + Solar Kit + adhesive PCB standoffs + 3M VHB) is **unchanged**. Body preserved as history. See [`../dev-log/2026-05-08-relay-mount-tripod-decision.md`](../dev-log/2026-05-08-relay-mount-tripod-decision.md). A separate ADR-003 amendment ticket flips the §Decision wording when the spike returns the tripod + adapter selection.
+
 ## Context
 
 The relay is pole-mounted outdoors and runs on solar. Requirements:
