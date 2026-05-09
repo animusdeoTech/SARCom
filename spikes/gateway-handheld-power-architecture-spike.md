@@ -1,12 +1,33 @@
 ---
 title: "Spike — Handheld gateway battery + charging + power-good architecture"
-status: open
+status: closed
 type: spike
 timebox: 1 day
 opened: 2026-05-06
+closed: 2026-05-08
 ---
 
 # Spike: Handheld gateway battery + charging + power-good architecture
+
+## Closed 2026-05-08
+
+**Verdict — H2.** A commercial USB-C-PD power bank, mounted **inside** the handheld shell as a serviceable internal component, replaces the H1 "custom 2S Li-Ion + BMS + buck + charger IC" path. H1 (custom charging IC + BMS + buck topology) and H0 (single-cell hobby-BMS desk demonstrator) are both **rejected** for v1 — the commercial bank already integrates BMS, balancing, OV/UV, OCP, and 5V/5A PD output to the Pi 5; reproducing that in a one-off design is engineering risk without payoff at this stage.
+
+**Working candidate:** Anker A1689 25600 mAh / 87 W / ~95 Wh (154 × 62 × 30 mm). Other PD-capable power banks of similar spec are interchangeable — the architectural commitment is **"~20-25 Ah PD-capable power bank inside the shell"**, not a vendor lock. SKU pinning is a procurement-ticket detail.
+
+**Runtime envelope.** Conservative 9 W typical worst-case (Pi 5 8 GB + Pi Touch Display 2 7" + Dragino HAT active LoRa RX). 95 Wh / 9 W ≈ 10.5 h typical; 95 Wh × ~80 % effective / 12 W peak ≈ 6 h peak. Targets (≥6 h typical, ≥4 h worst-case) hold with margin.
+
+**Charging path.** External **magnetic-pogo connector** in the shell wall (permanently IP65-sealed, ≥25 W / 5V@5A rated) → internal USB-C-PD cable → power bank's USB-C-PD input. Magnetic cable accessory ships with the device + a spare. No exposed USB-C bulkhead, no gasket cycling on a connector that gets used daily.
+
+**Output path.** Power bank's USB-C-PD output → internal USB-C cable → Pi 5's USB-C-PD input at 5V/5A. Pi 5 powers the entire stack including display backlight via the Pi 5 PMIC. **No custom buck. No TP4056. No BQ24074. No PMIC integration.** The bank IS the power architecture.
+
+**Clean-shutdown contract — OPEN.** Three candidate paths surfaced, final pick deferred to runtime-task-architecture-spike close: (a) Pi 5 firmware low-VBUS detection → graceful shutdown via systemd; (b) external small UPS HAT (~30 s buffer) between bank and Pi 5; (c) accept unclean shutdown — rely on SQLite WAL durability + a conservative read-only Yocto rootfs partition layout. **v1 default: (a) + (c) combined** — soft-shutdown on detected low-VBUS, accept unclean tail.
+
+**Service.** Clamshell open → battery compartment via internal divider plate → power bank slides out, fresh one slides in (or same one recharged externally via the magnetic connector). **Hot-swap NOT supported in v1** (Pi 5 powers down during swap). Optional separate battery-service door (own gasket + 2× M3 screws so the main clamshell stays sealed for non-battery service) deferred to enclosure-spike CAD phase.
+
+Named follow-ups: **enclosure-spike close** (consumes the 154×62×30 mm power-bank envelope + magnetic-pogo bulkhead + service-door question for internal layout) and **runtime-task-architecture-spike close** (formalises the SHUTDOWN_REQUEST signal sequencing and the systemd-graceful-shutdown daemon).
+
+Decisions captured below in the §Decision note.
 
 ## Why this spike exists
 
@@ -102,59 +123,215 @@ This spike scopes the topology, the protections, the signals, and the runtime me
 - If H2 (USB power bank) is chosen: spec which power-bank features must be exposed (≥30 W PD output, pass-through charging, ideally a power-good output); add an explicit "no cold-charge cutoff" warning since most banks lack one.
 - If H0 (single-cell hobby BMS) is chosen: document operating envelope honestly and downgrade the runtime targets in the decision note.
 
-## Decision note template
+## Decision note
 
 ```
-Date:
-Topology recommended: 1S / 2S / LiFePO4 / USB-power-bank / other:
-Cell chemistry assumed (not SKU-locked): Li-Ion / LiFePO4 / NMC:
+Date: 2026-05-08
+
+Topology recommended: USB-power-bank class — commercial USB-C-PD power
+  bank as a SERVICEABLE INTERNAL COMPONENT inside the handheld shell.
+  Working candidate: Anker A1689 25600 mAh / 87 W / ~95 Wh
+  (154 × 62 × 30 mm). Other PD-capable banks of similar spec are
+  interchangeable; SKU pinning is a procurement-ticket detail.
+  Architectural commitment: ~20-25 Ah, PD-capable, ≥87 W output, fits
+  the internal envelope.
+
+H1 (custom 2S + BMS + buck + charger IC):  REJECTED — engineering risk
+  without payoff at v1; commercial bank already integrates the same
+  protections.
+H0 (single-cell hobby BMS desk demo):       REJECTED — does not deliver
+  Pi 5 5V/5A peak, no clean-shutdown story.
+
+Cell chemistry assumed (not SKU-locked): Li-Ion (whatever cells the
+  commercial bank uses internally; cell-level chemistry is not
+  exposed to us by the bank).
+
 Nominal pack voltage / capacity range:
-Buck topology to 5V/5A: yes / no / via PD trigger:
+  internal cells: 3.7 V Li-Ion (bank vendor's choice)
+  bank PD output: USB-C-PD profiles (5/9/12/15/20 V); we use the 5V/5A
+                  profile for the Pi 5
+  capacity envelope: ≥20 Ah / ≥95 Wh @ 3.7 V nominal
 
-Energy budget arithmetic:
-  typical (kiosk + LoRa RX + GPS): __ Wh, __ h runtime
-  peak   (Pi 5 + WiFi assoc + CoT emit): __ Wh, __ h runtime
-  charge time, near-empty → 80% via USB-C-PD: __ minutes at __ W
+Buck topology to 5V/5A:
+  NO custom buck designed by us. The bank's USB-C-PD output IC
+  delivers 5V/5A directly to the Pi 5's USB-C-PD input; the Pi 5 PMIC
+  handles internal rails. No TP4056, no BQ24074, no external PMIC.
 
-Protections:
-  per-cell BMS:                mandatory / recommended / deferred:
-  balancing:                   mandatory / recommended / deferred:
-  inrush limit:                mandatory / recommended / deferred:
-  over-current fuse:           mandatory / recommended / deferred:
-  NTC cold-charge cutoff:      mandatory (≥0°C):
-  over-temp shutdown:          mandatory / recommended / deferred:
-  OV / UV cutoff:              mandatory / recommended / deferred:
-  reverse-polarity:            mandatory / recommended / deferred:
-  USB-C ESD:                   mandatory / recommended / deferred:
+Energy budget arithmetic (worst-case envelope per substrate-spike close):
+  typical (Pi 5 8 GB + 7" DSI + Dragino HAT active LoRa RX):
+                                   ~9 W → 95 Wh / 9 W ≈ 10.5 h runtime
+  peak   (above + WiFi assoc + CoT emit):
+                                   ~12 W × 0.80 effective → ≈ 6.3 h
+  worst-case (still hits ≥4 h target with margin):
+                                   ≈ 8 h at sustained 12 W
+  charge time, near-empty → 80% via 87 W magnetic-pogo input:
+                                   ~70-80 min (95 Wh × 0.80 / 87 W /
+                                   0.85 PD-conversion)
+
+Charging input:
+  external connector type:    magnetic-pogo, in shell wall,
+                              permanently IP65-sealed.
+  rating:                     ≥25 W (5V/5A) minimum; specific vendor
+                              SKU deferred to procurement ticket.
+  internal path:              magnetic-pogo connector → internal
+                              USB-C-PD cable → power bank's USB-C-PD
+                              input.
+  cable accessory shipped:    1× magnetic charge cable + 1× spare with
+                              the device.
+
+Power output path:
+  power bank's USB-C-PD output → internal USB-C cable → Pi 5 USB-C-PD
+  input @ 5V/5A → Pi 5 PMIC powers display backlight + Dragino HAT +
+  any USB peripherals.
+
+Protections (handled by the commercial bank unless noted):
+  per-cell BMS:                handled by bank (internal)
+  balancing:                   handled by bank (internal)
+  inrush limit:                handled by bank's PD controller +
+                               Pi 5 PMIC
+  over-current fuse:           handled by bank + Pi 5 PMIC
+  NTC cold-charge cutoff:      NOT exposed by typical PD power banks
+                               — accepted as out-of-envelope; see
+                               operating-envelope caveat below.
+  over-temp shutdown:          handled by bank (internal)
+  OV / UV cutoff:              handled by bank (internal)
+  reverse-polarity:            n/a (USB-C is keyed; magnetic-pogo
+                               vendor handles polarity)
+  USB-C ESD:                   handled by magnetic-pogo connector +
+                               bank's USB-C input stage
 
 Signal contract:
-  POWER_GOOD       — type:           consumed by:
-  BATTERY_STATE    — type:           consumed by:
-  CHARGE_STATE     — type:           consumed by:
-  THERMAL_STATE    — type:           consumed by:
-  SHUTDOWN_REQUEST — type:           consumed by:
-  Power button     — debounce / wake:
+  POWER_GOOD       — type: GPIO read of VBUS-presence at the magnetic-
+                            pogo input (via divider + ADC, or a small
+                            USB-C-PD watchdog IC's open-drain output).
+                     consumed by: power_monitor task (runtime spike) +
+                            CoT/TAK export gate (tak-cot-integration
+                            spike). HIGH = external charger present.
+  BATTERY_STATE    — type: NOT directly readable. Commercial banks
+                            do not expose cell SoC over a usable
+                            interface. CAVEAT — see envelope notes.
+                     consumed by: visual LED on the bank (operator-
+                            visible during service); not consumed by
+                            firmware in v1.
+  CHARGE_STATE     — type: NOT directly readable for the same reason.
+                            Inferred indirectly from POWER_GOOD
+                            (charger present) + bank's internal LED
+                            count (operator-visible).
+                     consumed by: operator only in v1.
+  THERMAL_STATE    — type: NOT exposed by the bank. Pi 5 SoC thermal
+                            is readable via /sys/class/thermal — that
+                            is a separate signal owned by the runtime
+                            spike, not this one.
+                     consumed by: runtime spike thermal task.
+  SHUTDOWN_REQUEST — type: derived locally on the Pi 5 — when VBUS
+                            from the bank starts to droop under load
+                            (bank near-empty), Pi 5 firmware low-VBUS
+                            detection raises the signal and systemd
+                            initiates graceful shutdown. Implementation
+                            detail owned by runtime-task-architecture-
+                            spike close.
+                     consumed by: systemd via a small monitor daemon.
+  Power button     — debounced momentary switch on a Pi 5 GPIO; tied
+                     into systemd reboot/poweroff target. Standard
+                     integration; no design specials here.
+
+Clean-shutdown approach (v1 default):
+  (a) Pi 5 firmware low-VBUS detection → graceful systemd shutdown
+      — adopted.
+  (c) accept unclean tail — adopted as fallback. Rely on SQLite WAL
+      durability + a read-only Yocto rootfs partition layout to make
+      "unclean shutdown does not corrupt the filesystem" the system-
+      level guarantee.
+  (b) external small UPS HAT (~30 s buffer) — REJECTED for v1 (extra
+      hardware, extra failure mode, the (a)+(c) combo is sufficient
+      for handheld use).
 
 Runtime measurement method:
-  rig:
-  loads (idle / typical / peak):
-  capture path (USB current meter / DMM / INA219 / SQLite power table):
+  rig:           USB-C inline power meter on the magnetic-pogo input
+                 (charge side); USB-C inline power meter on the
+                 bank → Pi 5 cable (output side); thermistor or
+                 IR thermometer on the heat-spreader.
+  loads:         (idle) Pi 5 booted, kiosk idle, LoRa RX listening
+                 (typical) above + walkers + PMTiles redraw at native
+                          refresh
+                 (peak)   above + WiFi monitor active + CoT/TAK
+                          emitting (when ADR-016 lands)
+  capture path:  USB power meters log to CSV via PC during bench
+                 runs; v1 does not need an in-Pi power-data table.
+                 Promotion of power data into a SQLite table is a
+                 v2 ask routed to the runtime spike, not this one.
+
+Service:
+  battery access:     clamshell open → internal divider plate →
+                      power bank slides out / new one slides in.
+  hot-swap:           NOT supported in v1 (Pi 5 powers down during
+                      swap).
+  separate door:      OPTIONAL — own gasket + 2× M3 captive screws
+                      so the main clamshell stays sealed for non-
+                      battery service. DEFERRED to enclosure-spike
+                      CAD phase.
 
 Cross-spike implications recorded:
-  tak-cot-integration:    ___
-  gateway runtime tasks:  ___
-  enclosure (battery placement / vent / service): ___
-  substrate (5V/5A peak): ___
-  production-concerns §2 and §4 promoted: ___
+  tak-cot-integration:
+      POWER_GOOD = VBUS-presence at the magnetic-pogo input (charger
+      attached), NOT bank-internal SoC. Export gate fires when
+      external power is present; bank-empty conditions are caught
+      via the Pi 5 low-VBUS shutdown path.
+  gateway runtime tasks:
+      power_monitor task reads (i) VBUS-presence GPIO/ADC, (ii) Pi 5
+      VBUS voltage from PMIC, raises SHUTDOWN_REQUEST when (ii)
+      droops past threshold. Daemon design owned by runtime-task-
+      architecture-spike close.
+  enclosure (battery placement / vent / service):
+      154 × 62 × 30 mm bank envelope (Anker A1689 class) + magnetic-
+      pogo bulkhead in shell wall + internal divider plate; optional
+      separate battery-service door deferred to CAD phase.
+  substrate (5V/5A peak):
+      Pi 5 8 GB worst-case envelope (substrate-spike close) confirmed
+      compatible with the 87 W bank output via standard USB-C PD;
+      no external buck.
+  production-concerns §2 (cold-charge):
+      promoted to v1 scope as a USER-FACING OPERATIONAL CAVEAT —
+      "do not charge below 0°C" — because the commercial bank does
+      NOT expose a cold-charge NTC cutoff. Documented in handover
+      notes (production-concerns close); not solved in firmware.
+  production-concerns §4 (clean-shutdown rootfs / SQLite):
+      promoted to v1 scope and addressed by the (a)+(c) combo above.
 
-Operating-envelope caveats accepted (write here, do not silently bury):
-  - cold charge: ___
-  - peak-while-charging: ___
-  - other: ___
+Operating-envelope caveats accepted (written here, not buried):
+  - cold charge:           bank does not have NTC cutoff. Operational
+                           rule: do not charge below 0°C. Visible in
+                           user-facing handover notes.
+  - peak-while-charging:   87 W input vs ~12 W peak Pi 5 stack draw
+                           leaves ~75 W headroom for charging. Charge-
+                           while-running at peak is supported.
+  - bank state visibility: bank's internal SoC / cell health / thermal
+                           NOT readable by the Pi 5 in v1. Operator
+                           checks the bank's LED indicator during
+                           service; firmware infers via VBUS-droop.
+  - hot-swap:              not supported. Pi 5 powers down during
+                           battery swap. Operationally acceptable in
+                           the SARCOM use case (hut staff swap on
+                           shift change, not mid-incident).
 
-Not implemented in this spike: part selection, PCB design, firmware code, BOM commitments.
+Not implemented in this spike: part selection (procurement ticket),
+                                magnetic-pogo SKU choice (procurement
+                                ticket), enclosure mechanical layout
+                                (enclosure-spike CAD), clean-shutdown
+                                daemon code (runtime-task-architecture-
+                                spike close), PCB design, BOM commit.
 
-Next action:
+Follow-ups filed:
+  (1) enclosure-spike close — consumes 154×62×30 mm bank envelope,
+      magnetic-pogo bulkhead, optional battery-service door question.
+  (2) runtime-task-architecture-spike close — formalises the
+      SHUTDOWN_REQUEST signal sequencing and the low-VBUS systemd-
+      graceful-shutdown daemon.
+
+Next action: enclosure-spike close + runtime-task-architecture-spike
+             close. Procurement of the bank itself rolls into the
+             bom.md update commit alongside the substrate-spike close
+             outputs.
 ```
 
 ## Cross-references
