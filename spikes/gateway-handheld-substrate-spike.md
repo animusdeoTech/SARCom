@@ -1,12 +1,27 @@
 ---
 title: "Spike — Handheld gateway substrate, HAT stack, IO + antenna paths"
-status: open
+status: closed
 type: spike
 timebox: 1 day
 opened: 2026-05-06
+closed: 2026-05-08
 ---
 
 # Spike: Handheld gateway substrate, HAT stack, and IO / antenna paths
+
+## Closed 2026-05-08
+
+**Verdict — mixed.** H1 (Pi 5 class + Dragino HAT + 22-pin DSI panel + USB-C PD) is committed as the substrate **shape**, but the specific Pi 5 RAM variant (2 / 4 / 8 GB) is **not pre-picked** — it is deferred to a per-variant empirical comparison (v0.6 substrate empirical test pass). H2 (BLE-through-shell) becomes part of that same test pass instead of a parallel investigation. H0 (CM5 / Zero 2W fallback) remains the credible escape if all three Pi 5 variants fail the envelope, but is no longer the working path.
+
+**Resolution shape.** Three Pi 5 RAM variants are being procured (1× each: 2 GB, 4 GB, 8 GB). Per-variant measurement of (a) idle current, (b) typical-load current at full `walkers` + PMTiles render, (c) peak current under stress, (d) sustained thermal under passive cooling, (e) UX feel of map render at native refresh rate. Comparison feeds both the substrate-variant pick and the ADR-015 authoring. Cheaper to measure than to argue from spec sheets.
+
+**Display class committed.** 2× new **Raspberry Pi Touch Display 2 (7-inch; Pi-5-native 22-pin DSI; 720×1280 portrait native, rotated to landscape via DRM/KMS)** for the v1 build path. 1× Pi-5-compatible 5-inch 22-pin DSI panel procured and **parked for v2 portrait variant** — out of v1 enclosure-spike scope. The on-hand 15-pin 7" DSI Touchscreen (originally on retired `pi3kiosk`) is **not on the v1 critical path** — it would need a 22-pin→15-pin adapter ribbon and an extra wire-routing complication; salvage value retained for ad-hoc bench tests only.
+
+**Active cooling rejected.** Passive aluminum heat-spreader to rear shell handles Pi 5 thermal dissipation. No fan, no vent. The heat-path mechanical detail belongs to the enclosure-spike close.
+
+Named follow-up: **power-architecture-spike close** + a separate **bom.md procurement update commit**. ADR-015 authoring is downstream of the v0.6 empirical test pass closing — not filed in this commit.
+
+Decisions captured below in the §Decision note.
 
 ## Why this spike exists
 
@@ -100,49 +115,161 @@ For each option, list:
 - If H2 (BLE-through-shell fails): document the dongle path; BLE commissioning spike inherits the constraint.
 - If H0 (Pi 5 fails): fall back to CM5 / Zero 2W per updated H0 above. Re-cost the handheld; the enclosure spike re-bounds for the chosen fallback form factor. (Pi 4 is retired and not a fallback — see [`../dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](../dev-log/2026-05-07-pi4-retirement-substrate-decision.md).)
 
-## Decision note template
+## Decision note
 
 ```
-Date:
-Recommended substrate: option ___ (Pi 5 / Pi 5+USB / CM5 / Zero 2W)
-Rationale (one paragraph):
+Date: 2026-05-08
 
-Substrate ranking:
-  1. ___ — pros / cons / cost / antenna path:
-  2. ___ — ...
-  3. ___ — ...
-  4. ___ — ...
+Recommended substrate: empirical-test-resolution — Pi 5 class + Dragino
+LoRa/GPS HAT + Raspberry Pi Touch Display 2 (7", 22-pin DSI) + USB-C PD is
+the committed substrate SHAPE. The specific Pi 5 RAM variant (2 / 4 / 8 GB)
+is NOT pre-picked; it is deferred to v0.6 substrate empirical test pass.
 
-Pi 5 IO verification (or fallback):
-  SPI / RP1: state, source:
-  UART for L80: state, source:
-  I²C for DS3231: state, source:
-  GPIO interrupts (polled-RX implication): state, source:
-  Dragino HAT GPIO 25 CS defect (silkscreen rev on the 3 on-hand HATs): state:
+Rationale: hardware envelope (footprint, GPIO header, RP1 IO behavior, USB-C
+PD profile, DSI 22-pin connector, thermal class) is identical across the
+three Pi 5 RAM SKUs. The only differentiator under SARCOM's load profile is
+sustained RAM ceiling under egui + walkers + PMTiles + Yocto + Rust binary +
+BLE central + WiFi monitor + LoRa RX. That ceiling is cheaper to measure
+empirically across the three variants than to argue from spec sheets, and
+the cost delta between the three variants is small enough that procuring
+all three to test is the rational move. Empirical result also feeds the
+ADR-015 authoring with measured numbers instead of guesses.
+
+Substrate ranking (post-Pi-4-retirement):
+
+  1. Pi 5 (any RAM, empirical) + Dragino HAT + Pi Touch Display 2 (7") +
+     USB-C PD — COMMITTED as substrate shape; RAM-variant pick deferred
+     to v0.6 empirical test pass. Onboard Wi-Fi 5 + BT 5.0; LoRa via
+     Dragino HAT SX1276; GPS via Dragino HAT L80 (M39 variant per
+     ADR-011 framing); USB-C PD wall path for desk bring-up, battery +
+     buck topology for handheld (power spike scope).
+
+  2. Pi 5 + USB SX1276 dongle (no HAT) + Pi Touch Display 2 (7") —
+     contingency. Picked up only if all three on-hand Dragino HATs are
+     confirmed defective on Pi 5 during v0.6 empirical test pass.
+
+  3. CM5 + carrier + 22-pin DSI panel + SX1276 module — H0 fallback if
+     Pi 5 fails the envelope (all three RAM variants throttle, cannot
+     sustain map render, or BLE-through-shell fails irrecoverably).
+
+  4. Zero 2 W — out-of-envelope per scoping; not pursued.
+
+Pi 5 IO verification (deferred to v0.6 + gateway-rx-bringup-spike):
+  SPI / RP1:                          deferred to v0.6 bring-up
+  UART for L80:                       deferred to v0.6 bring-up
+  I²C for DS3231:                     deferred to v0.6 bring-up
+  GPIO interrupts (polled-RX impl.):  deferred — polled-RX remains v1a
+                                      default per gateway-rx-bringup-spike
+  Dragino HAT GPIO 25 CS defect on the 3 on-hand HATs:
+                                      deferred — visual silkscreen-rev
+                                      check + bench-test in v0.6 bring-up
+
+v0.6 substrate empirical test pass — hard gate per Pi 5 RAM variant:
+  (a) idle current at the 5V rail
+  (b) typical-load current under walkers + PMTiles render at native
+      refresh on Pi Touch Display 2 (7")
+  (c) peak current under stress (boot transient + LoRa TX + map redraw)
+  (d) sustained thermal under sealed-shell passive cooling
+      (aluminum heat-spreader path; enclosure-spike scope)
+  (e) UX feel of map render at native refresh (subjective; recorded
+      with frame-time numbers where available)
+  Result feeds: substrate-variant pick + ADR-015 authoring + power-
+                architecture-spike close (idle/typical/peak numbers).
+
+Display class:
+  v1 build path:    Raspberry Pi Touch Display 2 (7", 22-pin DSI;
+                    720×1280 native portrait, rotated to landscape via
+                    DRM/KMS). 2× new units in procurement.
+  v2 portrait:      Pi-5-compatible 5-inch 22-pin DSI panel (1× new
+                    unit in procurement; parked, out of v1 scope).
+  Salvage:          on-hand 15-pin 7" DSI Touchscreen from retired
+                    pi3kiosk — NOT on v1 critical path (would require
+                    22-pin→15-pin adapter ribbon + extra wire routing).
+                    Retained for ad-hoc bench tests only.
 
 Antenna paths through 3D-printed shell:
-  LoRa SMA: chosen path:
-  GPS SMA: chosen path / sky-window-only / external bulkhead:
-  Pi 5 onboard WiFi/BLE through shell: measured / estimated / out-of-envelope:
-  External BLE/WiFi dongle needed? yes / no / TBD by enclosure spike:
+  LoRa SMA:                   bulkhead through shell — committed; mech
+                              detail in enclosure-spike close.
+  GPS SMA:                    open — sky-window-only vs external bulkhead
+                              decided by enclosure-spike close (gated on
+                              GPS-discipline runtime priority; ADR-011
+                              keeps DS3231 RTC primary, GPS opportunistic,
+                              so "no external GPS" is defensible).
+  Pi 5 onboard WiFi/BLE
+  through shell:              measure during v0.6 empirical test pass
+                              (BLE-through-shell at arm's length is the
+                              H2 trigger condition; result decides
+                              external-dongle question).
+  External BLE/WiFi dongle:   TBD by v0.6 BLE-through-shell measurement
+                              + enclosure-spike close.
 
-Physical envelope (chosen substrate, with HAT + 5" panel + battery):
-  L × W × H mm:
-  Internal bulkhead count:
+Cooling:
+  active cooler:              REJECTED — no fan, no vent.
+  passive heat-spreader:      aluminum plate, SoC-pad → plate → rear
+                              shell inner wall as thermal mass + radiating
+                              surface. Mech detail owned by enclosure-
+                              spike close.
+  thermal pad/paste:           cooling paste between SoC and heatsink/
+                              spreader (one-time); thermal pad between
+                              spreader and rear shell (re-workable).
+
+Physical envelope (chosen substrate, indicative — exact L × W × H is
+enclosure-spike scope):
+  Pi 5 board:                 85 × 56 mm
+  Dragino HAT Z-stack:        ~25-30 mm above Pi PCB (HAT + GPIO header
+                              + SMA pigtail clearance)
+  Pi Touch Display 2 (7"):    Pi-5-native 22-pin DSI; mounting via the
+                              display's own threaded standoffs holding
+                              the Pi PCB on the back face. Final L × W ×
+                              H + bulkhead count: enclosure-spike close.
 
 Cross-spike implications recorded:
-  power spike:           ___
-  enclosure spike:       ___
-  runtime spike:         ___
-  ble commissioning:     ___
-  rx bringup spike:      ___
-  pmtiles retarget:      ___
+  power spike:        receives v0.6 idle/typical/peak current measurements
+                      per RAM variant; closes battery + buck topology
+                      against the worst-case envelope. Named follow-up.
+  enclosure spike:    Pi 5 + Pi Touch Display 2 (7", 22-pin DSI) +
+                      Dragino HAT Z-stack + battery; passive aluminum
+                      heat-spreader to rear shell (no active cooler);
+                      LoRa SMA bulkhead committed; GPS SMA bulkhead vs
+                      sky-window open; USB-C PD charge-port placement
+                      open.
+  runtime spike:      BLE central in a separate Yocto service (not the
+                      kiosk binary) per the ble-gateway-ui-flow-spike
+                      close — process / IPC architecture is the runtime
+                      spike's domain.
+  ble commissioning:  BLE-through-shell measurement is part of v0.6
+                      empirical test pass, not a parallel investigation.
+  rx bringup spike:   receives the chosen Pi 5 RAM variant after v0.6
+                      close; bring-up runs against the picked variant.
+  pmtiles retarget:   Pi Touch Display 2 (7") native 720×1280 portrait,
+                      rotated to landscape via DRM/KMS; rotation handled
+                      at the display layer, not in the egui/walkers code.
 
-Follow-up: ADR-004 amendment ticket filed? yes / no, reason:
+Procurement (placement is a separate bom.md update commit, not this one):
+  1× Pi 5 2 GB
+  1× Pi 5 4 GB
+  1× Pi 5 8 GB
+  3× Pi 5 official 27 W USB-C-PD PSU
+  NO Pi 5 active cooler  (passive heat-spreader handles thermal)
+  3× SanDisk High Endurance 64 GB microSD
+  2× Raspberry Pi Touch Display 2 (7"; 22-pin DSI; Pi-5-native)
+  1× Raspberry Pi Touch Display 2 (5") if available from RPi Foundation,
+        else equivalent Pi-5-compatible 22-pin DSI 5" panel (verify SKU
+        at checkout) — parked for v2 portrait variant.
 
-Not implemented in this spike: code, BOM commitments, ordering decisions.
+Follow-up: ADR-004 amendment / ADR-015 authoring deferred to AFTER v0.6
+empirical test pass closes (RAM variant + measured numbers feed it).
+Named follow-ups for THIS spike close are:
+  (1) power-architecture-spike close
+  (2) bom.md procurement update (separate commit)
 
-Next action:
+Not implemented in this spike: code, BOM commit (separate commit),
+                                ADR edits, ordering decisions, enclosure
+                                mechanical detail.
+
+Next action: power-architecture-spike close + bom.md procurement update
+             (separate commit). v0.6 empirical test pass opens once
+             hardware arrives.
 ```
 
 ## Cross-references
