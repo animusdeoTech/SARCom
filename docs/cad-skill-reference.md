@@ -22,7 +22,7 @@ companion: docs/sarcom-cad-doc-map.md
 
 The skill activates when **ALL** of:
 
-(a) The user message OR conversation context contains any of: `fusion`, `cad`, `enclosure`, `doosje`, `IP65`, `IP67`, `gasket`, `bulkhead`, `parting plane`, `battery door`, `heat-spreader`, `pocket`, `bezel`, `mounting boss`, `shell`, `front_depth`, `rear_depth`, `pi 5`, `pi touch display`, `dragino`, `anker a1689`, `gateway-v1`, `spike-close`, `spike close`.
+(a) The user message OR conversation context contains any of: `fusion`, `cad`, `enclosure`, `doosje`, `IP65`, `IP67`, `gasket`, `bulkhead`, `parting plane`, `battery door`, `heat-spreader`, `pocket`, `bezel`, `mounting boss`, `shell`, `front_depth`, `rear_depth`, `pi 5`, `pi touch display`, `dragino`, `anker a1689`, `gateway-v1`, `spike-close`, `spike close`. (Single flat OR list intentional; per-category splitting was considered and rejected to avoid logic-complexity that doesn't earn its keep at activation time.)
 
 (b) The working tree shows uncommitted changes to `docs/spike-*` OR `spikes/gateway-handheld-*` OR the Fusion 360 file `gateway-v1` is open via MCP bridge (verifiable via `fusion_execute` returning a non-error response with `app.activeDocument.name == 'gateway-v1'`).
 
@@ -62,7 +62,7 @@ When the skill activates, the first five actions are non-negotiable:
    - Anything I'm missing before I start?
    ```
 
-The summary protects against silent assumption drift between sessions. It also forces the skill to look at live state before proposing actions.
+The summary protects against silent assumption drift between sessions. It also forces the skill to look at live state before proposing actions. Format is intentionally rigid — flexibility here would re-introduce the narrative drift this skill restructure eliminated.
 
 ## §2 — Source-of-truth hierarchy + anti-patterns
 
@@ -92,7 +92,7 @@ Conflict-resolution rules for adjacent pairs:
 | Anti-pattern | Why it's wrong | Source |
 |---|---|---|
 | Accept audit-bot findings as action items without filtering | 4 of 5 Autodesk Assistant findings on 2026-05-14 were STALE or HALLUCINATION; acting on them would have re-introduced pogo bore + shrunk depth wrong + chased a non-issue on door bosses | `cad-day-retrospective` G/F section; `anker-dims-and-gate-propagation.md` §"Post-Autodesk-Assistant-audit pass" |
-| Propose materials, cooling, or topology that contradict committed spike-close §Decision | Passive cooling was flipped to active twice on 2026-05-14 before Pieter caught it; memory file now exists | `feedback_cooling_is_passive.md`; `cad-day-retrospective` F12 |
+| Propose materials, cooling, or topology that contradict committed spike-close §Decision | Passive cooling was flipped to active twice on 2026-05-14 before Pieter caught it | Consult user memory for cooling-related feedback rules — the passive heat-spreader commitment in the enclosure spike-close §Decision is the source of truth; any drift toward active cooling terminology is the anti-pattern. Cross-ref: `cad-day-retrospective` F12 |
 | Extrude internal features before upstream carry-over decisions are resolved | Orientation X vs Y (carry-over #1) gates all Pi/HAT mounting bosses, display window cutout, gasket-groove offsets, heat-spreader pocket details | `TODO.md` carry-over; `cad-day-retrospective` O1, O2 |
 | Trust WebSearch for vendor mechanical dimensions | Pi Touch Display 2: WebSearch returned 8.55 mm, direct PDF gave 15 mm; 6.45 mm error would cascade through stack-up arithmetic | `cad-day-retrospective` F1 / `anker-dims-and-gate-propagation` §(a) |
 | Iterate-and-delete-inline on Fusion `comp.features` | `InternalValidationError: dmFeature || pmFeature` after cascade-delete; loop variable references already-deleted feature | `cad-day-retrospective` F10 |
@@ -164,7 +164,7 @@ Concrete actionable patterns. Each recipe carries a **frequency tag** indicating
 
 **Related API:** F9.
 
-### [OCCASIONAL] Recipe K — Amend a spike-close (NEW)
+### [OCCASIONAL — every session on doc-heavy days] Recipe K — Amend a spike-close (NEW)
 
 **Trigger:** A committed Accepted spike-close needs an inhoudelijke wijziging (decision change, dimension correction, retirement of a feature, addition of a new constraint).
 
