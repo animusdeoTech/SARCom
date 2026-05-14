@@ -7,7 +7,9 @@ tags: [index, status]
 
 # LoRa SAR — Search & Rescue telemetry network
 
-**What it is.** Hiker-carried GPS tags beacon over LoRa 868 MHz. Solar-powered relays on poles forward those beacons. A handheld Rust gateway with a touchscreen receives them and renders a live read-only map. No cloud, no inbound network, no phone app, no downlink on the LoRa side. Local-first by default. Outbound LAN-bounded CoT/TAK export to TAK-compatible clients on the same WiFi is a v1 feature gated on WiFi + external power + manual opt-in (pending ADR-016); when any gate input is false, the export path is silent.[^pivot]
+**What it is.** Hiker-carried GPS tags beacon over LoRa 868 MHz. Solar-powered relays on poles forward those beacons. A handheld Rust gateway with a touchscreen receives them and renders a live read-only map. No cloud, no inbound network, no phone app, no downlink on the LoRa side. Local-first by default. Outbound LAN-bounded CoT/TAK export to TAK-compatible clients on the same WiFi is a v1 feature gated on WiFi + manual opt-in (pending ADR-016); when either gate input is false, the export path is silent.[^pivot][^gate-2026-05-14]
+
+[^gate-2026-05-14]: Gate re-scoped from 3 inputs ("WiFi + external power + manual opt-in") to 2 inputs ("WiFi + manual opt-in") on 2026-05-14 after the magnetic-pogo charging connector was dropped from the v1 gateway. With no in-shell charging input, the SBC cannot read external-power-present as a signal, so it cannot be a gate input. See [`dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md`](dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md), [`dev-log/2026-05-14-anker-dims-and-gate-propagation.md`](dev-log/2026-05-14-anker-dims-and-gate-propagation.md), and the 2026-05-14 amendments on `spikes/gateway-handheld-power-architecture-spike.md`, `spikes/tak-cot-integration-spike.md`, `spikes/gateway-runtime-task-architecture-spike.md`.
 
 **Who it's for.** Hut staff or rescue-adjacent operators who carry the gateway and glance at the screen to see where hikers are. The mountain hut is one possible deployment site, not the only one. Not sysadmins. Not web users.
 

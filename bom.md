@@ -133,6 +133,7 @@ These are superseded or out of scope:
 - ~~Wooden pole from hardware store~~ — retired 2026-05-08 (same dev-log); off-the-shelf plastic tripod + adapter replaces this approach.
 - ~~Fusion 360 designed three-legged base + ground-stake~~ — retired 2026-05-08 (same dev-log); off-the-shelf plastic tripod + adapter replaces this approach. Selection per [`spikes/physical-fabrication-brief-spike.md`](spikes/physical-fabrication-brief-spike.md).
 - ~~Tag enclosure~~ — deferred; garden v1a doesn't need it; v1b (Terril Waterschei) will need a proper solution, designed then
+- ~~Magnetic-pogo charging connector + cable accessories~~ — retired 2026-05-14, gateway runs on removable battery pack only (see [`dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md`](dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md))
 
 ---
 

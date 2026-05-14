@@ -5,27 +5,45 @@ type: spike
 timebox: 1 day
 opened: 2026-05-06
 closed: 2026-05-08
+amended: 2026-05-14
 ---
 
 # Spike: Handheld gateway battery + charging + power-good architecture
+
+## 2026-05-14 partial supersession — magnetic-pogo charging retired
+
+The **magnetic-pogo half of the H2 verdict is superseded.** The gateway no longer has any external charging input in the enclosure wall. Recharging is now strictly external: open the battery service door, remove the power bank, charge the bank via its own built-in USB-C cable to a wall adapter, return it. The bank-inside-the-shell architectural commitment from §Closed 2026-05-08 is unchanged; only the charging path and the `POWER_GOOD` signal contract change.
+
+Concrete consequences:
+
+- **`POWER_GOOD` is removed from the signal contract.** Without an external charger input in the shell, there is no "external power present" state for the SBC to read. The signal does not exist in v1.
+- **CoT/TAK export gate language changes** to **"WiFi + manual opt-in"** (two inputs, not three). The "external power" input is gone; near-empty-battery emit is allowed and the existing low-VBUS clean-shutdown path catches the consequence at file-system level. Pending ADR-016 gate wording updates accordingly.
+- **`BATTERY_STATE` and `CHARGE_STATE`** were already declared not-firmware-readable in the 2026-05-08 contract (commercial bank exposes neither over a usable interface). The 2026-05-14 amendment removes them from the firmware signal surface entirely; they remain operator-visible via the bank's own LED count during service.
+- **`SHUTDOWN_REQUEST` survives unchanged** — the Pi 5 still reads VBUS-droop on its own USB-C-PD input and raises a clean-shutdown request; no enclosure-side signal is needed.
+- **One magnetic-pogo bulkhead** disappears from the enclosure bulkhead inventory (handled separately in `spikes/gateway-handheld-enclosure-spike.md` 2026-05-14 amendment).
+- **Magnetic charge cable accessories** (cable + spare) drop from the BOM.
+
+The §Closed 2026-05-08 and §Decision sections below are amended inline; the original text remains visible with the changed clauses replaced. Decision-note dated `2026-05-14` amendment block at top of §Decision lists the exact clause-level changes.
+
+See also `dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md`.
 
 ## Closed 2026-05-08
 
 **Verdict — H2.** A commercial USB-C-PD power bank, mounted **inside** the handheld shell as a serviceable internal component, replaces the H1 "custom 2S Li-Ion + BMS + buck + charger IC" path. H1 (custom charging IC + BMS + buck topology) and H0 (single-cell hobby-BMS desk demonstrator) are both **rejected** for v1 — the commercial bank already integrates BMS, balancing, OV/UV, OCP, and 5V/5A PD output to the Pi 5; reproducing that in a one-off design is engineering risk without payoff at this stage.
 
-**Working candidate:** Anker A1689 25600 mAh / 87 W / ~95 Wh (154 × 62 × 30 mm). Other PD-capable power banks of similar spec are interchangeable — the architectural commitment is **"~20-25 Ah PD-capable power bank inside the shell"**, not a vendor lock. SKU pinning is a procurement-ticket detail.
+**Working candidate:** Anker A1689 25600 mAh / 87 W / ~95 Wh, **119.9 × 73.4 × 31.4 mm** `[CORRECTED 2026-05-14 — Anker official spec; anker.com/eu-en/products/a1689]` (was: "~25600 mAh / 87 W / ~95 Wh / 154 × 62 × 30 mm" in 2026-05-08 verdict; the capacity / wattage / Wh figures were also part of the 2026-05-08 hand-wave and remain unverified against the official spec — flagged for procurement-ticket follow-up). Other PD-capable power banks of similar spec are interchangeable — the architectural commitment is **"~20-25 Ah PD-capable power bank inside the shell"**, not a vendor lock. SKU pinning is a procurement-ticket detail.
 
 **Runtime envelope.** Conservative 9 W typical worst-case (Pi 5 8 GB + Pi Touch Display 2 7" + Dragino HAT active LoRa RX). 95 Wh / 9 W ≈ 10.5 h typical; 95 Wh × ~80 % effective / 12 W peak ≈ 6 h peak. Targets (≥6 h typical, ≥4 h worst-case) hold with margin.
 
-**Charging path.** External **magnetic-pogo connector** in the shell wall (permanently IP65-sealed, ≥25 W / 5V@5A rated) → internal USB-C-PD cable → power bank's USB-C-PD input. Magnetic cable accessory ships with the device + a spare. No exposed USB-C bulkhead, no gasket cycling on a connector that gets used daily.
+**Charging path.** **External only — pack out, pack's own USB-C to wall charger, pack back.** No charging input in the enclosure wall at all in v1. The Anker A1689 has an integrated USB-C input cable; recharging means opening the battery service door, removing the bank, plugging its own USB-C into any wall adapter (or PD source), then returning it. ~~External magnetic-pogo connector in the shell wall…~~ — *retired 2026-05-14 per top-of-file partial supersession; see dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md.* The trade is that the device cannot run while the bank is being charged in v1 (no pass-through), but this matches the SARCOM use case (shift-change swap, not mid-incident charging) and eliminates one IP65 sealing surface, daily-cycled connector wear, and a magnetic cable accessory category.
 
 **Output path.** Power bank's USB-C-PD output → internal USB-C cable → Pi 5's USB-C-PD input at 5V/5A. Pi 5 powers the entire stack including display backlight via the Pi 5 PMIC. **No custom buck. No TP4056. No BQ24074. No PMIC integration.** The bank IS the power architecture.
 
 **Clean-shutdown contract — OPEN.** Three candidate paths surfaced, final pick deferred to runtime-task-architecture-spike close: (a) Pi 5 firmware low-VBUS detection → graceful shutdown via systemd; (b) external small UPS HAT (~30 s buffer) between bank and Pi 5; (c) accept unclean shutdown — rely on SQLite WAL durability + a conservative read-only Yocto rootfs partition layout. **v1 default: (a) + (c) combined** — soft-shutdown on detected low-VBUS, accept unclean tail.
 
-**Service.** Clamshell open → battery compartment via internal divider plate → power bank slides out, fresh one slides in (or same one recharged externally via the magnetic connector). **Hot-swap NOT supported in v1** (Pi 5 powers down during swap). Optional separate battery-service door (own gasket + 2× M3 screws so the main clamshell stays sealed for non-battery service) deferred to enclosure-spike CAD phase.
+**Service.** **Battery service door is the only regular access path.** The 2026-05-14 amendment promotes the previously-optional service door to mandatory and removes the alternative "clamshell open → battery compartment" path from regular service — the main clamshell stays sealed except for non-battery service events. Workflow: service door open → power bank slides out → bank charged externally on the bench via its own integrated USB-C cable → return same bank or a charged spare → close door. **Hot-swap NOT supported in v1** (Pi 5 powers down during swap; operationally acceptable in the SARCOM use case — hut staff swap on shift change, not mid-incident).
 
-Named follow-ups: **enclosure-spike close** (consumes the 154×62×30 mm power-bank envelope + magnetic-pogo bulkhead + service-door question for internal layout) and **runtime-task-architecture-spike close** (formalises the SHUTDOWN_REQUEST signal sequencing and the systemd-graceful-shutdown daemon).
+Named follow-ups: **enclosure-spike close** (consumes the **119.9 × 73.4 × 31.4 mm** `[CORRECTED 2026-05-14 — Anker official spec; anker.com/eu-en/products/a1689]` power-bank envelope + magnetic-pogo bulkhead + service-door question for internal layout) and **runtime-task-architecture-spike close** (formalises the SHUTDOWN_REQUEST signal sequencing and the systemd-graceful-shutdown daemon).
 
 Decisions captured below in the §Decision note.
 
@@ -126,13 +144,46 @@ This spike scopes the topology, the protections, the signals, and the runtime me
 ## Decision note
 
 ```
+Date: 2026-05-14 amendment (pogo half of H2 superseded)
+
+Changed clauses (this amendment overrides the 2026-05-08 text below
+for these clauses only; everything else stays):
+
+  - Charging input → external only (pack out, bank's own USB-C to
+    wall, pack back). No enclosure-wall connector. Magnetic-pogo
+    bulkhead, magnetic cable accessory + spare: REMOVED.
+  - Signal contract / POWER_GOOD: REMOVED. No external charger
+    presence to detect in v1.
+  - Signal contract / BATTERY_STATE, CHARGE_STATE: REMOVED from
+    firmware signal surface. Operator-visible via bank's own LED
+    count during service only.
+  - CoT/TAK export gate language: "WiFi + manual opt-in"
+    (2 inputs, not 3). The "external power" input is gone.
+  - Service: battery service door promoted from optional to the
+    ONLY regular access path. Main clamshell stays sealed except
+    for non-battery service.
+  - Operating-envelope caveat "peak-while-charging": REMOVED
+    (no in-shell charging in v1; charging happens off-device).
+
+See dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md for the
+session context that produced this amendment, and
+spikes/gateway-handheld-enclosure-spike.md 2026-05-14 amendment
+for the mirrored bulkhead-inventory change.
+
+================================================================
+
 Date: 2026-05-08
 
 Topology recommended: USB-power-bank class — commercial USB-C-PD power
   bank as a SERVICEABLE INTERNAL COMPONENT inside the handheld shell.
   Working candidate: Anker A1689 25600 mAh / 87 W / ~95 Wh
-  (154 × 62 × 30 mm). Other PD-capable banks of similar spec are
-  interchangeable; SKU pinning is a procurement-ticket detail.
+  (119.9 × 73.4 × 31.4 mm) [CORRECTED 2026-05-14 — Anker official
+  spec; anker.com/eu-en/products/a1689; the 2026-05-08 verdict had
+  154 × 62 × 30 mm which does not match the Anker product page].
+  Capacity / wattage / Wh figures inherited from 2026-05-08
+  hand-wave; verify at procurement-ticket time. Other PD-capable
+  banks of similar spec are interchangeable; SKU pinning is a
+  procurement-ticket detail.
   Architectural commitment: ~20-25 Ah, PD-capable, ≥87 W output, fits
   the internal envelope.
 
@@ -169,15 +220,20 @@ Energy budget arithmetic (worst-case envelope per substrate-spike close):
                                    0.85 PD-conversion)
 
 Charging input:
-  external connector type:    magnetic-pogo, in shell wall,
-                              permanently IP65-sealed.
-  rating:                     ≥25 W (5V/5A) minimum; specific vendor
-                              SKU deferred to procurement ticket.
-  internal path:              magnetic-pogo connector → internal
-                              USB-C-PD cable → power bank's USB-C-PD
-                              input.
-  cable accessory shipped:    1× magnetic charge cable + 1× spare with
-                              the device.
+  [SUPERSEDED 2026-05-14 — no in-shell charging path in v1]
+  external connector type:    NONE. Recharging is external only:
+                              open battery service door → remove
+                              power bank → charge bank via its
+                              own integrated USB-C cable to any
+                              wall adapter → return bank → close
+                              door.
+  rating:                     n/a (handled by whatever PD source
+                              the operator plugs the bank's own
+                              cable into; bank rates its own input).
+  internal path:              n/a (no enclosure-side charging path).
+  cable accessory shipped:    NONE. Bank's integrated USB-C cable
+                              is the only charging cable; user
+                              provides the wall adapter.
 
 Power output path:
   power bank's USB-C-PD output → internal USB-C cable → Pi 5 USB-C-PD
@@ -197,27 +253,26 @@ Protections (handled by the commercial bank unless noted):
   OV / UV cutoff:              handled by bank (internal)
   reverse-polarity:            n/a (USB-C is keyed; magnetic-pogo
                                vendor handles polarity)
-  USB-C ESD:                   handled by magnetic-pogo connector +
-                               bank's USB-C input stage
+  USB-C ESD:                   handled by bank's USB-C input stage
+                               when external charger is connected
+                               externally; no in-shell USB-C surface
+                               in v1.
 
 Signal contract:
-  POWER_GOOD       — type: GPIO read of VBUS-presence at the magnetic-
-                            pogo input (via divider + ADC, or a small
-                            USB-C-PD watchdog IC's open-drain output).
-                     consumed by: power_monitor task (runtime spike) +
-                            CoT/TAK export gate (tak-cot-integration
-                            spike). HIGH = external charger present.
-  BATTERY_STATE    — type: NOT directly readable. Commercial banks
-                            do not expose cell SoC over a usable
-                            interface. CAVEAT — see envelope notes.
-                     consumed by: visual LED on the bank (operator-
-                            visible during service); not consumed by
-                            firmware in v1.
-  CHARGE_STATE     — type: NOT directly readable for the same reason.
-                            Inferred indirectly from POWER_GOOD
-                            (charger present) + bank's internal LED
-                            count (operator-visible).
-                     consumed by: operator only in v1.
+  [SUPERSEDED 2026-05-14 — POWER_GOOD removed; BATTERY_STATE /
+   CHARGE_STATE removed from firmware surface entirely.]
+  POWER_GOOD       — REMOVED. No external charger input exists in
+                     v1, so "external power present" is not a state
+                     the SBC can read. Implication for CoT/TAK gate:
+                     dropped from the gate predicate (see top-of-
+                     section amendment block).
+  BATTERY_STATE    — REMOVED from firmware signal surface. Operator-
+                     visible only via the bank's own LED count during
+                     service. Not consumed by any firmware task in v1.
+  CHARGE_STATE    — REMOVED from firmware signal surface. Charging
+                     happens off-device on the bench; no in-firmware
+                     "charging / charged / fault" inference path
+                     exists in v1.
   THERMAL_STATE    — type: NOT exposed by the bank. Pi 5 SoC thermal
                             is readable via /sys/class/thermal — that
                             is a separate signal owned by the runtime
@@ -262,30 +317,47 @@ Runtime measurement method:
                  v2 ask routed to the runtime spike, not this one.
 
 Service:
-  battery access:     clamshell open → internal divider plate →
-                      power bank slides out / new one slides in.
+  [SUPERSEDED 2026-05-14 — battery service door promoted to the only
+   regular access path; clamshell-open path retired for routine
+   battery service.]
+  battery access:     battery service door open → power bank slides
+                      out / charged bank slides in → close door.
+                      Main clamshell stays sealed except for non-
+                      battery service events (e.g. SD card recovery,
+                      mainboard service).
   hot-swap:           NOT supported in v1 (Pi 5 powers down during
-                      swap).
-  separate door:      OPTIONAL — own gasket + 2× M3 captive screws
-                      so the main clamshell stays sealed for non-
-                      battery service. DEFERRED to enclosure-spike
-                      CAD phase.
+                      swap; operationally acceptable for shift-change
+                      swap, not mid-incident).
+  separate door:      MANDATORY (promoted from optional 2026-05-08
+                      verdict) — own gasket + 2× M3 captive screws,
+                      sealed. Geometry owned by
+                      spikes/gateway-handheld-enclosure-spike.md.
 
 Cross-spike implications recorded:
   tak-cot-integration:
-      POWER_GOOD = VBUS-presence at the magnetic-pogo input (charger
-      attached), NOT bank-internal SoC. Export gate fires when
-      external power is present; bank-empty conditions are caught
-      via the Pi 5 low-VBUS shutdown path.
+      [SUPERSEDED 2026-05-14] Export gate is now
+      "WiFi + manual opt-in" (2 inputs). POWER_GOOD has been removed
+      from the gate predicate because no external charger input
+      exists in v1. Bank-empty conditions are still caught at the
+      file-system level by the Pi 5 low-VBUS clean-shutdown path
+      (SHUTDOWN_REQUEST below) — no CoT/TAK-side change is needed
+      for graceful tail behaviour.
   gateway runtime tasks:
-      power_monitor task reads (i) VBUS-presence GPIO/ADC, (ii) Pi 5
-      VBUS voltage from PMIC, raises SHUTDOWN_REQUEST when (ii)
-      droops past threshold. Daemon design owned by runtime-task-
-      architecture-spike close.
+      power_monitor task reads Pi 5 VBUS voltage from PMIC and
+      raises SHUTDOWN_REQUEST when VBUS droops past threshold.
+      [SUPERSEDED 2026-05-14] No external-VBUS-presence GPIO/ADC
+      input — that signal does not exist in v1. Daemon design owned
+      by runtime-task-architecture-spike close.
   enclosure (battery placement / vent / service):
-      154 × 62 × 30 mm bank envelope (Anker A1689 class) + magnetic-
-      pogo bulkhead in shell wall + internal divider plate; optional
-      separate battery-service door deferred to CAD phase.
+      [SUPERSEDED 2026-05-14] 119.9 × 73.4 × 31.4 mm bank envelope
+      (Anker A1689 class) [CORRECTED 2026-05-14 — Anker official
+      spec; anker.com/eu-en/products/a1689; was 154 × 62 × 30 mm in
+      2026-05-08 verdict] + MANDATORY battery service door (promoted
+      from optional). NO magnetic-pogo bulkhead. Internal divider
+      plate separates display+Pi+HAT compartment from battery
+      compartment. Geometry owned by
+      spikes/gateway-handheld-enclosure-spike.md 2026-05-14
+      amendment.
   substrate (5V/5A peak):
       Pi 5 8 GB worst-case envelope (substrate-spike close) confirmed
       compatible with the 87 W bank output via standard USB-C PD;
@@ -302,9 +374,13 @@ Operating-envelope caveats accepted (written here, not buried):
   - cold charge:           bank does not have NTC cutoff. Operational
                            rule: do not charge below 0°C. Visible in
                            user-facing handover notes.
-  - peak-while-charging:   87 W input vs ~12 W peak Pi 5 stack draw
-                           leaves ~75 W headroom for charging. Charge-
-                           while-running at peak is supported.
+  - peak-while-charging:   [SUPERSEDED 2026-05-14 — no in-shell
+                           charging in v1] Charging happens off-
+                           device on the bench. The device runs from
+                           the bank until depleted; clean shutdown
+                           on low VBUS catches the tail. Shift-
+                           change swap is the operational pattern,
+                           not run-while-charging.
   - bank state visibility: bank's internal SoC / cell health / thermal
                            NOT readable by the Pi 5 in v1. Operator
                            checks the bank's LED indicator during
@@ -322,8 +398,10 @@ Not implemented in this spike: part selection (procurement ticket),
                                 spike close), PCB design, BOM commit.
 
 Follow-ups filed:
-  (1) enclosure-spike close — consumes 154×62×30 mm bank envelope,
-      magnetic-pogo bulkhead, optional battery-service door question.
+  (1) enclosure-spike close — consumes 119.9 × 73.4 × 31.4 mm
+      [CORRECTED 2026-05-14 — Anker official spec;
+      anker.com/eu-en/products/a1689] bank envelope, magnetic-pogo
+      bulkhead, optional battery-service door question.
   (2) runtime-task-architecture-spike close — formalises the
       SHUTDOWN_REQUEST signal sequencing and the low-VBUS systemd-
       graceful-shutdown daemon.

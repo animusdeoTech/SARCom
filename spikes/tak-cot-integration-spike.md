@@ -5,9 +5,25 @@ type: spike-ticket
 timebox: TBD (decide when scoped)
 opened: 2026-05-05
 updated: 2026-05-06 (handheld pivot — promoted from optional to architectural)
+amended: 2026-05-14 (export gate language: 3 inputs → 2; POWER_GOOD removed)
 ---
 
 # Spike ticket: TAK / CoT integration
+
+## 2026-05-14 gate-language correction — POWER_GOOD removed from the export gate
+
+The pending-ADR-016 CoT/TAK export gate predicate is now **"WiFi + manual opt-in"** (2 inputs), not "WiFi + external power + manual opt-in" (3 inputs). The middle term ("external power") is retired because the magnetic-pogo charging input has been removed from the v1 gateway (see `dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md` + `spikes/gateway-handheld-power-architecture-spike.md` 2026-05-14 amendment). With no in-shell charging path, `POWER_GOOD` is no longer a signal the SBC can read, so it cannot be a gate input.
+
+Pieter's recorded answer (option b of three): "WiFi + manual opt-in only. Two inputs, not three. The 'external power' input is gone. CoT/TAK is allowed to emit on near-empty battery; clean shutdown on low-VBUS catches the consequence at the file-system level (SQLite WAL durability + read-only rootfs partition layout)."
+
+Concrete effect on this spike:
+
+- §PIVOT REFRAME 2026-05-06 Export gate item 2 (Power state / POWER_GOOD) is **struck**. Items 1 (WiFi) and 3 (Manual enable flag) remain.
+- Cross-references to `POWER_GOOD signal is part of the export gate` are corrected inline.
+- H verdicts, Phase 1 scope, ADR-008 reframe, and open questions 4-15 are unchanged by this amendment — only the gate predicate.
+- Bank-near-empty conditions are still caught at the file-system level by Pi 5 low-VBUS clean shutdown via the runtime spike's `shutdown_orchestrator` task; no CoT-side change is needed for graceful tail behaviour.
+
+See also `dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md` and `dev-log/2026-05-14-anker-dims-and-gate-propagation.md`.
 
 ## PIVOT REFRAME 2026-05-06 — promoted from optional to architectural
 
@@ -21,7 +37,7 @@ What changes:
 - **In-process vs separate daemon** → **answered**: in-process Tokio task inside the gateway binary, per the runtime-task spike. The runtime spike allocates a `cot_emitter` task slot and a `cot_gate` predicate task.
 - **Export gate** → committed: the emitter only fires when **all** of these are true:
   1. **WiFi state**: associated, has-default-gateway, has-DHCP-lease (from `wifi_monitor` task — see runtime spike)
-  2. **Power state**: external power present AND battery not in critical state (from `power_monitor` — see `gateway-handheld-power-architecture-spike.md` `POWER_GOOD` signal)
+  2. ~~**Power state**: external power present AND battery not in critical state (from `power_monitor` — see `gateway-handheld-power-architecture-spike.md` `POWER_GOOD` signal)~~ **[SUPERSEDED 2026-05-14 — POWER_GOOD is no longer a readable signal in v1; gate drops to 2 inputs; see top-of-file 2026-05-14 amendment]**
   3. **Manual enable flag**: a config-file flag default off; the operator opts in. (No kiosk UI surface; ADR-007 stays read-only.)
 - **Transport** → committed (subject to Phase 1): UDP multicast on the LAN to a TAK group address, OR unicast TCP to a configured TAK Server address — both behind the gate. **No internet-routed destinations**; the emitter must drop messages whose destination is not RFC1918 / link-local / multicast. Check enforced in code, not by trust.
 - **Data flow** → committed: the emitter is a **fire-and-forget read-only consumer of `tag_reports`** and a SQLite-backed replay log of what's been emitted. No retransmit logic in v1 — if the emit gate is open, send; if not, drop. (Replay-on-reconnect is a v2 follow-up; do not bundle.)
@@ -201,7 +217,7 @@ Listed here to prevent creep:
 - `decisions/ADR-013-multi-hop-flood-via-packet-id.md` — defines the wire data CoT bridge translates
 - `dev-log/2026-05-05-first-entry-hardware-pi5-rppal.md` — same-day session that surfaced career-investment framing
 - `spikes/gateway-rx-bringup-spike.md` — sibling spike; gateway must be receiving packets reliably before CoT bridge has anything to emit
-- `spikes/gateway-handheld-power-architecture-spike.md` — POWER_GOOD signal is part of the export gate
+- `spikes/gateway-handheld-power-architecture-spike.md` — ~~POWER_GOOD signal is part of the export gate~~ **[CORRECTED 2026-05-14 — POWER_GOOD removed from the export gate; the spike's 2026-05-14 amendment retires the signal entirely; cross-ref still points at the power-arch spike for the BATTERY_STATE / CHARGE_STATE / SHUTDOWN_REQUEST changes]**
 - `spikes/gateway-runtime-task-architecture-spike.md` — allocates `cot_gate` and `cot_emitter` tasks
 - `spikes/handheld-pivot-doc-audit-spike.md` — registrar; owns the ADR-008 amendment thread
 - `crates/protocol/` — `Position` struct is the source data this bridge translates from

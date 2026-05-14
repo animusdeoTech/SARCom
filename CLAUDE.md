@@ -11,7 +11,7 @@ Onboarding note for any Claude instance entering this project — chat, Claude C
 
 ## What this project is
 
-LoRa-based Search & Rescue telemetry network. GPS tags → solar LoRa relays → handheld Rust gateway with a touchscreen showing a live read-only map. Carried by hut staff or rescue-adjacent operators; the mountain hut is one possible deployment site, not the only one. **Local-first. No cloud. No phone app. No inbound network. Pure uplink on the LoRa side.** Outbound LAN-bounded CoT/TAK export is a v1 feature gated on WiFi + external power + manual opt-in (pending ADR-016); when any gate input is false the export path is silent and nothing else changes.[^pivot]
+LoRa-based Search & Rescue telemetry network. GPS tags → solar LoRa relays → handheld Rust gateway with a touchscreen showing a live read-only map. Carried by hut staff or rescue-adjacent operators; the mountain hut is one possible deployment site, not the only one. **Local-first. No cloud. No phone app. No inbound network. Pure uplink on the LoRa side.** Outbound LAN-bounded CoT/TAK export is a v1 feature gated on WiFi + manual opt-in (pending ADR-016); when any gate input is false the export path is silent and nothing else changes.[^pivot][^gate-2026-05-14]
 
 For the full picture see [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -41,7 +41,7 @@ These are **Accepted** in `decisions/`, dated 2026-04-22 (ADR-001 through ADR-00
 
 If a suggestion starts with "let's just add a small web dashboard" or "let's use Python for the gateway" or "let's use React for the map" or "let's put SOS on a separate frequency for more range" or "let's just NTP the clock when WiFi is around" or "let's let the gateway compute the relay's position" or "let's auto-detect aerial role from altitude" or "let's add a homing beacon" or "let's add direction finding" or "let's put a buzzer on the relay" or "let's put SOS on the aviation distress band" or "let's add a FORWARD envelope with path tracking" or "let's record per-hop RSSI in the packet" or "let's add a role byte to distinguish hiker from relay" or "let's split into CH_TAG and CH_FWD channels" or "let's defer multi-hop to v2" — stop. That door is closed. Re-read the ADRs.
 
-Note: outbound LAN-bounded CoT/TAK export under the pending ADR-016 gate (WiFi + external power + manual opt-in) is **not** the same shape as a "small web dashboard" or an NTP call. It is read-only, outbound-only, RFC1918 / link-local / multicast-only, and silent unless all gate inputs are true. The dashboard / cloud / phone-app / NTP doors remain closed.
+Note: outbound LAN-bounded CoT/TAK export under the pending ADR-016 gate (WiFi + manual opt-in)[^gate-2026-05-14] is **not** the same shape as a "small web dashboard" or an NTP call. It is read-only, outbound-only, RFC1918 / link-local / multicast-only, and silent unless all gate inputs are true. The dashboard / cloud / phone-app / NTP doors remain closed.
 
 > **Pi 4 substrate is retired (2026-05-07).** All three on-hand Pi 4 Model B units tested out of order; substrate is now Pi 5 (variant TBD per [`spikes/gateway-handheld-substrate-spike.md`](spikes/gateway-handheld-substrate-spike.md)). Do NOT propose a Pi 4 power-on test. Do NOT list Pi 4 as a substrate candidate. See [`dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](dev-log/2026-05-07-pi4-retirement-substrate-decision.md).
 
@@ -53,6 +53,18 @@ Note: outbound LAN-bounded CoT/TAK export under the pending ADR-016 gate (WiFi +
 4. `ARCHITECTURE.md` — the system in one document
 5. `TODO.md` — what's being worked on right now
 6. Whichever file is relevant to the current task
+
+## Spike-writing protocol
+
+When writing or updating any file under `spikes/`, read these first:
+
+1. `docs/spike-rules.md` — definition + hard rules + executor test
+2. `docs/spike-template.md` — copy as the starting skeleton
+3. The three canonical exemplar spikes named in the rules file
+
+A spike that does not match the canonical shape is rewritten before commit. The hard "no" list (no IC selection, no vendor lock-in, no euro figures stated as answers, etc.) is non-negotiable. Named parts / vendors appear ONLY as candidates with comparison criteria, never as the choice. Cost envelope is relative at open; exact euro only at close if cited, measured, or candidate-pending. Every concrete claim is either a candidate-pending-comparison or cites repo-local `path:line` evidence (produced via `rg -n` / `git grep -n`). External datasheets, measured values, and calculator outputs are valid evidence at close. Claims that cannot be sourced go in a top-of-file "To verify before close" block, flagged low-confidence.
+
+The spike's output is a commitment to one named follow-up: implementation ticket, ADR write, procurement-decision ticket backed by its own ranked shortlist, smaller re-scoped spike, or a decomposition follow-up that lists sub-spikes. The spike does not decide architecture.
 
 ## Tone and working style (Pieter)
 
@@ -151,4 +163,6 @@ The smoke test is about proving the lookup behaviour, not about producing usable
 
 ## What "done" looks like for v1
 
-Dot moves on the handheld gateway's touchscreen map as Pieter walks around his garden carrying a tag. Relay on an off-the-shelf plastic tripod (per `spikes/physical-fabrication-brief-spike.md`), solar-powered, rebroadcasting packets. Gateway stores POSITION reports in `tag_reports` (SQLite) on its local Yocto Linux install and draws them live with a native Rust GUI. Zero internet required at any point on the LoRa side; outbound CoT/TAK export is silent unless WiFi + external power + manual opt-in are all present (pending ADR-016). See [ARCHITECTURE.md §15](ARCHITECTURE.md) for the full v1 acceptance criteria. Display class, substrate, and enclosure shape are open pending ADR-015 / ADR-017.
+Dot moves on the handheld gateway's touchscreen map as Pieter walks around his garden carrying a tag. Relay on an off-the-shelf plastic tripod (per `spikes/physical-fabrication-brief-spike.md`), solar-powered, rebroadcasting packets. Gateway stores POSITION reports in `tag_reports` (SQLite) on its local Yocto Linux install and draws them live with a native Rust GUI. Zero internet required at any point on the LoRa side; outbound CoT/TAK export is silent unless WiFi + manual opt-in are both present (pending ADR-016).[^gate-2026-05-14] See [ARCHITECTURE.md §15](ARCHITECTURE.md) for the full v1 acceptance criteria. Display class, substrate, and enclosure shape are open pending ADR-015 / ADR-017.
+
+[^gate-2026-05-14]: The pending-ADR-016 export gate was re-scoped from three inputs ("WiFi + external power + manual opt-in") to two inputs ("WiFi + manual opt-in") on 2026-05-14 after the magnetic-pogo charging input was dropped from the v1 gateway. With no in-shell charging path, the SBC cannot read "external power present" as a signal, so it cannot be a gate input. See [`dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md`](dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md) for the originating decision, [`dev-log/2026-05-14-anker-dims-and-gate-propagation.md`](dev-log/2026-05-14-anker-dims-and-gate-propagation.md) for the propagation pass, and `spikes/gateway-handheld-power-architecture-spike.md` + `spikes/tak-cot-integration-spike.md` + `spikes/gateway-runtime-task-architecture-spike.md` 2026-05-14 amendments for the spike-level changes.

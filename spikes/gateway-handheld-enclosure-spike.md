@@ -5,23 +5,34 @@ type: spike
 timebox: 1 day
 opened: 2026-05-06
 closed: 2026-05-08
+amended: 2026-05-14
 ---
 
 # Spike: Handheld gateway 3D-printed waterproof enclosure
 
+## 2026-05-14 partial supersession — magnetic-pogo charging bulkhead retired
+
+The **magnetic-pogo charging connector is removed from the bulkhead inventory and from §Decision.** The gateway no longer has any external charging input in the enclosure wall. Recharging is fully external: open the battery service door, remove the power bank, charge the bank via its own integrated USB-C cable, return it. The battery service door is promoted from optional to **mandatory** (it is now the only regular access path).
+
+The mirrored power-side change lives in `spikes/gateway-handheld-power-architecture-spike.md` 2026-05-14 amendment. The pending ADR-016 CoT/TAK export gate language drops the "external power" input and becomes **"WiFi + manual opt-in"**.
+
+What stays unchanged: LoRa SMA bulkhead (top edge centred), IP67 sealed power button (side edge), Gore PolyVent membrane (rear shell). IP65 target stays. ASA material commitment stays. Internal layout (Pi 5 + Dragino HAT on back of Pi Touch Display 2, Anker A1689 in separate compartment) stays. Passive heat-spreader path (1 mm thermal pad → 30 × 30 × 8 mm Al block → AlMg3 sheet) stays.
+
+See also `dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md`.
+
 ## Closed 2026-05-08
 
-**Verdict — H1.** IP65 (rain + dust, no immersion) is the committed v1 target, on a single-material ASA clamshell with a Buna-N 2 mm cord-stock gasket, a 3 mm polycarbonate display window, off-the-shelf threaded SMA + IP67 power button, **magnetic-pogo charging (no panel-mount USB-C)**, and a Gore PolyVent rear membrane. H0 (IP54 + pouch policy) is rejected for v1.
+**Verdict — H1.** IP65 (rain + dust, no immersion) is the committed v1 target, on a single-material ASA clamshell with a Buna-N 2 mm cord-stock gasket, a 3 mm polycarbonate display window, off-the-shelf threaded SMA + IP67 power button, ~~magnetic-pogo charging (no panel-mount USB-C)~~ **[SUPERSEDED 2026-05-14 — no in-shell charging in v1; see top-of-file supersession]**, and a Gore PolyVent rear membrane. H0 (IP54 + pouch policy) is rejected for v1.
 
-**v1 build path is the 7" landscape variant only.** Form factor: ~180 × 120 mm front face, ~45-55 mm depth. Single LoRa SMA bulkhead centered on the top edge; **no GNSS bulkhead** (Dragino HAT L80-M39's onboard 15 × 15 × 4 mm patch antenna fires up through the ASA shell back/top — defensible because ADR-011 keeps DS3231 RTC primary, GPS opportunistic). The 5" portrait variant is parked as a v2 follow-up spike — **no parametrised dual-front design is produced here.**
+**v1 build path is the 7" landscape variant only.** Form factor: ~180 × 120 mm front face, **~85–100 mm depth** (spec-language correction 2026-05-14 per [`dev-log/2026-05-14-c1-depth-stackup-arithmetic.md`](../dev-log/2026-05-14-c1-depth-stackup-arithmetic.md) — the prior "~45–55 mm" figure was a hand-wave that did not stack-up the Dragino HAT envelope; the corrected number is what the chosen substrate + HAT + display + Anker A1689 + passive heat-spreader path actually require. No architecture, cooling, or substrate change). Single LoRa SMA bulkhead centered on the top edge; **no GNSS bulkhead** (Dragino HAT L80-M39's onboard 15 × 15 × 4 mm patch antenna fires up through the ASA shell back/top — defensible because ADR-011 keeps DS3231 RTC primary, GPS opportunistic). The 5" portrait variant is parked as a v2 follow-up spike — **no parametrised dual-front design is produced here.**
 
 **Acceptance gate.** Terril Waterschei in measurable rain, no water ingress. Failing the rain test does NOT silently demote to IP54; it triggers a rework loop on the gasket compression + window seal, not a scope reduction.
 
 **Material commitment: ASA throughout.** Single material across shell halves, bezel, internal mounts, internal dividers — to keep thermal-expansion behavior uniform across mating surfaces (mismatched-CTE seams leak).
 
-**Internal layout.** Pi 5 + Dragino HAT stack mounted to the back of the Pi Touch Display 2 (7") via the display's own M2.5 standoffs (display + Pi assembly is one rigid unit, attached to the front shell via the bezel). Anker A1689-class power bank (~155 × 60 × 30 mm, per power-architecture-spike close) lives in a separate compartment behind/below the Pi+HAT+display unit, divided by an internal ASA wall. Pi 5 SoC thermal path: 1 mm thermal pad on SoC → 30 × 30 × 8 mm aluminum heat-spreader block → thermal paste → AlMg3 1.5 mm sheet (80 × 60 mm) recessed into a rear-shell pocket. **Optional separate battery-service door is INCLUDED** (own Buna-N O-ring + 2× M3 captive screws) — keeps the main clamshell sealed for non-battery service.
+**Internal layout.** Pi 5 + Dragino HAT stack mounted to the back of the Pi Touch Display 2 (7") via the display's own M2.5 standoffs (display + Pi assembly is one rigid unit, attached to the front shell via the bezel). Anker A1689-class power bank (**119.9 × 73.4 × 31.4 mm** `[CORRECTED 2026-05-14 — Anker official spec; anker.com/eu-en/products/a1689; was "~155 × 60 × 30 mm" in 2026-05-08 verdict, consumed from power-architecture-spike's own hand-wave dims]`) lives in a separate compartment behind/below the Pi+HAT+display unit, divided by an internal ASA wall. **Bank orientation in the rear compartment:** long axis (119.9 mm) along device X, width axis (73.4 mm) along device Y, thickness axis (31.4 mm) along device Z. This places the battery service door on the **+X face** of the rear shell (perpendicular to the bank's long axis, so the bank slides out axially along its 119.9 mm long axis through the 73.4 × 31.4 cross-section aperture). The 30 mm of X-axis slack in the rear compartment (interior 171 mm minus bank 119.9 mm) is an open architectural question — see `dev-log/2026-05-14-anker-dims-and-gate-propagation.md` §(a). Pi 5 SoC thermal path: 1 mm thermal pad on SoC → 30 × 30 × 8 mm aluminum heat-spreader block → thermal paste → AlMg3 1.5 mm sheet (80 × 60 mm) recessed into a rear-shell pocket. **Optional separate battery-service door is INCLUDED** (own Buna-N O-ring + 2× M3 captive screws) — keeps the main clamshell sealed for non-battery service. (Door promoted from optional to mandatory in the 2026-05-14 amendment at top of file.)
 
-**Bulkhead inventory locked:** 1× LoRa SMA (top edge centred), 1× IP67 sealed power button (side edge), 1× magnetic-pogo charging connector (opposite side or bottom edge), 1× Gore PolyVent (rear shell, off the grip surface). Zero GNSS SMA, zero SD service slot (v1 SD access requires opening the main clamshell — acceptable for prototype service interval), zero commissioning-trigger button (magnet+reed equivalent is a v2 consideration).
+**Bulkhead inventory locked:** 1× LoRa SMA (top edge centred), 1× IP67 sealed power button (side edge), ~~1× magnetic-pogo charging connector (opposite side or bottom edge)~~ **[SUPERSEDED 2026-05-14 — removed]**, 1× Gore PolyVent (rear shell, off the grip surface), 1× mandatory battery service door (own Buna-N O-ring + 2× M3 captive screws — promoted from optional 2026-05-14; the only regular access path). Zero GNSS SMA, zero SD service slot (v1 SD access requires opening the main clamshell — acceptable for prototype service interval), zero commissioning-trigger button (magnet+reed equivalent is a v2 consideration), zero in-shell charging connector.
 
 **Drop tolerance.** Chamfered or radiused corners in the v1 print. Optional silicone bumper sleeve as a v2 polish item.
 
@@ -149,7 +160,14 @@ Material chosen: ASA throughout (single material across shell halves,
 
 Form factor (v1, 7" landscape variant only):
   front face:         ~180 × 120 mm
-  depth:              ~45 - 55 mm
+  depth:              ~85 - 100 mm   (corrected 2026-05-14 per
+                                       dev-log/2026-05-14-c1-depth-
+                                       stackup-arithmetic.md; original
+                                       "~45 - 55 mm" was a hand-wave
+                                       that did not stack-up the
+                                       Dragino HAT envelope. No
+                                       architecture, cooling, or
+                                       substrate change.)
   orientation:        landscape
   display:            Raspberry Pi Touch Display 2 (7", 22-pin DSI),
                       720×1280 native portrait rotated to landscape
@@ -214,22 +232,23 @@ Sealing strategy:
                     is a v2 amendment, not a v1 blocker.
 
   USB-C charging:
-    type:           NOT a panel-mount USB-C port. Magnetic-pogo
-                    connector instead, permanently IP65-sealed
-                    in the shell wall.
-    spec:           internal pogo-pin block mounted to the shell
-                    wall; 4-5 spring pins exposed flush to the
-                    outer surface; magnet array beneath the shell
-                    wall holds the matching external cable.
-    rating:         ≥25 W (5V/5A) minimum.
-    location:       side edge or bottom edge, opposite the power
-                    button.
-    accessory:      magnetic charge cable + 1× spare ship with the
-                    device.
-    vendor / SKU:   procurement-ticket detail.
-    reason:         no exposed USB-C bulkhead means no daily gasket
-                    cycling on the connector that gets used most;
-                    matches the power-architecture-spike close.
+    [SUPERSEDED 2026-05-14 — no in-shell charging path in v1]
+    type:           NONE. No panel-mount USB-C, no magnetic-pogo,
+                    no charging input in the enclosure wall at all.
+    spec:           n/a.
+    rating:         n/a.
+    location:       n/a.
+    accessory:      NONE. Recharging is external only: open the
+                    battery service door → remove the power bank
+                    → charge the bank via its own integrated USB-C
+                    cable to any wall adapter → return the bank →
+                    close the door.
+    reason:         eliminates one IP65 sealing surface, one daily-
+                    cycled connector, one BOM accessory category,
+                    and removes the POWER_GOOD signal from the
+                    firmware contract (no external charger presence
+                    to detect). Mirror of the 2026-05-14 amendment
+                    in gateway-handheld-power-architecture-spike.md.
 
   vent membrane:
     type:           Gore PolyVent (or equivalent ePTFE adhesive
@@ -255,9 +274,12 @@ Internal layout:
                     front shell via the bezel.
 
   battery envelope (Anker A1689-class power bank, per power-arch close):
-                    154 × 62 × 30 mm. Separate compartment behind /
-                    below the Pi+HAT+display unit, divided by an
-                    internal ASA wall.
+                    119.9 × 73.4 × 31.4 mm [CORRECTED 2026-05-14 —
+                    Anker official spec; anker.com/eu-en/products/
+                    a1689; was 154 × 62 × 30 mm in 2026-05-08
+                    verdict]. Separate compartment behind / below
+                    the Pi+HAT+display unit, divided by an internal
+                    ASA wall.
 
   total internal volume target:
                     bounded by the form factor above (~180 × 120 ×
@@ -293,14 +315,19 @@ Internal layout:
                     clamshell stays sealed for non-battery service.
 
 Bulkhead inventory:
+  [AMENDED 2026-05-14 — magnetic-pogo entry removed; battery
+   service door promoted from optional to mandatory.]
   LoRa SMA:                 1× — top edge, centred. Mandatory.
   GPS SMA:                  0 — explicitly NOT included (L80-M39
                             patch antenna onboard).
-  USB-C charging:           0 — REPLACED by magnetic-pogo connector
-                            (1×, side or bottom edge, opposite
-                            power button).
-  magnetic-pogo charging:   1× — mandatory.
+  USB-C charging:           0 — no in-shell charging path in v1.
+  magnetic-pogo charging:   0 — RETIRED 2026-05-14. (Was: 1×
+                            mandatory in 2026-05-08 verdict.)
   power button:             1× — IP67 sealed, side edge. Mandatory.
+  battery service door:     1× — own Buna-N O-ring + 2× M3 captive
+                            screws. MANDATORY (promoted from
+                            optional 2026-05-14). Only regular
+                            access path.
   commissioning button:     0 — deferred. Magnet+reed-switch
                             equivalent considered for v2.
   SD service slot:          0 — explicitly NOT included for v1.
@@ -347,11 +374,14 @@ Cross-spike implications recorded:
       Pi Touch Display 2 (7", 22-pin DSI) consumed unchanged from
       substrate-spike close.
   power architecture:
-      154 × 62 × 30 mm Anker A1689-class power bank envelope +
-      magnetic-pogo bulkhead consumed unchanged from power-
-      architecture-spike close. Battery-service door QUESTION
-      from that spike: ANSWERED HERE — yes, separate door
-      included.
+      119.9 × 73.4 × 31.4 mm Anker A1689-class power bank envelope
+      [CORRECTED 2026-05-14 — Anker official spec; anker.com/eu-en/
+      products/a1689; was 154 × 62 × 30 mm in 2026-05-08 consumed
+      figure] + magnetic-pogo bulkhead consumed unchanged from
+      power-architecture-spike close. Battery-service door QUESTION
+      from that spike: ANSWERED HERE — yes, separate door included.
+      (Both magnetic-pogo bulkhead and door-optional clause are
+      further amended 2026-05-14; see top-of-file supersession.)
   runtime tasks:
       power-button GPIO debouncing + low-VBUS shutdown daemon
       remain owned by runtime-task-architecture-spike close.

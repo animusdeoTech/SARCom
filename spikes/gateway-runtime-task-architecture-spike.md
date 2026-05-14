@@ -4,9 +4,26 @@ status: open
 type: spike
 timebox: 0.5 day
 opened: 2026-05-06
+amended: 2026-05-14 (cot_gate predicate: 3 inputs → 2; power_monitor no longer exposes POWER_GOOD)
 ---
 
 # Spike: Gateway runtime task architecture
+
+## 2026-05-14 signal-contract correction — POWER_GOOD retired
+
+The pending-ADR-016 CoT/TAK export gate has been re-scoped to **"WiFi + manual opt-in"** (2 inputs). This is a signal-contract change for two tasks in the table below:
+
+- **`cot_gate`** no longer reads `POWER_GOOD`. Its inputs reduce to `watch<WifiState>` (from `wifi_monitor`) + a config-file flag (read once at startup, or watched via inotify if hot-reload is wanted). Output `watch<ExportEnabled>` is unchanged in shape; only the predicate composing it changes.
+- **`power_monitor`** no longer exposes `POWER_GOOD`. The task still exists (it still reads VBUS-droop on the Pi 5 USB-C-PD input to raise `SHUTDOWN_REQUEST` for clean shutdown), but its `watch<PowerState>` no longer carries an external-power-present bit. The `BATTERY_STATE` / `CHARGE_STATE` fields previously named in the power-arch spike's signal contract were already declared not-firmware-readable in the 2026-05-08 verdict; they are now formally removed from this task's outputs.
+- **`shutdown_orchestrator`** is unchanged. The low-VBUS-detect → clean-shutdown sequence still runs through `SHUTDOWN_REQUEST`; that signal survives the amendment.
+
+Concrete effect on this spike:
+
+- Task table row `cot_gate` "Triggered by" column: gate inputs are now WiFi state + config flag (was: WiFi + POWER_GOOD + config flag).
+- Task table row `power_monitor`: `watch<PowerState>` carries VBUS-droop / SHUTDOWN_REQUEST trigger only; no external-power-present bit.
+- H1 / H0 verdicts and channel contracts are unchanged.
+
+See `spikes/gateway-handheld-power-architecture-spike.md` 2026-05-14 amendment, `spikes/tak-cot-integration-spike.md` 2026-05-14 gate-language correction, and `dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md` for the originating session.
 
 ## Why this spike exists
 
@@ -194,7 +211,7 @@ Next action:
 - `decisions/ADR-009-database-sqlite.md` — single writer / WAL preserved.
 - `decisions/ADR-011-gateway-time-source.md` — gpsd/chrony Linux-side; Rust binary reads system clock.
 - `production-concerns.md` §4 — clean shutdown is a daily concern on battery, not a once-in-a-blue-moon mains-loss concern.
-- `spikes/gateway-handheld-power-architecture-spike.md` — POWER_GOOD / SHUTDOWN_REQUEST contracts.
+- `spikes/gateway-handheld-power-architecture-spike.md` — ~~POWER_GOOD~~ `[CORRECTED 2026-05-14 — POWER_GOOD retired]` / SHUTDOWN_REQUEST contracts.
 - `spikes/ble-commissioning-scope-spike.md` — BLE central activation surface.
 - `spikes/tak-cot-integration-spike.md` — cot_gate predicate.
 - `spikes/pmtiles-walkers-spike.md` — UI render thread shape.

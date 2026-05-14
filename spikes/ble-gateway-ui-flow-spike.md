@@ -337,7 +337,7 @@ Follow-up filed: spikes/gateway-runtime-task-architecture-spike.md close —
   LoRa RX + SQLite writer + optional CoT/TAK emitter), (c) the ADR-004
   amendment ticket recording the single-binary stance break, (d) integration
   with the power-architecture-spike's signal contract (BLE service must
-  respect SHUTDOWN_REQUEST, POWER_GOOD, etc.).
+  respect SHUTDOWN_REQUEST; ~~POWER_GOOD~~ `[CORRECTED 2026-05-14 — POWER_GOOD retired when magnetic-pogo charging was dropped; SHUTDOWN_REQUEST survives unchanged. See dev-log/2026-05-14-pogo-drop-and-shell-extrudes.md and power-arch spike 2026-05-14 amendment.]`).
 
 Next action: open / progress runtime-task-architecture-spike close.
 ```
