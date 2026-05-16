@@ -20,7 +20,14 @@ pub struct KioskLabApp {
     pub(crate) status_msg: String,
     pub(crate) status_expire: f64,
     pub(crate) map_mode: MapMode,
-    pub(crate) osm_map: Option<OsmMap>,
+    /// Every `[[overlays]] kind = "osm"` block loaded as an `OsmMap`,
+    /// in region.toml declaration order. Both source variants
+    /// (`source = "file"` hand-drawn and `source = "overpass"` auto-
+    /// fetched) load into the same vector; the renderer doesn't
+    /// distinguish them. Later entries paint on top -- write the
+    /// overpass block first and the hand-drawn block second so explicit
+    /// hand-annotated detail wins the z-fight.
+    pub(crate) osm_maps: Vec<OsmMap>,
     pub(crate) active_region: Option<Region>,
     pub(crate) pmtiles_map: Option<PmTilesMap>,
     pub(crate) view_offset: eframe::egui::Vec2,
@@ -37,20 +44,25 @@ impl KioskLabApp {
         let regions = region::discover(region::regions_root());
         let active_region = region::pick_default(&regions).cloned();
 
-        // Load the active region's optional OSM overlay once at startup.
-        // Used by both MapMode::OsmVector (standalone) and MapMode::PmTiles
-        // (layered on top of the basemap). None if the active region has no
-        // [overlay] block or the named .osm file is missing on disk.
-        let osm_map = active_region
+        // Load every `[[overlays]] kind = "osm"` block from the active
+        // region in declaration order. Source variant (`"file"` /
+        // `"overpass"`) is dispatch-side only; the kiosk-lab renders both
+        // through the same OsmMap path. Failures (missing file, parse
+        // error) log a stderr warning and skip that entry; the rest of
+        // the stack keeps loading.
+        let osm_maps: Vec<OsmMap> = active_region
             .as_ref()
-            .and_then(|r| r.osm_overlay_path())
-            .and_then(|p| match OsmMap::load_from_path(&p) {
+            .map(|r| r.osm_overlay_paths())
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|p| match OsmMap::load_from_path(&p) {
                 Ok(m) => Some(m),
                 Err(e) => {
-                    eprintln!("[regions] overlay load failed at {}: {}", p.display(), e);
+                    eprintln!("[regions] osm overlay load failed at {}: {}", p.display(), e);
                     None
                 }
-            });
+            })
+            .collect();
 
         // Default into the walkers + PMTiles path when at least one region is
         // ready; fall back to the egui-painted OSM-vector path otherwise so
@@ -76,7 +88,7 @@ impl KioskLabApp {
             status_msg: String::new(),
             status_expire: 0.0,
             map_mode: default_mode,
-            osm_map,
+            osm_maps,
             active_region,
             pmtiles_map: None,
             view_offset: egui::Vec2::ZERO,
@@ -287,7 +299,11 @@ impl eframe::App for KioskLabApp {
                     {
                         parts.push("hillshade");
                     }
-                    if self.osm_map.is_some() {
+                    // One `OSM` token regardless of how many OSM overlays
+                    // are stacked or which source variants they come from --
+                    // the source distinction is an implementation detail,
+                    // not an operator-facing facet.
+                    if !self.osm_maps.is_empty() {
                         parts.push("OSM");
                     }
                     let zoom = self

@@ -1,0 +1,107 @@
+# Phase 3 deliverable for the pmtiles-walkers spike -- the Belgian-area
+# region for SARCom's first-light test bench. Slag heap "Terril van
+# Waterschei" near Genk, Limburg.
+#
+# Source kind = protomaps_extract: the fetch script clips this bbox out of a
+# Protomaps planet-scale daily build via HTTP range requests. The Protomaps
+# bucket retains daily builds for ~1 week; for longer-horizon reproducibility,
+# mirror this daily to private storage and pin the mirrored URL here.
+
+name        = "terril-waterschei"
+description = "Slag heap near Genk, Limburg (BE). SARCom v1a test area."
+
+[bounds]
+# Match the hand-drawn OSM file's actual coverage with small margin.
+# Pieter's terril-waterschei.osm <bounds> declares
+# minlat=50.9998 minlon=5.5352 maxlat=51.0161 maxlon=5.5571;
+# the SARCom slag heap centres around 5.547 deg E, 51.008 deg N (Genk).
+min_lon = 5.515
+min_lat = 50.985
+max_lon = 5.580
+max_lat = 51.030
+
+[view]
+center_lon   = 5.547
+center_lat   = 51.008
+default_zoom = 14
+
+[source]
+kind                = "protomaps_extract"
+upstream_url        = "https://build.protomaps.com/20260516.pmtiles"
+tool                = "go-pmtiles@v1.30.2"
+license             = "ODbL"
+attribution         = "OpenStreetMap contributors, packaged by Protomaps"
+source_extract_date = "2026-05-16"
+
+# Overlays rendered on top of the PMTiles basemap, in array order
+# (basemap -> hillshade -> osm overlays (declaration order, later on top)
+# -> markers -> badge).
+#
+# Schema is the typed `[[overlays]]` array per the migration documented in
+# `dev-log/2026-05-16-lidar-overlay-implementation.md` (replaces the earlier
+# single `[overlay] osm_file = "..."` shape; one-shot migration, no
+# backward compat). Each entry is a tagged enum: `kind = "osm"` for OSM
+# XML overlays (sub-dispatched on `source = "file" | "overpass"` per
+# `dev-log/2026-05-16-osm-overlay-collapse-subtypes.md` -- recommended
+# default is `source = "overpass"` for new regions), `kind = "hillshade"`
+# for a baked raster PMTiles archive produced from LIDAR (primary for
+# Flanders).
+#
+# v1 fallback policy: render-all-when-present, soft-fallback on missing
+# files. All three overlays declared here (hillshade + two OSM source
+# variants); rendering survives any subset missing.
+
+# Primary overlay -- DHMV-II 1m DSM hillshade, baked by scripts/fetch-region.ps1
+# when the operator has staged kaartblad k25 / k26 in
+# %LOCALAPPDATA%\SARCom\lidar-cache\dhmv-ii\dsm\ (or $env:SARCOM_LIDAR_CACHE).
+# Output file is gitignored; license + source kaartbladen are recorded in
+# hillshade.provenance.json next to it.
+[[overlays]]
+kind   = "hillshade"
+file   = "hillshade.pmtiles"
+source = "dhmv_ii_dsm_1m"
+
+# OSM overlays. Single `kind = "osm"` enum value; the `source` field
+# dispatches between hand-drawn (`source = "file"`, committed to repo)
+# and auto-fetched (`source = "overpass"`, written by the bake script
+# from the public Overpass API). Both source variants render through the
+# same osm_vector.rs primitive; declaration order in this file determines
+# render z-order (later block paints on top).
+#
+# Mirrors the hillshade `source = "..."` dispatch pattern. See
+# resources/regions/README.md `region.toml schema` section for the
+# per-source field set and defaults.
+
+# Auto-fetched OSM features for the region bbox. Recommended default
+# for new regions -- no JOSM/iD round-trip needed, refresh by re-running
+# scripts/fetch-region.ps1. Fetched file lands at <region>/osm-overpass.osm
+# (gitignored). Painted BELOW the source = "file" block below so explicit
+# hand-annotated detail wins the z-fight where both cover the same area.
+#
+# `features` and `endpoint` are optional -- defaults declared in
+# tools/sarcom-kiosk-lab/src/map/region.rs (`default_overpass_features`
+# and `default_overpass_endpoint`) and mirrored in scripts/fetch-region.ps1
+# (`$DefaultOverpassFeatures` / `$DefaultOverpassEndpoint`). The explicit
+# block below documents the worked-example feature set; replace, extend,
+# or drop the fields entirely on other regions.
+[[overlays]]
+kind   = "osm"
+source = "overpass"
+features = [
+    "highway",
+    "waterway",
+    "natural=water",
+    "natural=wetland",
+    "landuse=brownfield",
+    "man_made=spoil_heap",
+]
+# endpoint omitted -> default https://overpass-api.de/api/interpreter
+
+# Hand-drawn OSM XML committed to the repo. Carries the slag-heap polygon,
+# trails, and water features for SARCom landmark recognition. Painted
+# ABOVE the source = "overpass" block above so hand-annotated detail
+# wins when both cover the same area.
+[[overlays]]
+kind   = "osm"
+source = "file"
+file   = "terril-waterschei.osm"

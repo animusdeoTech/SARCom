@@ -325,18 +325,43 @@ sha256 in region.toml or investigate the upstream change before keeping it.
 # spikes/field-deployment-package-shape-spike.md is extended here with
 # (a) typed [[overlays]] array and (b) per-product provenance sidecars.
 
-# Parse [[overlays]] array-of-tables from $Content.
-# Each match returns a hashtable with the per-table scalar fields.
+# Parse [[overlays]] array-of-tables from $Content. Each match returns a
+# hashtable with the per-table fields; scalar values come back as strings,
+# array values (e.g. `features = ["highway", "waterway"]`) come back as
+# string[]. Two-pass: arrays first (multi-line `key = [ ... ]` blocks are
+# stripped from the body so the scalar pass does not mis-capture the `[`
+# as a value), scalars second.
 function Get-OverlayBlocks {
     $blocks = @()
     $blockPattern = '(?ms)^\[\[overlays\]\]\s*\r?\n(.*?)(?=\r?\n\[|\z)'
+    $arrayPattern = '(?ms)^\s*([a-z_]+)\s*=\s*\[([^\]]*)\]'
     $blockMatches = [regex]::Matches($Content, $blockPattern)
     foreach ($m in $blockMatches) {
         $body = $m.Groups[1].Value
         $entry = @{}
-        $kvPattern = '(?m)^\s*([a-z_]+)\s*=\s*(?:"([^"]*)"|([^\s#"]+))'
-        foreach ($lm in [regex]::Matches($body, $kvPattern)) {
+
+        # Pass 1: array-of-strings. Match `key = [ "a", "b", ... ]` allowing
+        # the array body to span multiple lines.
+        foreach ($am in [regex]::Matches($body, $arrayPattern)) {
+            $key = $am.Groups[1].Value
+            $inner = $am.Groups[2].Value
+            $items = @()
+            foreach ($im in [regex]::Matches($inner, '"([^"]*)"')) {
+                $items += $im.Groups[1].Value
+            }
+            $entry[$key] = ,$items
+        }
+
+        # Strip array blocks from the body so the scalar pass does not
+        # mistake the `[` for a bare scalar value.
+        $bodyScalars = [regex]::Replace($body, $arrayPattern, '')
+
+        # Pass 2: scalar k=v lines (quoted string OR bare scalar that does
+        # not start with `[`).
+        $kvPattern = '(?m)^\s*([a-z_]+)\s*=\s*(?:"([^"]*)"|([^\s#"\[][^\s#"]*))'
+        foreach ($lm in [regex]::Matches($bodyScalars, $kvPattern)) {
             $key = $lm.Groups[1].Value
+            if ($entry.ContainsKey($key)) { continue }
             $val = if ($lm.Groups[2].Success -and $lm.Groups[2].Value) {
                 $lm.Groups[2].Value
             } else {
@@ -732,14 +757,212 @@ function Invoke-DhmvHillshadeBake {
     Write-Host ("[ok] hillshade -> {0} ({1} MB, sha256 {2}..., {3}s)" -f $hillshadePath, $sizeMb, $shaShort, $elapsedSec)
 }
 
+# Default OSM feature selectors mirrored against
+# tools/sarcom-kiosk-lab/src/map/osm_vector.rs's tag classifier so the
+# auto-fetched ways render with the same colour scheme as the hand-drawn
+# ones. Kept in sync with `default_overpass_features()` in region.rs.
+$DefaultOverpassFeatures = @(
+    'highway',
+    'waterway',
+    'natural=water',
+    'natural=wetland',
+    'landuse=reservoir',
+    'landuse=basin',
+    'landuse=brownfield',
+    'man_made=spoil_heap'
+)
+$DefaultOverpassEndpoint = 'https://overpass-api.de/api/interpreter'
+
+function Invoke-OsmOverpassFetch {
+    param(
+        [string[]]$Features,
+        [string]$Endpoint
+    )
+
+    if (-not $Features -or $Features.Count -eq 0) {
+        $Features = $DefaultOverpassFeatures
+    }
+    if ([string]::IsNullOrEmpty($Endpoint)) {
+        $Endpoint = $DefaultOverpassEndpoint
+    }
+
+    # Read region bounds (script-scope $Content already loaded).
+    $MinLon = [double](Get-Scalar 'bounds' 'min_lon')
+    $MinLat = [double](Get-Scalar 'bounds' 'min_lat')
+    $MaxLon = [double](Get-Scalar 'bounds' 'max_lon')
+    $MaxLat = [double](Get-Scalar 'bounds' 'max_lat')
+    if (-not ($MinLon -and $MinLat -and $MaxLon -and $MaxLat)) {
+        Write-Error "[bounds] block missing min_lon/min_lat/max_lon/max_lat in $TomlPath"
+        exit 4
+    }
+
+    # Overpass uses (south, west, north, east) -- not WGS84
+    # min_lon,min_lat,max_lon,max_lat ordering. Convert explicitly.
+    $bboxOverpass = "$MinLat,$MinLon,$MaxLat,$MaxLon"
+
+    # Build Overpass QL query: a union of `way[<selector>]` filters across
+    # the global `[bbox:...]`. `out body; >; out skel qt;` returns the ways
+    # plus all referenced nodes (recursive-up) so the kiosk-lab can resolve
+    # node refs at render time without a second pass.
+    $queryLines = @(
+        "[out:xml][timeout:25][bbox:$bboxOverpass];",
+        '('
+    )
+    foreach ($f in $Features) {
+        if ($f -match '^([a-z_]+)=(.+)$') {
+            $tag = $Matches[1]
+            $val = $Matches[2]
+            $queryLines += "  way[`"$tag`"=`"$val`"];"
+        } else {
+            $queryLines += "  way[`"$f`"];"
+        }
+    }
+    $queryLines += ');'
+    $queryLines += 'out body;'
+    $queryLines += '>;'
+    $queryLines += 'out skel qt;'
+    $query = $queryLines -join "`n"
+
+    $osmPath = Join-Path $RegionDir 'osm-overpass.osm'
+    $provenancePath = Join-Path $RegionDir 'osm-overpass.provenance.json'
+
+    Write-Host ""
+    Write-Host "[osm/overpass] POST $Endpoint"
+    Write-Host "[osm/overpass]   bbox=$bboxOverpass features=$($Features -join ',')"
+
+    # Overpass POST contract: when Content-Type is application/x-www-form-
+    # urlencoded the body must be a form-encoded `data=<urlencoded QL>`
+    # parameter, NOT the raw query string. Sending the raw QL with that
+    # content-type triggers HTTP 406 Not Acceptable.
+    # Also explicit User-Agent: the public endpoint rejects some default
+    # PowerShell / .NET UAs as anonymous-bot signals.
+    $body = "data=" + [System.Net.WebUtility]::UrlEncode($query)
+
+    $startedAt = Get-Date
+    try {
+        $response = Invoke-WebRequest -Uri $Endpoint `
+                                      -Method Post `
+                                      -Body $body `
+                                      -ContentType 'application/x-www-form-urlencoded' `
+                                      -UserAgent 'SARCom-bake-script/1.0 (+https://github.com/animusdeoTech/SARCom)' `
+                                      -UseBasicParsing `
+                                      -ErrorAction Stop
+    } catch {
+        # Surface rate-limit / gateway-timeout responses with operator-
+        # actionable wording. Do NOT auto-retry: that worsens public-
+        # endpoint rate-limit pressure.
+        $status = $null
+        if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
+        switch ($status) {
+            429 {
+                Write-Host ""
+                Write-Host "==============================================================="
+                Write-Host " Overpass returned HTTP 429 (rate limited)"
+                Write-Host "==============================================================="
+                Write-Host "Endpoint: $Endpoint"
+                Write-Host "Wait a few minutes and re-run, or configure a different"
+                Write-Host "endpoint by adding an `endpoint` field to the [[overlays]]"
+                Write-Host "kind='osm' source='overpass' block in $TomlPath."
+                Write-Host "==============================================================="
+                exit 23
+            }
+            504 {
+                Write-Host ""
+                Write-Host "==============================================================="
+                Write-Host " Overpass returned HTTP 504 (gateway timeout)"
+                Write-Host "==============================================================="
+                Write-Host "The query may be too broad for the public endpoint's"
+                Write-Host "timeout window. Try narrowing the features list, splitting"
+                Write-Host "the bbox into smaller regions, or using a self-hosted"
+                Write-Host "Overpass endpoint."
+                Write-Host "==============================================================="
+                exit 24
+            }
+            default {
+                Write-Error "Overpass request failed: $_"
+                exit 25
+            }
+        }
+    }
+    if ($response.StatusCode -ne 200) {
+        Write-Error "Overpass returned HTTP $($response.StatusCode)"
+        exit 25
+    }
+
+    # Invoke-WebRequest -UseBasicParsing returns $response.Content as a
+    # System.String in Windows PowerShell 5.1 (vs byte[] in pwsh 7+).
+    # WriteAllBytes coerces element-wise and explodes on non-numeric chars;
+    # WriteAllText handles both shapes by going through the string path.
+    # OSM XML is UTF-8 text, so no information is lost. UTF-8 no-BOM keeps
+    # the file byte-identical to what Overpass served.
+    [System.IO.File]::WriteAllText($osmPath, $response.Content, [System.Text.UTF8Encoding]::new($false))
+    $elapsedSec = [int]((Get-Date) - $startedAt).TotalSeconds
+
+    $sha256 = (Get-FileHash -Algorithm SHA256 $osmPath).Hash.ToLower()
+    $bytes  = (Get-Item $osmPath).Length
+
+    $provenance = [ordered]@{
+        region          = $RegionName
+        product         = 'osm-overpass'
+        fetched_at_utc  = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        source_kind     = 'overpass'
+        endpoint        = $Endpoint
+        bbox_overpass   = $bboxOverpass
+        bbox_wgs84      = "$MinLon,$MinLat,$MaxLon,$MaxLat"
+        features        = @($Features)
+        query           = $query
+        sha256          = $sha256
+        bytes           = $bytes
+        fetch_seconds   = $elapsedSec
+        recipe          = 'scripts/fetch-region.ps1'
+        license         = 'ODbL'
+        attribution     = 'OpenStreetMap contributors'
+    }
+    $json = $provenance | ConvertTo-Json -Depth 6
+    [System.IO.File]::WriteAllText($provenancePath, $json, [System.Text.UTF8Encoding]::new($false))
+
+    $sizeKb = [math]::Round($bytes / 1KB, 1)
+    $shaShort = $sha256.Substring(0, 12)
+    Write-Host ("[ok] osm-overpass -> {0} ({1} KB, sha256 {2}..., {3}s)" -f $osmPath, $sizeKb, $shaShort, $elapsedSec)
+}
+
 # Dispatch overlay-baking work.
 $overlays = Get-OverlayBlocks
 foreach ($overlay in $overlays) {
     $kind = $overlay.kind
     switch ($kind) {
         'osm' {
-            # No-op. OSM files are hand-drawn and committed to the repo.
-            # The kiosk-lab discovers them through region.osm_overlay_path().
+            # `kind = "osm"` sub-dispatches on `source` (mirrors the
+            # hillshade `source = ...` pattern). Two sources today:
+            #   source = "file"     hand-drawn .osm committed to the repo;
+            #                       no bake step here (kiosk-lab loads
+            #                       directly from disk at startup).
+            #   source = "overpass" auto-fetched from the public Overpass
+            #                       API; produces <region>/osm-overpass.osm
+            #                       + sidecar.
+            $source = $overlay.source
+            if (-not $source) {
+                Write-Host "[warn] [[overlays]] kind='osm' block missing 'source' field; skipping"
+                continue
+            }
+            switch ($source) {
+                'file' {
+                    if ($overlay.file) {
+                        $expected = Join-Path $RegionDir $overlay.file
+                        if (-not (Test-Path $expected)) {
+                            Write-Host "[warn] [[overlays]] kind='osm' source='file' file='$($overlay.file)' not found at $expected (kiosk-lab will log + skip at render)"
+                        }
+                    } else {
+                        Write-Host "[warn] [[overlays]] kind='osm' source='file' missing 'file' field; skipping"
+                    }
+                }
+                'overpass' {
+                    Invoke-OsmOverpassFetch -Features $overlay.features -Endpoint $overlay.endpoint
+                }
+                default {
+                    Write-Host "[warn] [[overlays]] kind='osm' source='$source' not implemented; skipping"
+                }
+            }
         }
         'hillshade' {
             $source = $overlay.source

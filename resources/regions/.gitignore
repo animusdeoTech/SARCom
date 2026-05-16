@@ -1,0 +1,31 @@
+# Per resources/regions/README.md: tile binaries and per-fetch provenance
+# are never committed. region.toml is the only durable artifact per region.
+# Hand-drawn .osm files (kind = "osm" overlays) are committed; everything
+# under [[overlays]] kind = "hillshade" is gitignored (bake artefact).
+
+# Basemap product + sidecar (per-product provenance per the
+# field-deployment-package-shape sister-spike contract, extended in
+# dev-log/2026-05-16-lidar-overlay-implementation.md).
+**/basemap.pmtiles
+**/basemap.provenance.json
+
+# Hillshade overlay product + sidecar.
+**/hillshade.pmtiles
+**/hillshade.provenance.json
+
+# Auto-fetched Overpass OSM overlay product + sidecar. The fetched file
+# carries OpenStreetMap data verbatim (ODbL); per the bake-recipe shape
+# we treat it as a derived product alongside basemap/hillshade and keep
+# it out of git. The `[[overlays]] kind = "osm_overpass"` block in
+# region.toml is the durable artefact.
+**/osm-overpass.osm
+**/osm-overpass.provenance.json
+
+# Legacy single-file provenance shape (pre-2026-05-16-LIDAR migration);
+# kept ignored so stale files don't surface in `git status` on machines
+# that ran an older revision of fetch-region.ps1.
+**/provenance.json
+
+# Bake-time scratch.
+**/provenance-mismatch.txt
+**/*.pmtiles.tmp

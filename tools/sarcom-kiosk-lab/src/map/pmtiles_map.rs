@@ -85,17 +85,17 @@ impl PmTilesMap {
     ///      LIDAR-derived terrain shading rendered above the basemap by
     ///      walkers' multi-layer tile draw at `walkers/src/map.rs:191-193`
     ///   3. Inside the `Map::show` closure:
-    ///      a. Optional hand-drawn OSM-XML overlay via `draw_with_projector`
-    ///         (terril shape, trails, water -- hand-annotated landmark
-    ///         detail, kept as dev-fallback when LIDAR is unavailable or
-    ///         insufficient)
+    ///      a. Every `osm_overlays` entry via `draw_with_projector`, in
+    ///         declaration order (later entries paint on top). Source
+    ///         variant is dispatch-side only; the renderer treats every
+    ///         OsmMap identically.
     ///      b. SARCom sim markers (relay / gateway / tag)
     ///      c. Region badge (bottom-right corner)
     pub fn show(
         &mut self,
         ui: &mut egui::Ui,
         sim: &SimState,
-        osm_overlay: Option<&OsmMap>,
+        osm_overlays: &[&OsmMap],
         t: f64,
     ) {
         // Hoist any &self field reads BEFORE we hand &mut borrows of
@@ -115,9 +115,12 @@ impl PmTilesMap {
         map.show(ui, |ui, _response, projector, _memory| {
             let painter = ui.painter();
 
-            // 2. OSM vector overlay (if the active region declared one).
-            //    Painted before markers so markers always stay on top.
-            if let Some(osm) = osm_overlay {
+            // 2. OSM overlays in declaration order. Later entries paint on
+            //    top -- region.toml authors put the overpass block first
+            //    and the hand-drawn block second so explicit hand-annotated
+            //    detail wins the z-fight where both cover the same area.
+            //    Markers paint after this loop so they always stay on top.
+            for osm in osm_overlays {
                 osm.draw_with_projector(painter, projector);
             }
 

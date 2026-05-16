@@ -17,6 +17,14 @@ For the full picture see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 [^pivot]: 2026-05-06 form-factor pivot — see [`dev-log/2026-05-07-handheld-pivot-doc-audit-close.md`](dev-log/2026-05-07-handheld-pivot-doc-audit-close.md). Three new ADRs proposed: ADR-015 (handheld substrate + form factor; supersedes-in-part ADR-004; refines-in-part ADR-005/006/007), ADR-016 (base-mode export gate; supersedes-in-part ADR-008), ADR-017 (custom 3D-printed waterproof enclosures for gateway and tag; refines-in-part ADR-002). The accepted ADR ledger below reads as it does today; supersession headers will land when those ADRs are written.
 
+## Current hardware inventory (as of 2026-05-16)
+
+**Nothing is in hand.** Every ADR'd or spike-closed hardware pick is paper-decided only. No Pi 5. No Pi Touch Display 2. No Heltec Wireless Tracker V2 boards. No Heltec Solar Kit. No Dragino HAT. No DS3231 RTC. No enclosure, no battery, no display panel, no antennas. The three Pi 4 Model B units mentioned under ADR-004 are retired (see [`dev-log/2026-05-07-pi4-retirement-substrate-decision.md`](dev-log/2026-05-07-pi4-retirement-substrate-decision.md)) and not in usable condition.
+
+**Procurement is Pieter's call, not Claude's. Pieter's wallet is not a planning input.** Paper-decided ≠ buy-committed. An ADR that picks a hardware part is a technical commitment to *that* part *if and when* it gets bought; it is not a commitment to buy it, and it is not a schedule. Claude does not recommend purchases. Claude does not push toward procurement. Claude does not assume future purchases as the basis for current work. Claude does not structure plans around eventual hardware as a foregone conclusion. Claude does not write "ordering now would unblock X" or "the cheapest path to validating this is to buy Y." Pieter spends his money when he is convinced — not when Claude is convinced, not when a spike is convinced, not when a plan needs it. Every plan must work with the hardware actually in hand (nothing) or admit upfront that it cannot, and stop there.
+
+Any spike phase or implementation step that calls for **deploy on / flash / measure on / photograph** physical hardware is **deferred-pending-procurement** until the inventory line above changes. Stop asking whether a board is in the house; the answer is no. When procurement starts, this section is updated; until then, treat every hardware-dependent step as out-of-scope for the work at hand and surface it as a deferred-line in the relevant spike's decision note, not as a halt-and-ask-the-user gate.
+
 ## Do NOT re-open these decisions without explicit reason
 
 These are **Accepted** in `decisions/`, dated 2026-04-22 (ADR-001 through ADR-009), 2026-04-24 (ADR-010, ADR-011), 2026-04-25 (ADR-012), and 2026-04-26 (ADR-013, ADR-014). ADR-012 is **superseded in part** by ADR-013/014 — its v1a/v1b split, tag buzzer, and non-goals list survive; its role enum, SIGHTING, RELAY_INFO and three-table schema do not. Arguing accepted decisions again wastes time. If context genuinely changed, write a new ADR that supersedes the old one; do not re-litigate inline.
@@ -77,6 +85,23 @@ The spike's output is a commitment to one named follow-up: implementation ticket
 - Is building this for himself, learning, and portfolio. Not selling anything. Quality > speed.
 - **Dev machine: Windows home PC (desktop).** Not a laptop. The cross-compile / kiosk spike / espflash / Yocto-cross / `cargo check` workflow runs on a Windows desktop. References in the doc set to "the dev laptop" or "on a laptop first" are stale and being retired — see [`dev-log/2026-05-08-dev-machine-correction.md`](dev-log/2026-05-08-dev-machine-correction.md) (this retirement).
 
+## Schema-extension discipline — the subtyping-fetish check
+
+Before proposing any new enum variant, schema `kind` value, wire-level type byte, or struct subtype, Claude (especially in reviewer / orchestrator role) must answer these three questions explicitly, in the proposal itself:
+
+1. **Is the distinction operator-visible or consumer-visible at runtime, or is it only provenance / origin?** If it's only provenance, it's an **attribute**, not a type.
+2. **Does an existing type already use an attribute-pattern for this category?** Mirror it. Hillshade overlays use `kind = "hillshade"` + `source = "dhmv_ii_dsm_1m"`. Relay roles live in `nodes.toml` keyed on `node_id`, not as a wire-level role byte (`decisions/ADR-013-multi-hop-flood-via-packet-id.md`). If a pattern exists, use it.
+3. **Does the new variant force every downstream consumer (renderer, parser, dispatcher, doc-section, firmware byte-pack) into an extra branch / argument / case / wire byte?** If yes, the distinction must be *categorically* worth that cost — not just notionally distinct.
+
+If question 1 = "provenance only", or question 2 = "yes, a pattern exists", or question 3 = "yes, but not categorically", the answer is an attribute on an existing type, not a new type. Redesign before proposing.
+
+Two prior instances where this check was needed and caught late by Pieter:
+
+- **Nearly added `drone_relay` / `fixed_relay` as wire-level subtypes in POSITION packets.** The correct shape is one `relay` role with presentation / configuration attributes in `nodes.toml` per ADR-013. Had this landed, every firmware layer (tag, relay, gateway) would have paid a per-packet decode-branch cost forever, plus a wire byte that encoded nothing functionally distinct.
+- **Shipped `osm_overpass` as a peer enum variant of `osm` in the region overlay schema** (2026-05-16). Caught after one bake. Collapsed to one `kind = "osm"` with `source = "file" | "overpass"` per `dev-log/2026-05-16-osm-overlay-collapse-subtypes.md`. Every consumer (region.rs, app.rs, pmtiles_map.rs, mod.rs, fetch-region.ps1, terril-waterschei region.toml, README, QUICKSTART) had gained a parallel branch / argument / doc-section for what is operator-invisible provenance.
+
+If a type addition lands without the three-question check visibly run, the filter wasn't applied. Surface the check in the proposal — don't push the watchdog burden on Pieter. Shifting the failure cost to the operator is the same failure mode in disguise.
+
 ## Tools this project uses
 
 - **Language:** Rust everywhere. `no_std` on MCU (tag, relay), `std` on the gateway/kiosk. Python only for one-off scripts.
@@ -108,7 +133,7 @@ Per-crate first lookup (verified 2026-05-06):
 | `lora-phy` (lora-rs) | `github` MCP → `lora-rs/lora-rs` (`examples/`, `src/`) | Context7 has **no entry**. `/lora-rs/lora-rs` returns "not found"; `resolve-library-id` returns irrelevant LoRA-AI projects. **Reject anything from the archived `embassy-rs/lora-phy`.** |
 | `embassy-executor`, `embassy-time`, `embassy-sync` | Context7 `/embassy-rs/embassy` | Lane A only. Cross-check against `esp-hal` examples for correct timer-driver wiring on ESP32-S3. |
 | `esp-hal` | Context7 `/esp-rs/esp-hal` | Lane A confirmed. Version-pinned snapshots also exist (`/websites/espressif_projects_rust_esp-hal_1_0_0_*`) for matching a specific `Cargo.lock`. **Never `esp-idf-hal`.** |
-| `walkers` | Context7 `/podusowski/walkers` for basics, `github` MCP → `podusowski/walkers` for PMTiles | Context7 surfaces only the `HttpTiles` + OpenStreetMap path. PMTiles tile-source API is not indexed — read `walkers/examples/` and `walkers/src/sources/` directly. |
+| `walkers` | Context7 `/podusowski/walkers` for basics, `github` MCP → `podusowski/walkers` for PMTiles | Context7 surfaces only the `HttpTiles` + OpenStreetMap path. PMTiles tile-source API lives at `walkers/src/pmtiles.rs` (crate root, behind the `pmtiles` feature flag) — read that file plus `walkers/examples/` directly. The `walkers/src/sources/` directory only contains HTTP-based tile providers (Mapbox, OSM, Geoportal, OpenFreeMap); PMTiles is NOT there. |
 | `egui` / `eframe` | Context7 `/emilk/egui` | Pin the version to whatever `eframe` resolves to in `Cargo.lock`; widget API moves between minor versions. |
 | `nmea` / `nmea0183` | `github` MCP → `AeroRust/nmea` (README + `src/lib.rs`) | Context7 indexes only the **C++ Arduino** library under the same name — wrong language. Switch to `cargo doc -p <crate>` once selected and pinned. |
 | Hardware datasheets | `resources/datasheets/` (when populated) | Deep chip-level reading deferred to bring-up. |
