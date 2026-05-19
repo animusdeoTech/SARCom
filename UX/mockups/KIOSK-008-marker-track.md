@@ -15,9 +15,9 @@ diff between panels is selection state:
   renders current dot + pulse ring only. No-fix tag-3 renders the
   ghost only. Stale tag-4 renders tail + current dot in
   `freshness_color(Stale)` = rgb(180, 83, 9).
-- **Panel B — `Selection::Tag(1)`.** tag-1's three-fix tail is
-  replaced by the full polyline through every fix in `TagData.track`
-  (`tools/sarcom-kiosk-lab/src/data.rs:142`), rendered in tag colour
+- **Panel B — `Selection::Node(_)`.** tag-1's three-fix tail is
+  replaced by the full polyline through every fix in `NodeData.track`
+  (`tools/sarcom-kiosk-lab/src/data.rs:134`), rendered in tag colour
   BLUE at opacity 0.5. tag-2, tag-3, tag-4 are unchanged — only the
   selected tag's track-render swaps.
 
@@ -32,12 +32,12 @@ diff between panels is selection state:
 | Tag-tail dots paint inside same `Map::show` closure, after basemap layers, before current dots | `tools/sarcom-kiosk-lab/src/map/pmtiles_map.rs:127+, 161-202`; `tickets/KIOSK-008-marker-track-rendering.md:63-68` |
 | Current-position dot (8 px filled circle) | `tools/sarcom-kiosk-lab/src/map/markers.rs:194-262`, specifically the `circle_filled` at `markers.rs:229` and the PMTiles inline `pmtiles_map.rs:194` |
 | Per-state colour for tail + current dot | `tools/sarcom-kiosk-lab/src/ui/palette.rs:4-30`; `tag_display_color` / `freshness_color` at `tools/sarcom-kiosk-lab/src/map/markers.rs:40-48` |
-| `TagData.track` polyline data | `tools/sarcom-kiosk-lab/src/data.rs:142` |
+| `NodeData.track` polyline data | `tools/sarcom-kiosk-lab/src/data.rs:134` |
 | Visible-position helper (selects sentinel vs last-valid for ghost) | `tools/sarcom-kiosk-lab/src/map/markers.rs:32-38` |
 | Selection halo around selected current dot | `tools/sarcom-kiosk-lab/src/map/markers.rs:231-237` |
 | SOS pulse ring | `tools/sarcom-kiosk-lab/src/map/markers.rs:216-227` |
 | No-fix ghost (faded fill + dashed outer ring + label) | `tools/sarcom-kiosk-lab/src/map/markers.rs:265-302` |
-| Selection enum (`Selection::None` / `Selection::Tag(usize)`) | `tickets/KIOSK-003-sidebar-row-redesign.md:43-56, 67, 74` |
+| Selection enum (`Selection::None` / `Selection::Node(usize)`) | `tickets/KIOSK-003-sidebar-row-redesign.md` post-collapse three-question check section |
 | Recenter on selection (150 ms eased pan to `tag_visible_pos`) | `tickets/KIOSK-004-selection-detail-panel.md:36, 87` |
 | Legacy `draw_tracks` 1 px dashed-segment helper (unchanged) | `tools/sarcom-kiosk-lab/src/map/markers.rs:102-114` |
 | Strict ADR-007 chrome budget (compass rose + scale bar only) | `tickets/README.md:14-33, 26`; `tickets/KIOSK-001-map-scale-north.md:16, 31` |
@@ -141,7 +141,7 @@ original eight). Pieter has not decided these.
 - tag-4 (stale) tail dots and current dot both render in
   `freshness_color(Stale)` = rgb(180, 83, 9) — per-state colour
   consistency (Decisions pinned #8).
-- tag-1 in Panel B shows a full polyline through `TagData.track`
+- tag-1 in Panel B shows a full polyline through `NodeData.track`
   replacing its three-fix tail; rendered in BLUE at opacity 0.5
   (Decisions pinned #7); selection halo (+2 px white ring) on the
   current dot per `markers.rs:231-237`.

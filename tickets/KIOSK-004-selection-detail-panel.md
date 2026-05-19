@@ -120,6 +120,6 @@ All fields are read from the selected `NodeData` at [`tools/sarcom-kiosk-lab/src
 
 ## Dependencies
 
-- **Depends on** [`KIOSK-003-sidebar-row-redesign.md`](KIOSK-003-sidebar-row-redesign.md) — provides the `Selection` enum that this ticket consumes.
-- **Soft dependency on** [`KIOSK-005-gateway-status-surface.md`](KIOSK-005-gateway-status-surface.md) — if KIOSK-005 has landed, this ticket renders the new `GatewayData.battery_pct` / `charging` fields in the gateway detail; if not, those fields are simply omitted from the detail layout.
+- **Depends on** [`KIOSK-003-sidebar-row-redesign.md`](KIOSK-003-sidebar-row-redesign.md) — provides the `Selection::Node(usize)` enum that this ticket consumes.
+- **No dependency on** [`KIOSK-005-gateway-status-surface.md`](KIOSK-005-gateway-status-surface.md) — KIOSK-005 is deferred from v1a per `dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`. The v1a detail surface is one uniform layout for any node kind; the gateway selection renders the same NodeData fields the layout shows for tag and relay (no special gateway-self chrome). Earlier draft cited a soft dependency on `GatewayData.battery_pct` / `charging` extensions; both the dependency and those struct extensions are retracted.
 - **SPIKE-001 closed strict** — no variant decision is pending; sidebar replacement is the only design.

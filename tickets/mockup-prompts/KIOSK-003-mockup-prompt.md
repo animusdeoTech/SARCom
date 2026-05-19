@@ -10,7 +10,7 @@ target for KIOSK-003. Output one SVG file at
 - [`CLAUDE.md`](../../CLAUDE.md)
 - [`decisions/ADR-007-touchscreen-primary-ui.md`](../../decisions/ADR-007-touchscreen-primary-ui.md)
 - [`tools/sarcom-kiosk-lab/src/ui/sidebar.rs`](../../tools/sarcom-kiosk-lab/src/ui/sidebar.rs) — current sidebar
-- [`tools/sarcom-kiosk-lab/src/data.rs:131-167`](../../tools/sarcom-kiosk-lab/src/data.rs) — TagData / RelayData / GatewayData
+- [`tools/sarcom-kiosk-lab/src/data.rs:123-150`](../../tools/sarcom-kiosk-lab/src/data.rs) — uniform `NodeData` (lines 123-142) + `SimState { nodes, inventory: HashMap<u8, NodeKind> }` (lines 145-150) per `dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`
 - [`tools/sarcom-kiosk-lab/src/ui/palette.rs`](../../tools/sarcom-kiosk-lab/src/ui/palette.rs)
 - [`tools/sarcom-kiosk-lab/src/map/pmtiles_map.rs:82-125`](../../tools/sarcom-kiosk-lab/src/map/pmtiles_map.rs) — three-layer render stack (basemap + hillshade + OSM overlays, in z-order)
 - [`tools/sarcom-kiosk-lab/src/map/region.rs:25-71`](../../tools/sarcom-kiosk-lab/src/map/region.rs) — Overlay enum (osm + hillshade variants)
