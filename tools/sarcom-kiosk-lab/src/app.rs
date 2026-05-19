@@ -1,9 +1,9 @@
-use crate::data::{ScenarioKind, SimState, TagData};
+use crate::data::{NodeData, NodeKind, ScenarioKind, SimState};
 use crate::map::region::{self, Region};
 use crate::map::{DragTarget, MapMode, OsmMap, PmTilesMap};
 use crate::ui::{
-    format_age_or_unavailable, format_wall,
-    palette::{AMBER, HEADER_BG, MAP_BG, SIDEBAR_BG, TEXT_BRIGHT, TEXT_DIM},
+    format_age, format_wall,
+    palette::{HEADER_BG, MAP_BG, SIDEBAR_BG, TEXT_BRIGHT, TEXT_DIM},
 };
 use eframe::egui;
 
@@ -184,60 +184,22 @@ impl eframe::App for KioskLabApp {
                 self.show_header(ui, t);
             });
 
-        // Amber RTC strip (ADR-011): only when the clock is invalid.
-        // Sits directly under the header so the operator sees it the
-        // moment they look at the screen.
-        if !self.sim.clock_valid {
-            egui::Panel::top("rtc_warning")
-                .frame(
-                    egui::Frame::NONE
-                        .fill(egui::Color32::from_rgb(46, 32, 8))
-                        .inner_margin(egui::Margin::symmetric(12, 5)),
-                )
-                .show_inside(ui, |ui| {
-                    ui.horizontal_wrapped(|ui| {
-                        ui.label(
-                            egui::RichText::new("⚠")
-                                .color(AMBER)
-                                .strong()
-                                .size(13.0),
-                        );
-                        ui.label(
-                            egui::RichText::new(
-                                "RTC unavailable. System clock is not set — \
-                                 \"last seen\" times are suppressed. SSH in and run",
-                            )
-                            .color(AMBER)
-                            .size(11.0),
-                        );
-                        ui.label(
-                            egui::RichText::new("date --set …; hwclock --systohc")
-                                .color(AMBER)
-                                .monospace()
-                                .strong()
-                                .size(11.0),
-                        );
-                    });
-                });
-        }
-
         // Bottom status bar — built before the sidebar/central panels so
         // egui's layout reserves the space at the bottom of the viewport.
         // SARCOM-honest: no ACK, no downlink, no operator-action wording
         // (ADR-007 / ADR-008). When SOS is active the strip goes red and
         // wide; otherwise it stays as a thin "read-only" hint.
-        let sos_tag: Option<&TagData> = self.sim.tags.iter().find(|t| t.sos);
+        let sos_tag: Option<&NodeData> = self
+            .sim
+            .nodes
+            .iter()
+            .find(|n| n.sos && self.sim.kind_for_id(n.node_id) == NodeKind::Tag);
         if let Some(tag) = sos_tag {
             let label = tag.label.clone();
-            let clock_valid = self.sim.clock_valid;
-            let last_frame = format_age_or_unavailable(tag.last_seen_secs, clock_valid);
+            let last_frame = format_age(tag.last_seen_secs);
             // "since" is the wall-clock time of the most recent frame; lab is
             // synthetic so this stands in for the real distress-onset clock.
-            let since = if clock_valid {
-                format!("since {}", format_wall(t - tag.last_seen_secs as f64))
-            } else {
-                "since --:--:--".to_string()
-            };
+            let since = format!("since {}", format_wall(t - tag.last_seen_secs as f64));
 
             egui::Panel::bottom("bottom_status")
                 .frame(

@@ -1,10 +1,11 @@
 use eframe::egui;
 use walkers::{Map, MapMemory, PmTiles, Position, Style, lon_lat};
 
-use crate::data::SimState;
+use crate::data::{NodeKind, SimState};
+use crate::map::markers::node_display_color;
 use crate::map::osm_vector::OsmMap;
 use crate::map::region::{Bounds, Region};
-use crate::ui::palette::{BLUE, GREEN, GREY, ORANGE, RED, TEXT_BRIGHT, TEXT_DIM};
+use crate::ui::palette::{GREEN, ORANGE, TEXT_BRIGHT, TEXT_DIM};
 
 /// Walkers + PMTiles render path. Owns the walkers tile source for the
 /// basemap, the optional LIDAR-derived hillshade tile source, and the
@@ -124,45 +125,14 @@ impl PmTilesMap {
                 osm.draw_with_projector(painter, projector);
             }
 
-            // Relay marker: orange cross.
-            let relay_pos = normalized_to_lonlat(sim.relay.pos, &bounds);
-            let relay_screen = projector.project(relay_pos).to_pos2();
-            draw_cross(painter, relay_screen, ORANGE);
-            painter.text(
-                relay_screen + egui::vec2(12.0, 0.0),
-                egui::Align2::LEFT_CENTER,
-                &sim.relay.label,
-                egui::FontId::monospace(10.0),
-                ORANGE,
-            );
-
-            // Gateway marker: green square outline.
-            let gw_pos = normalized_to_lonlat(sim.gateway.pos, &bounds);
-            let gw_screen = projector.project(gw_pos).to_pos2();
-            let half = 7.0;
-            let gw_rect = egui::Rect::from_min_max(
-                egui::pos2(gw_screen.x - half, gw_screen.y - half),
-                egui::pos2(gw_screen.x + half, gw_screen.y + half),
-            );
-            painter.rect_stroke(
-                gw_rect,
-                0,
-                egui::Stroke::new(1.5, GREEN),
-                egui::StrokeKind::Middle,
-            );
-            painter.text(
-                gw_screen + egui::vec2(12.0, 0.0),
-                egui::Align2::LEFT_CENTER,
-                &sim.gateway.label,
-                egui::FontId::monospace(10.0),
-                GREEN,
-            );
-
-            // Tag markers: filled circles.
-            for tag in &sim.tags {
-                let p = if tag.gps_valid {
-                    tag.pos
-                } else if let Some(lvf) = tag.last_valid_fix_pos {
+            // Per dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md,
+            // iterate all nodes uniformly; dispatch glyph + colour from the
+            // inventory kind. No per-kind data branch.
+            for node in &sim.nodes {
+                let kind = sim.kind_for_id(node.node_id);
+                let p = if node.gps_valid {
+                    node.pos
+                } else if let Some(lvf) = node.last_valid_fix_pos {
                     lvf
                 } else {
                     continue;
@@ -170,35 +140,65 @@ impl PmTilesMap {
                 let pos = normalized_to_lonlat(p, &bounds);
                 let screen = projector.project(pos).to_pos2();
 
-                let color = if tag.sos {
-                    RED
-                } else if !tag.gps_valid {
-                    GREY
-                } else {
-                    BLUE
-                };
+                match kind {
+                    NodeKind::Relay => {
+                        draw_cross(painter, screen, ORANGE);
+                        painter.text(
+                            screen + egui::vec2(12.0, 0.0),
+                            egui::Align2::LEFT_CENTER,
+                            &node.label,
+                            egui::FontId::monospace(10.0),
+                            ORANGE,
+                        );
+                    }
+                    NodeKind::Gateway => {
+                        let half = 7.0;
+                        let gw_rect = egui::Rect::from_min_max(
+                            egui::pos2(screen.x - half, screen.y - half),
+                            egui::pos2(screen.x + half, screen.y + half),
+                        );
+                        painter.rect_stroke(
+                            gw_rect,
+                            0,
+                            egui::Stroke::new(1.5, GREEN),
+                            egui::StrokeKind::Middle,
+                        );
+                        painter.text(
+                            screen + egui::vec2(12.0, 0.0),
+                            egui::Align2::LEFT_CENTER,
+                            &node.label,
+                            egui::FontId::monospace(10.0),
+                            GREEN,
+                        );
+                    }
+                    NodeKind::Tag => {
+                        // Per-state colour from freshness_color (Decisions
+                        // pinned #8 in KIOSK-008).
+                        let color = node_display_color(node);
 
-                if tag.sos {
-                    let pulse = ((t * 2.5).sin() * 0.5 + 0.5) as f32;
-                    let alpha = (pulse * 180.0) as u8;
-                    painter.circle_stroke(
-                        screen,
-                        16.0,
-                        egui::Stroke::new(
-                            2.0,
-                            egui::Color32::from_rgba_unmultiplied(255, 60, 60, alpha),
-                        ),
-                    );
+                        if node.sos {
+                            let pulse = ((t * 2.5).sin() * 0.5 + 0.5) as f32;
+                            let alpha = (pulse * 180.0) as u8;
+                            painter.circle_stroke(
+                                screen,
+                                16.0,
+                                egui::Stroke::new(
+                                    2.0,
+                                    egui::Color32::from_rgba_unmultiplied(255, 60, 60, alpha),
+                                ),
+                            );
+                        }
+
+                        painter.circle_filled(screen, 8.0, color);
+                        painter.text(
+                            screen + egui::vec2(12.0, -5.0),
+                            egui::Align2::LEFT_TOP,
+                            &node.label,
+                            egui::FontId::monospace(10.0),
+                            TEXT_BRIGHT,
+                        );
+                    }
                 }
-
-                painter.circle_filled(screen, 8.0, color);
-                painter.text(
-                    screen + egui::vec2(12.0, -5.0),
-                    egui::Align2::LEFT_TOP,
-                    &tag.label,
-                    egui::FontId::monospace(10.0),
-                    TEXT_BRIGHT,
-                );
             }
 
             // Bottom-right corner: which region is active, for the spike's

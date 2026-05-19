@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // Cadence-derived freshness. Normal heartbeat cadence 300–330 s per ADR-013.
 // SOS cadence 45–60 s jittered per ADR-010.
@@ -117,6 +118,19 @@ impl NodeState {
     }
 }
 
+/// Inventory kind — the ONLY distinction between tag / relay / gateway in v1a.
+/// Maps `node_id → NodeKind` for icon glyph + colour assignment in the UI.
+/// Per dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md: this is the
+/// gateway-internal inventory table (SQLite-backed in the real gateway binary),
+/// modelled here as a HashMap. Not part of the wire protocol; not a field on
+/// NodeData (which carries only POSITION-derived state).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum NodeKind {
+    Tag,
+    Relay,
+    Gateway,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SightingEntry {
     pub seq: u32,
@@ -125,8 +139,12 @@ pub struct SightingEntry {
     pub sos: bool,
 }
 
+/// Uniform node shape: POSITION-derived state for any node in the network.
+/// Per dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md, the v1a UI
+/// data model is one uniform NodeData. Tag vs Relay vs Gateway is an inventory
+/// distinction (see [`NodeKind`] + `SimState.inventory`), not a struct split.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TagData {
+pub struct NodeData {
     pub node_id: u8,
     pub label: String,
     /// Normalised [0,1] position. Only valid when gps_valid=true.
@@ -148,27 +166,11 @@ pub struct TagData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RelayData {
-    pub node_id: u8,
-    pub label: String,
-    pub pos: [f32; 2],
-    /// Age of the most recent frame from this relay (POSITION; one packet type per ADR-013).
-    #[serde(default)]
-    pub last_seen_secs: Option<f32>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GatewayData {
-    pub node_id: u8,
-    pub label: String,
-    pub pos: [f32; 2],
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimState {
-    pub tags: Vec<TagData>,
-    pub relay: RelayData,
-    pub gateway: GatewayData,
+    /// All nodes in the network — tags, relays, gateway — uniform NodeData.
+    pub nodes: Vec<NodeData>,
+    /// node_id → NodeKind mapping (inventory; presentation-only).
+    pub inventory: HashMap<u8, NodeKind>,
 }
 
 impl SimState {
@@ -183,70 +185,82 @@ impl SimState {
         }
     }
 
-    fn normal() -> Self {
-        Self {
-            tags: vec![make_tag(
-                1,
-                "tag-1",
-                [0.55, 0.38],
-                NodeState::Normal,
-                8.0,
-                true,
-                false,
-                false,
-            )],
-            relay: default_relay(),
-            gateway: default_gateway(),
+    /// Inventory kind lookup by node_id.
+    pub fn kind_for_id(&self, node_id: u8) -> NodeKind {
+        self.inventory
+            .get(&node_id)
+            .copied()
+            .unwrap_or(NodeKind::Tag)
+    }
+
+    fn with_infra(mut tags: Vec<NodeData>) -> Self {
+        let relay = default_relay_node();
+        let gateway = default_gateway_node();
+        let mut inventory = HashMap::new();
+        for t in &tags {
+            inventory.insert(t.node_id, NodeKind::Tag);
         }
+        inventory.insert(relay.node_id, NodeKind::Relay);
+        inventory.insert(gateway.node_id, NodeKind::Gateway);
+        tags.push(relay);
+        tags.push(gateway);
+        Self {
+            nodes: tags,
+            inventory,
+        }
+    }
+
+    fn normal() -> Self {
+        Self::with_infra(vec![make_tag(
+            1,
+            "tag-1",
+            [0.55, 0.38],
+            NodeState::Normal,
+            8.0,
+            true,
+            false,
+            false,
+        )])
     }
 
     fn sos() -> Self {
-        Self {
-            // 42 s: within the 45–60 s SOS cadence window
-            tags: vec![make_tag(
-                2,
-                "tag-2",
-                [0.60, 0.44],
-                NodeState::Sos,
-                42.0,
-                true,
-                true,
-                false,
-            )],
-            relay: default_relay(),
-            gateway: default_gateway(),
-        }
+        Self::with_infra(vec![make_tag(
+            2,
+            "tag-2",
+            [0.60, 0.44],
+            NodeState::Sos,
+            42.0,
+            true,
+            true,
+            false,
+        )])
     }
 
     fn stale() -> Self {
-        Self {
-            tags: vec![
-                // 700 s crosses the 660 s aging→stale threshold
-                make_tag(
-                    1,
-                    "tag-1",
-                    [0.50, 0.33],
-                    NodeState::Stale,
-                    700.0,
-                    true,
-                    false,
-                    false,
-                ),
-                // 1400 s crosses the 1320 s stale→very-stale threshold
-                make_tag(
-                    3,
-                    "tag-3",
-                    [0.65, 0.52],
-                    NodeState::VeryStale,
-                    1400.0,
-                    true,
-                    false,
-                    true,
-                ),
-            ],
-            relay: default_relay(),
-            gateway: default_gateway(),
-        }
+        Self::with_infra(vec![
+            // 700 s crosses the 660 s aging→stale threshold
+            make_tag(
+                1,
+                "tag-1",
+                [0.50, 0.33],
+                NodeState::Stale,
+                700.0,
+                true,
+                false,
+                false,
+            ),
+            // 1400 s crosses the 1320 s stale→very-stale threshold
+            make_tag(
+                3,
+                "tag-3",
+                [0.65, 0.52],
+                NodeState::VeryStale,
+                1400.0,
+                true,
+                false,
+                true,
+            ),
+        ])
     }
 
     fn no_fix() -> Self {
@@ -262,11 +276,7 @@ impl SimState {
         );
         tag.last_valid_fix_pos = Some([0.57, 0.45]);
         tag.last_valid_fix_age_secs = Some(480.0);
-        Self {
-            tags: vec![tag],
-            relay: default_relay(),
-            gateway: default_gateway(),
-        }
+        Self::with_infra(vec![tag])
     }
 
     fn multi_tag() -> Self {
@@ -282,43 +292,39 @@ impl SimState {
         );
         nf.last_valid_fix_pos = Some([0.69, 0.46]);
         nf.last_valid_fix_age_secs = Some(210.0);
-        Self {
-            tags: vec![
-                make_tag(
-                    1,
-                    "tag-1",
-                    [0.50, 0.28],
-                    NodeState::Normal,
-                    5.0,
-                    true,
-                    false,
-                    false,
-                ),
-                make_tag(
-                    2,
-                    "tag-2",
-                    [0.62, 0.41],
-                    NodeState::Sos,
-                    42.0,
-                    true,
-                    true,
-                    false,
-                ),
-                make_tag(
-                    3,
-                    "tag-3",
-                    [0.48, 0.54],
-                    NodeState::Stale,
-                    700.0,
-                    true,
-                    false,
-                    true,
-                ),
-                nf,
-            ],
-            relay: default_relay(),
-            gateway: default_gateway(),
-        }
+        Self::with_infra(vec![
+            make_tag(
+                1,
+                "tag-1",
+                [0.50, 0.28],
+                NodeState::Normal,
+                5.0,
+                true,
+                false,
+                false,
+            ),
+            make_tag(
+                2,
+                "tag-2",
+                [0.62, 0.41],
+                NodeState::Sos,
+                42.0,
+                true,
+                true,
+                false,
+            ),
+            make_tag(
+                3,
+                "tag-3",
+                [0.48, 0.54],
+                NodeState::Stale,
+                700.0,
+                true,
+                false,
+                true,
+            ),
+            nf,
+        ])
     }
 
     /// SOS active, current report GPS_VALID=0, previous valid fix available.
@@ -336,28 +342,46 @@ impl SimState {
         );
         tag.last_valid_fix_pos = Some([0.58, 0.42]);
         tag.last_valid_fix_age_secs = Some(380.0);
-        Self {
-            tags: vec![tag],
-            relay: default_relay(),
-            gateway: default_gateway(),
-        }
+        Self::with_infra(vec![tag])
     }
 }
 
-fn default_relay() -> RelayData {
-    RelayData {
+/// Relay node — same NodeData shape as a tag, populated as a relay broadcast.
+/// 840 s = 14 min, well within relay's ~1800 s POSITION cadence per ADR-006.
+fn default_relay_node() -> NodeData {
+    NodeData {
         node_id: 101,
         label: "relay-1".into(),
         pos: [0.55, 0.60],
-        last_seen_secs: Some(840.0), // 14 min: well within relay's ~1800 s POSITION cadence
+        state: NodeState::Normal,
+        last_seen_secs: 840.0,
+        gps_valid: true,
+        sos: false,
+        battery_low: false,
+        track: Vec::new(),
+        sightings: Vec::new(),
+        last_valid_fix_pos: None,
+        last_valid_fix_age_secs: None,
     }
 }
 
-fn default_gateway() -> GatewayData {
-    GatewayData {
+/// Gateway node — local; `last_seen_secs = 0.0` sentinel (gateway is the
+/// receiver and doesn't receive its own frames). UI presentation may render
+/// this as `— (local)` rather than `0 s` per KIOSK-004 / KIOSK-003.
+fn default_gateway_node() -> NodeData {
+    NodeData {
         node_id: 200,
         label: "gw-0".into(),
         pos: [0.30, 0.65],
+        state: NodeState::Normal,
+        last_seen_secs: 0.0,
+        gps_valid: true,
+        sos: false,
+        battery_low: false,
+        track: Vec::new(),
+        sightings: Vec::new(),
+        last_valid_fix_pos: None,
+        last_valid_fix_age_secs: None,
     }
 }
 
@@ -370,14 +394,14 @@ fn make_tag(
     gps_valid: bool,
     sos: bool,
     battery_low: bool,
-) -> TagData {
+) -> NodeData {
     let track = if gps_valid {
         make_track(pos)
     } else {
         Vec::new()
     };
     let cadence = if sos { 50.0_f32 } else { 330.0 };
-    TagData {
+    NodeData {
         node_id,
         label: label.into(),
         pos,
@@ -476,10 +500,51 @@ mod tests {
     #[test]
     fn sos_no_fix_scenario_has_ghost_data() {
         let s = SimState::from_scenario(ScenarioKind::SosNoFix);
-        let tag = &s.tags[0];
+        // Find the SOS tag (post-collapse: nodes vec includes infra too)
+        let tag = s
+            .nodes
+            .iter()
+            .find(|n| s.kind_for_id(n.node_id) == NodeKind::Tag && n.sos)
+            .expect("SosNoFix scenario must contain an SOS tag");
         assert!(tag.sos);
         assert!(!tag.gps_valid);
         assert!(tag.last_valid_fix_pos.is_some());
         assert!(tag.last_valid_fix_age_secs.is_some());
+    }
+
+    // Post-collapse invariant: every node in SimState.nodes has an inventory entry.
+    #[test]
+    fn every_node_has_inventory_entry() {
+        for scenario in ScenarioKind::all() {
+            let s = SimState::from_scenario(*scenario);
+            for node in &s.nodes {
+                assert!(
+                    s.inventory.contains_key(&node.node_id),
+                    "scenario {:?}: node_id {} missing from inventory",
+                    scenario,
+                    node.node_id
+                );
+            }
+        }
+    }
+
+    // Post-collapse invariant: each scenario has exactly one relay + one gateway.
+    #[test]
+    fn each_scenario_has_one_relay_and_one_gateway() {
+        for scenario in ScenarioKind::all() {
+            let s = SimState::from_scenario(*scenario);
+            let n_relays = s
+                .nodes
+                .iter()
+                .filter(|n| s.kind_for_id(n.node_id) == NodeKind::Relay)
+                .count();
+            let n_gateways = s
+                .nodes
+                .iter()
+                .filter(|n| s.kind_for_id(n.node_id) == NodeKind::Gateway)
+                .count();
+            assert_eq!(n_relays, 1, "scenario {:?}: expected 1 relay", scenario);
+            assert_eq!(n_gateways, 1, "scenario {:?}: expected 1 gateway", scenario);
+        }
     }
 }

@@ -32,7 +32,7 @@ Sidebar (320 px wide, full panel height) shows:
   - `● tag-6 · 18 s  ·  🔋 BATT` (battery-low, AMBER `🔋 BATT` token
     co-located on the primary line)
   - `● relay-1 · POSITION 14 m`
-  - `● gw-0 · RTC ok` (green)
+  - `● gw-0` (green)
 
 ## Per-element source-of-truth citations
 
@@ -58,20 +58,26 @@ Sidebar (320 px wide, full panel height) shows:
 | KIOSK-004 detail surface (no overlay) | `tickets/KIOSK-004-selection-detail-panel.md:24, 28, 76` |
 | No coord readout in v1a (KIOSK-002 deferred) | `tickets/README.md:30, 53, 71, 85` |
 
-## Row-format table (reproduced from `KIOSK-003:29-39`)
+## Row-format table — uniform across node kinds
 
-| Node state | Row primary text | Colour |
-|---|---|---|
-| Normal hiker | `● tag-1  ·  12 s ago` | `TEXT_BRIGHT` label, `TEXT_DIM` age |
-| SOS hiker | `🔴 SOS · tag-2 · 42 s` | `RED`, bold |
-| No-fix hiker | `⚠ tag-3 · NO FIX · last fix 8 m` | `AMBER` |
-| Stale hiker | `● tag-4 · stale · 12 m` | `TEXT_DIM` |
-| Very-stale hiker | `● tag-5 · very stale · 24 m` | `TEXT_DIM` (very dim) |
-| Battery-low hiker | append `🔋 BATT` (icon + suffix together) on the primary line | tint the `🔋 BATT` token `AMBER` |
-| Relay healthy | `● relay-1 · POSITION 14 m` | `TEXT_BRIGHT` |
-| Relay overdue (>3600 s) | `⚠ relay-1 · POSITION 65 m` | `AMBER` |
-| Gateway healthy | `● gw-0 · RTC ok` | `GREEN` |
-| Gateway RTC invalid | `⚠ gw-0 · RTC unset` | `AMBER` |
+Row format is **state-driven**, not kind-driven. The same template renders for every node; the inventory map (`HashMap<u8, NodeKind>`) provides the icon glyph + colour only. Per `dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`.
+
+| Node state | Row primary text | Colour | Sticky section? |
+|---|---|---|---|
+| Fresh | `● {label}  ·  {age}` | `TEXT_BRIGHT` label, `TEXT_DIM` age, state-bullet from `freshness_color(Fresh)` | no |
+| Aging | `● {label}  ·  {age}` | `TEXT_BRIGHT` label, `TEXT_DIM` age, state-bullet from `freshness_color(Aging)` | no |
+| Stale | `● {label} · stale · {age}` | `TEXT_DIM` | no |
+| Very-stale | `● {label} · very stale · {age}` | `TEXT_DIM` (very dim) | no |
+| SOS | `🔴 SOS · {label} · {age}` | `RED`, bold | **yes** (DISTRESS) |
+| No-fix | `⚠ {label} · NO FIX · last fix {age}` | `AMBER` | **yes** (DISTRESS) |
+| Battery-low | append `🔋 BATT` (icon + suffix together) on the primary line — token tinted `AMBER` | compatible with any state above | inherits |
+
+**Inventory-driven icon glyph + colour** (presentation only — no data-model branch):
+- `NodeKind::Tag` → `●` filled dot, `BLUE` label colour
+- `NodeKind::Relay` → `✚` cross, `ORANGE` label colour
+- `NodeKind::Gateway` → `■` square, `GREEN` label colour; `{age}` suffix elided (gateway is local, `last_seen_secs = 0`)
+
+For the gateway specifically, the row reads `● gw-0` (with the inventory-assigned glyph + colour; no age). No `RTC ok` / `RTC unset` chrome — gateway-self status is deferred per `tickets/KIOSK-005-gateway-status-surface.md`.
 
 ## What is NOT rendered
 

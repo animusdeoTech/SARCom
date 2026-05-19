@@ -1,197 +1,248 @@
-use crate::data::{freshness_for_tag, SimState, TagData};
-use crate::ui::format_age_or_unavailable;
+use crate::data::{freshness_for_tag, NodeData, NodeKind, SimState};
+use crate::map::Viewport;
+use crate::ui::format_age;
 use crate::ui::palette::{freshness_color, AMBER, GREEN, GREY, ORANGE, RED, TEXT_BRIGHT, TEXT_DIM};
 use eframe::egui;
 
+/// Drag target — index into `sim.nodes`. The kind-of-thing-being-dragged is
+/// looked up via `sim.inventory[node_id]` at apply time. No per-kind variants.
 #[derive(Clone, PartialEq)]
 pub enum DragTarget {
-    Tag(usize),
-    Relay,
-    Gateway,
+    Node(usize),
+    /// Empty-area drag — used to pan the viewport.
+    Pan,
 }
 
-pub fn n2s(norm: [f32; 2], rect: egui::Rect) -> egui::Pos2 {
-    egui::pos2(
-        rect.min.x + norm[0] * rect.width(),
-        rect.min.y + norm[1] * rect.height(),
-    )
+pub fn n2s(norm: [f32; 2], view: &Viewport) -> egui::Pos2 {
+    let world = egui::pos2(
+        view.rect.min.x + norm[0] * view.rect.width(),
+        view.rect.min.y + norm[1] * view.rect.height(),
+    );
+    view.apply(world)
 }
 
-fn s2n(pos: egui::Pos2, rect: egui::Rect) -> [f32; 2] {
+fn s2n(pos: egui::Pos2, view: &Viewport) -> [f32; 2] {
+    let world = view.unapply(pos);
     [
-        ((pos.x - rect.min.x) / rect.width()).clamp(0.0, 1.0),
-        ((pos.y - rect.min.y) / rect.height()).clamp(0.0, 1.0),
+        ((world.x - view.rect.min.x) / view.rect.width()).clamp(0.0, 1.0),
+        ((world.y - view.rect.min.y) / view.rect.height()).clamp(0.0, 1.0),
     ]
 }
 
-/// The map position the user sees for a tag, or `None` if no marker is drawn.
-/// - gps_valid: current `pos`
-/// - !gps_valid + last_valid_fix_pos: ghost at last valid fix
-/// - !gps_valid + no last valid fix: nothing on map
-pub fn tag_visible_pos(tag: &TagData) -> Option<[f32; 2]> {
-    if tag.gps_valid {
-        Some(tag.pos)
+/// Visible position for a node — `pos` when `gps_valid`, else `last_valid_fix_pos`.
+/// Same shape applies to tags, relays, and gateway. For relays/gateway in v1a
+/// fixtures, `gps_valid=true` and `pos` is always meaningful.
+pub fn node_visible_pos(node: &NodeData) -> Option<[f32; 2]> {
+    if node.gps_valid {
+        Some(node.pos)
     } else {
-        tag.last_valid_fix_pos
+        node.last_valid_fix_pos
     }
 }
 
-/// SOS / no-fix / freshness color for a tag's marker. Centralised so map
-/// and sidebar agree on what a tag "looks like right now".
-pub fn tag_display_color(tag: &TagData) -> egui::Color32 {
-    if tag.sos {
+/// Per-state colour from `freshness_color` (Decisions pinned #8 in KIOSK-008).
+/// Applies to any node kind that surfaces a freshness-driven dot colour.
+pub fn node_display_color(node: &NodeData) -> egui::Color32 {
+    if node.sos {
         return RED;
     }
-    if !tag.gps_valid {
+    if !node.gps_valid {
         return GREY;
     }
-    freshness_color(freshness_for_tag(tag.last_seen_secs, false))
+    freshness_color(freshness_for_tag(node.last_seen_secs, false))
 }
 
 pub fn find_closest(
     ptr: egui::Pos2,
     sim: &SimState,
-    rect: egui::Rect,
+    view: &Viewport,
     threshold: f32,
 ) -> Option<DragTarget> {
     let mut best: Option<(f32, DragTarget)> = None;
 
-    let mut check = |dist: f32, target: DragTarget| {
-        if dist < threshold && best.as_ref().map_or(true, |(d, _)| dist < *d) {
-            best = Some((dist, target));
-        }
-    };
-
-    for (i, tag) in sim.tags.iter().enumerate() {
-        if let Some(p) = tag_visible_pos(tag) {
-            check((ptr - n2s(p, rect)).length(), DragTarget::Tag(i));
+    for (i, node) in sim.nodes.iter().enumerate() {
+        // For tags use visible-pos (handles ghost at last_valid_fix_pos);
+        // for relays and gateway the pos is always meaningful.
+        let p = match sim.kind_for_id(node.node_id) {
+            NodeKind::Tag => node_visible_pos(node),
+            _ => Some(node.pos),
+        };
+        if let Some(p) = p {
+            let d = (ptr - n2s(p, view)).length();
+            if d < threshold && best.as_ref().map_or(true, |(bd, _)| d < *bd) {
+                best = Some((d, DragTarget::Node(i)));
+            }
         }
     }
-    check((ptr - n2s(sim.relay.pos, rect)).length(), DragTarget::Relay);
-    check(
-        (ptr - n2s(sim.gateway.pos, rect)).length(),
-        DragTarget::Gateway,
-    );
 
     best.map(|(_, t)| t)
 }
 
-pub fn apply_drag(sim: &mut SimState, target: &DragTarget, ptr: egui::Pos2, rect: egui::Rect) {
-    let norm = s2n(ptr, rect);
+pub fn apply_drag(sim: &mut SimState, target: &DragTarget, ptr: egui::Pos2, view: &Viewport) {
+    let norm = s2n(ptr, view);
     match target {
-        DragTarget::Tag(i) => {
-            // For no-fix tags the ghost (last_valid_fix_pos) is the visible marker;
-            // dragging it moves that ghost. For valid-fix tags, drag moves `pos`.
-            let tag = &mut sim.tags[*i];
-            if tag.gps_valid {
-                tag.pos = norm;
-            } else if tag.last_valid_fix_pos.is_some() {
-                tag.last_valid_fix_pos = Some(norm);
+        DragTarget::Node(i) => {
+            let kind = sim.kind_for_id(sim.nodes[*i].node_id);
+            let node = &mut sim.nodes[*i];
+            // Tags: respect gps_valid / last_valid_fix mode. Relays/gateway:
+            // always mutate `pos` directly.
+            if kind == NodeKind::Tag {
+                if node.gps_valid {
+                    node.pos = norm;
+                } else if node.last_valid_fix_pos.is_some() {
+                    node.last_valid_fix_pos = Some(norm);
+                } else {
+                    node.pos = norm;
+                }
             } else {
-                tag.pos = norm;
+                node.pos = norm;
             }
         }
-        DragTarget::Relay => sim.relay.pos = norm,
-        DragTarget::Gateway => sim.gateway.pos = norm,
+        DragTarget::Pan => {
+            // Pan is handled at the show_map level by adjusting view_offset
+            // directly from the per-frame drag delta. apply_drag is a no-op.
+        }
     }
 }
 
-pub fn draw_tracks(painter: &egui::Painter, tags: &[TagData], rect: egui::Rect) {
-    for tag in tags {
-        if !tag.gps_valid || tag.track.len() < 2 {
+/// 1 px dashed track of recent valid-fix points. Sentinel/no-fix coordinates
+/// never make it here — we only draw when `gps_valid`. Tag-only by current
+/// fixture (relays/gateway have empty tracks).
+pub fn draw_tracks(painter: &egui::Painter, sim: &SimState, view: &Viewport) {
+    for node in &sim.nodes {
+        if sim.kind_for_id(node.node_id) != NodeKind::Tag {
             continue;
         }
-        let base = tag_display_color(tag);
-        let color = egui::Color32::from_rgba_unmultiplied(base.r(), base.g(), base.b(), 80);
-        let pts: Vec<egui::Pos2> = tag.track.iter().map(|p| n2s(*p, rect)).collect();
-        for w in pts.windows(2) {
-            painter.line_segment([w[0], w[1]], egui::Stroke::new(1.5, color));
+        if !node.gps_valid || node.track.len() < 2 {
+            continue;
         }
-        for (i, p) in pts.iter().enumerate() {
-            if i < pts.len() - 1 {
-                painter.circle_filled(*p, 2.0, color);
-            }
+        let base = node_display_color(node);
+        let color = egui::Color32::from_rgba_unmultiplied(base.r(), base.g(), base.b(), 110);
+        let pts: Vec<egui::Pos2> = node.track.iter().map(|p| n2s(*p, view)).collect();
+        for w in pts.windows(2) {
+            draw_dashed_segment(painter, w[0], w[1], color);
         }
     }
 }
 
-pub fn draw_relay(painter: &egui::Painter, sim: &SimState, rect: egui::Rect) {
-    let rp = n2s(sim.relay.pos, rect);
-    let d = 8.0_f32;
-    painter.add(egui::Shape::convex_polygon(
-        vec![
-            egui::pos2(rp.x, rp.y - d),
-            egui::pos2(rp.x + d, rp.y),
-            egui::pos2(rp.x, rp.y + d),
-            egui::pos2(rp.x - d, rp.y),
+fn draw_dashed_segment(painter: &egui::Painter, a: egui::Pos2, b: egui::Pos2, color: egui::Color32) {
+    let dx = b.x - a.x;
+    let dy = b.y - a.y;
+    let len = (dx * dx + dy * dy).sqrt();
+    if len < 1.0 {
+        return;
+    }
+    let dash = 4.0_f32;
+    let gap = 3.0_f32;
+    let step = dash + gap;
+    let n = (len / step).ceil() as i32;
+    let ux = dx / len;
+    let uy = dy / len;
+    let stroke = egui::Stroke::new(1.0, color);
+    for i in 0..n {
+        let s = (i as f32) * step;
+        let e = (s + dash).min(len);
+        let p0 = egui::pos2(a.x + ux * s, a.y + uy * s);
+        let p1 = egui::pos2(a.x + ux * e, a.y + uy * e);
+        painter.line_segment([p0, p1], stroke);
+    }
+}
+
+/// Find the first node of a given kind. v1a sim has at most one of each
+/// non-tag kind; tag callers should iterate instead.
+fn first_node_of(sim: &SimState, kind: NodeKind) -> Option<&NodeData> {
+    sim.nodes
+        .iter()
+        .find(|n| sim.kind_for_id(n.node_id) == kind)
+}
+
+/// Relay marker: small ✚ pole/cross.
+pub fn draw_relay(painter: &egui::Painter, sim: &SimState, view: &Viewport) {
+    let Some(relay) = first_node_of(sim, NodeKind::Relay) else {
+        return;
+    };
+    let rp = n2s(relay.pos, view);
+    let arm = 7.0_f32;
+    let stroke = egui::Stroke::new(2.0, ORANGE);
+    painter.line_segment(
+        [
+            egui::pos2(rp.x - arm, rp.y),
+            egui::pos2(rp.x + arm, rp.y),
         ],
-        ORANGE,
-        egui::Stroke::new(1.0, egui::Color32::from_rgb(10, 15, 20)),
-    ));
+        stroke,
+    );
+    painter.line_segment(
+        [
+            egui::pos2(rp.x, rp.y - arm),
+            egui::pos2(rp.x, rp.y + arm),
+        ],
+        stroke,
+    );
+    painter.circle_filled(rp, 2.0, ORANGE);
     painter.text(
         rp + egui::vec2(12.0, 0.0),
         egui::Align2::LEFT_CENTER,
-        &sim.relay.label,
+        &relay.label,
         egui::FontId::monospace(10.0),
         ORANGE,
     );
 }
 
-pub fn draw_gateway(painter: &egui::Painter, sim: &SimState, rect: egui::Rect) {
-    let gp = n2s(sim.gateway.pos, rect);
-    let s = 8.0_f32;
-    painter.rect_filled(
-        egui::Rect::from_center_size(gp, egui::vec2(s * 2.0, s * 2.0)),
-        1.0,
-        GREEN,
+/// Gateway marker: plain square outline.
+pub fn draw_gateway(painter: &egui::Painter, sim: &SimState, view: &Viewport) {
+    let Some(gw) = first_node_of(sim, NodeKind::Gateway) else {
+        return;
+    };
+    let gp = n2s(gw.pos, view);
+    let half = 7.0_f32;
+    let body = egui::Rect::from_min_max(
+        egui::pos2(gp.x - half, gp.y - half),
+        egui::pos2(gp.x + half, gp.y + half),
     );
-    painter.rect_stroke(
-        egui::Rect::from_center_size(gp, egui::vec2(s * 2.0, s * 2.0)),
-        1.0,
-        egui::Stroke::new(1.0, egui::Color32::from_rgb(10, 15, 20)),
-    );
+    painter.rect_stroke(body, 0, egui::Stroke::new(1.5, GREEN), egui::StrokeKind::Middle);
     painter.text(
         gp + egui::vec2(12.0, 0.0),
         egui::Align2::LEFT_CENTER,
-        &sim.gateway.label,
+        &gw.label,
         egui::FontId::monospace(10.0),
         GREEN,
     );
 }
 
+/// Draw tag dots (and ghosts for no-fix tags). Dispatches via inventory.kind;
+/// relays/gateway are drawn separately via `draw_relay` / `draw_gateway`.
 pub fn draw_tags(
     painter: &egui::Painter,
-    tags: &[TagData],
-    selected_tag: Option<usize>,
+    sim: &SimState,
+    selected_node: Option<usize>,
     t: f64,
-    rect: egui::Rect,
-    clock_valid: bool,
+    view: &Viewport,
 ) {
-    for (i, tag) in tags.iter().enumerate() {
-        let is_sel = selected_tag == Some(i);
-
-        if tag.gps_valid {
-            draw_current_marker(painter, tag, is_sel, t, rect, clock_valid);
-        } else if tag.last_valid_fix_pos.is_some() {
-            draw_ghost_marker(painter, tag, is_sel, t, rect, clock_valid);
+    for (i, node) in sim.nodes.iter().enumerate() {
+        if sim.kind_for_id(node.node_id) != NodeKind::Tag {
+            continue;
         }
-        // !gps_valid && no last_valid_fix_pos: deliberately no map marker.
-        // Sidebar/no-fix list is the only honest place to surface this tag.
+        let is_sel = selected_node == Some(i);
+
+        if node.gps_valid {
+            draw_current_marker(painter, node, is_sel, t, view);
+        } else if node.last_valid_fix_pos.is_some() {
+            draw_ghost_marker(painter, node, is_sel, t, view);
+        }
     }
 }
 
 fn draw_current_marker(
     painter: &egui::Painter,
-    tag: &TagData,
+    node: &NodeData,
     is_sel: bool,
     t: f64,
-    rect: egui::Rect,
-    clock_valid: bool,
+    view: &Viewport,
 ) {
-    let sp = n2s(tag.pos, rect);
-    let color = tag_display_color(tag);
+    let sp = n2s(node.pos, view);
+    let color = node_display_color(node);
 
-    if tag.sos {
+    if node.sos {
         let pulse = ((t * 2.5).sin() * 0.5 + 0.5) as f32;
         let ring_alpha = (pulse * 180.0) as u8;
         painter.circle_stroke(
@@ -225,43 +276,33 @@ fn draw_current_marker(
     painter.text(
         sp + egui::vec2(14.0, -5.0),
         egui::Align2::LEFT_TOP,
-        &tag.label,
+        &node.label,
         egui::FontId::monospace(11.0),
         TEXT_BRIGHT,
     );
-    if clock_valid {
-        painter.text(
-            sp + egui::vec2(14.0, 7.0),
-            egui::Align2::LEFT_TOP,
-            &format_age_or_unavailable(tag.last_seen_secs, true),
-            egui::FontId::monospace(9.0),
-            TEXT_DIM,
-        );
-    }
+    painter.text(
+        sp + egui::vec2(14.0, 7.0),
+        egui::Align2::LEFT_TOP,
+        &format_age(node.last_seen_secs),
+        egui::FontId::monospace(9.0),
+        TEXT_DIM,
+    );
 }
 
-/// Ghost marker drawn at last_valid_fix_pos for a tag whose current report
-/// has GPS_VALID=0. Visually distinct from current-fix marker:
-///   * filled circle has low alpha
-///   * dashed-style outer ring (broken arc strokes)
-///   * label reads "<TAG> last fix" not just "<TAG>"
-///   * SOS pulse ring still drawn so distress remains prominent
 fn draw_ghost_marker(
     painter: &egui::Painter,
-    tag: &TagData,
+    node: &NodeData,
     is_sel: bool,
     t: f64,
-    rect: egui::Rect,
-    clock_valid: bool,
+    view: &Viewport,
 ) {
-    let Some(lvf) = tag.last_valid_fix_pos else {
+    let Some(lvf) = node.last_valid_fix_pos else {
         return;
     };
-    let gp = n2s(lvf, rect);
+    let gp = n2s(lvf, view);
     let radius = if is_sel { 10.0 } else { 8.0 };
 
-    if tag.sos {
-        // SOS state is still load-bearing even when current GPS is invalid.
+    if node.sos {
         let pulse = ((t * 2.5).sin() * 0.5 + 0.5) as f32;
         let ring_alpha = (pulse * 160.0) as u8;
         painter.circle_stroke(
@@ -274,16 +315,13 @@ fn draw_ghost_marker(
         );
     }
 
-    let fill = if tag.sos {
+    let fill = if node.sos {
         egui::Color32::from_rgba_unmultiplied(255, 60, 60, 90)
     } else {
         egui::Color32::from_rgba_unmultiplied(GREY.r(), GREY.g(), GREY.b(), 90)
     };
     painter.circle_filled(gp, radius, fill);
 
-    // Dashed outer ring: 8 short arc segments simulated as offset chords.
-    // egui has no native dashed-stroke; this hand-rolled version is enough
-    // to read as "ghost / last-known" at kiosk distance.
     let dash_color = egui::Color32::from_rgba_unmultiplied(220, 220, 220, 160);
     let r = radius + 4.0;
     for k in 0..12 {
@@ -314,13 +352,13 @@ fn draw_ghost_marker(
     painter.text(
         gp + egui::vec2(14.0, -5.0),
         egui::Align2::LEFT_TOP,
-        &format!("{} last fix", tag.label),
+        &format!("{} last fix", node.label),
         egui::FontId::monospace(10.0),
         label_color,
     );
 
-    let sub = match tag.last_valid_fix_age_secs {
-        Some(age) => format!("NO FIX · {}", format_age_or_unavailable(age, clock_valid)),
+    let sub = match node.last_valid_fix_age_secs {
+        Some(age) => format!("NO FIX · {}", format_age(age)),
         None => "NO FIX".to_string(),
     };
     painter.text(

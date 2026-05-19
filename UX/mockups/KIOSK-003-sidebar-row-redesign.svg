@@ -96,7 +96,7 @@
     <text x="510" y="465" fill="#6c7f92" font-size="9" font-style="italic">selectable (KIOSK-003 scope change)</text>
 
     <!-- gw-0 healthy -->
-    <text x="510" y="499" fill="#40d080" font-size="13">● gw-0 · RTC ok</text>
+    <text x="510" y="499" fill="#40d080" font-size="13">● gw-0</text>
     <text x="510" y="513" fill="#6c7f92" font-size="9" font-style="italic">selectable (KIOSK-003 scope change)</text>
   </g>
 

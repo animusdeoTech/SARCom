@@ -136,7 +136,7 @@
     <text x="510" y="183" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
     <text x="510" y="231" fill="#5a6a7a" font-size="10">● tag-4 · stale · 12 m</text>
     <text x="510" y="279" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
-    <text x="510" y="327" fill="#40d080" font-size="10">● gw-0 · RTC ok</text>
+    <text x="510" y="327" fill="#40d080" font-size="10">● gw-0</text>
     <text x="510" y="410" fill="#5a6a7a" font-size="9" font-style="italic">sidebar abstracted ·</text>
     <text x="510" y="423" fill="#5a6a7a" font-size="9" font-style="italic">KIOSK-003 owns detail</text>
   </g>
@@ -294,7 +294,7 @@
     <text x="510" y="730" fill="#6c7f92" font-size="9">NODES · 3</text>
     <text x="510" y="747" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
     <text x="510" y="795" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
-    <text x="510" y="843" fill="#40d080" font-size="10">● gw-0 · RTC ok</text>
+    <text x="510" y="843" fill="#40d080" font-size="10">● gw-0</text>
   </g>
 
   <g id="bottom-strip-b">

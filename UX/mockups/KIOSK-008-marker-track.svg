@@ -210,7 +210,7 @@
     <text x="520" y="252" fill="#5a6a7a" font-size="9">tag-3 · NO FIX · last 4 m</text>
     <text x="520" y="300" fill="#5a6a7a" font-size="9">tag-4 · 9 m · stale</text>
     <text x="520" y="348" fill="#5a6a7a" font-size="9">relay-1 · 14 m</text>
-    <text x="520" y="396" fill="#5a6a7a" font-size="9">gw-0 · RTC ok</text>
+    <text x="520" y="396" fill="#5a6a7a" font-size="9">gw-0</text>
   </g>
 
   <g id="bottom-strip">

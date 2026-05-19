@@ -41,17 +41,22 @@ Sidebar defaults to **320 px**. The `Edit → Layout` slider clamps to
 **300–420 px**.
 
 The sidebar follows the canonical project model from
-[ADR-013 §9](../../decisions/ADR-013-multi-hop-flood-via-packet-id.md): a
-flat list of **nodes** distinguished by `ui_kind`. Each node row carries
-a status bullet, the lowercase node label (`tag-1`, `relay-1`, `gw-0`),
-and a kind-specific summary.
+[ADR-013 §9](../../decisions/ADR-013-multi-hop-flood-via-packet-id.md)
+and the v1a UI data-model collapse decision
+([`dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`](../../dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md)):
+**one uniform `NodeData` shape for every node**, with kind-distinction
+(tag / relay / gateway) reduced to an inventory map
+(`HashMap<u8, NodeKind>`) used for icon glyph + label colour only.
+Each row carries a status bullet, the lowercase node label (`tag-1`,
+`relay-1`, `gw-0`), and a state-driven summary. Same row template
+across all kinds; gateway elides the `last_seen` line (gateway is
+local, `last_seen_secs = 0` sentinel).
 
 800×480-ish window (resizable) with:
 
 | Area | Description |
 |---|---|
 | **Header** | `SARCOM` brand wordmark, scenario badge (combobox in dim text), centred "last RX" with freshness dot and relative-age string, monospace wall clock, Edit toggle |
-| **RTC band** | Amber strip directly under the header, shown only when `clock_valid=false` (ADR-011) |
 | **Map** | Subdued OSM line-art on near-black slate, current-fix tag dots, ghost markers for last-valid-fix when no current fix, ✚ relay marker, house-outline gateway, 1 px dashed track lines |
 | **Sidebar** | `▼ NODES (n)` — collapsible flat list of hikers, relays, gateway. `▼ NO FIX (n)` — collapsible list of hikers whose latest report had `GPS_VALID=0`. **Counters footer card** at the bottom: `POSITION rx today`, `via relay`, `direct`, `dedup'd`, `CRC fail` (gateway-side counters; see ADR-013 §10 — coverage telemetry is a v2+ deferral, the lab values are synthetic). |
 | **Bottom strip** | Read-only hint plus `PMTiles · OSM · zoom 17`. Replaced by a red `● DISTRESS` band when any tag has `flags.SOS=1` |
@@ -68,7 +73,6 @@ Switch via the combobox in the header:
 | Stale | Two tags crossing real cadence-derived thresholds: stale (>11 min) + very stale (>22 min) |
 | No Fix | One tag with current `GPS_VALID=0`; ghost marker at last valid fix |
 | Multi-Tag | Four tags: normal, SOS, stale, no-fix-with-ghost |
-| Clock Invalid | `RTC NOT SET` header banner; all relative time strings are replaced with `time unavailable` (per ADR-011). Map markers still render — ordering is synthetic. |
 | SOS + No Fix | Tag is alive and distressed but current report has `GPS_VALID=0`. **No current-position marker is fabricated.** A ghost marker is drawn at the last valid fix with red SOS pulse emphasis. Sidebar shows last-frame age and last-valid-fix age separately. |
 
 ## Interacting
@@ -155,12 +159,15 @@ no separate "self-announce" frame on the wire.
 ## Clock validity
 
 [ADR-011](../../decisions/ADR-011-gateway-time-source.md) makes RTC
-validity load-bearing for the UI. When the gateway boots without a valid
-RTC, every relative-time string in the kiosk is replaced with
-`time unavailable`. The header shows `⚠ RTC NOT SET` and the right side
-shows `CLOCK INVALID` instead of wall time. Map markers still render
-(ordering is whatever the DB hands back), but the kiosk does not invent
-"42 s ago" from a free-running tick.
+validity load-bearing for the gateway. When the gateway boots without
+a valid RTC, every relative-time string ultimately becomes
+`time unavailable` per `format_age_or_unavailable` at
+[`src/ui/mod.rs:20-26`](src/ui/mod.rs). **Gateway-self status (RTC
+freshness, battery, render-tick liveness) is not surfaced in the v1a
+kiosk** per
+[`tickets/KIOSK-005-gateway-status-surface.md`](../../tickets/KIOSK-005-gateway-status-surface.md)
+(deferred from v1a). The gateway appears in the sidebar as just
+another node.
 
 ## SOS + No GPS fix
 

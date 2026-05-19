@@ -1,5 +1,5 @@
 use crate::app::KioskLabApp;
-use crate::data::NodeState;
+use crate::data::{NodeKind, NodeState};
 use crate::map::MapMode;
 use crate::ui::palette::{GREEN, TEXT_DIM};
 use eframe::egui;
@@ -17,38 +17,53 @@ impl KioskLabApp {
 
             // ── Layout ────────────────────────────────────────────────────
             ui.collapsing("Layout", |ui| {
-                // Min 300: INFRA / SYSTEM rows are a fixed-key + flexible-value
-                // two-column layout that wraps long values inside the value cell,
-                // so 300 px is the practical floor where everything still reads
-                // cleanly without forcing a wrap on the common short values.
+                // Min 300 px keeps the NODES rows readable: bullet + label
+                // + ui_kind on line 1, summary + coords on line 2, without
+                // forcing a wrap on the common short values.
                 ui.add(
                     egui::Slider::new(&mut self.sidebar_width, 300.0..=420.0).text("sidebar width"),
                 );
                 ui.checkbox(&mut self.show_track, "Show track");
-                ui.checkbox(&mut self.show_sighting_log, "Show sighting log");
             });
 
             ui.separator();
 
             // ── Tag Tweak ─────────────────────────────────────────────────
+            // Edit only nodes with inventory.kind == Tag. Relays / gateway are
+            // intentionally not editable here — they're infrastructure and the
+            // tweak panel exists to exercise tag-state transitions for UX.
             ui.collapsing("Tag Tweak", |ui| {
-                if self.sim.tags.is_empty() {
+                let tag_indices: Vec<usize> = self
+                    .sim
+                    .nodes
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, n)| self.sim.kind_for_id(n.node_id) == NodeKind::Tag)
+                    .map(|(i, _)| i)
+                    .collect();
+
+                if tag_indices.is_empty() {
                     ui.label(egui::RichText::new("No tags in this scenario.").color(TEXT_DIM));
                     return;
                 }
-                self.edit_tag_idx = self.edit_tag_idx.min(self.sim.tags.len() - 1);
 
-                let cur_label = self.sim.tags[self.edit_tag_idx].label.clone();
+                // Clamp edit_tag_idx to a valid tag-position. The field stores
+                // an index into `sim.nodes` directly; default to the first tag.
+                if !tag_indices.contains(&self.edit_tag_idx) {
+                    self.edit_tag_idx = tag_indices[0];
+                }
+
+                let cur_label = self.sim.nodes[self.edit_tag_idx].label.clone();
                 egui::ComboBox::from_label("Tag")
                     .selected_text(&cur_label)
                     .show_ui(ui, |ui| {
-                        for i in 0..self.sim.tags.len() {
-                            let lbl = self.sim.tags[i].label.clone();
+                        for &i in &tag_indices {
+                            let lbl = self.sim.nodes[i].label.clone();
                             ui.selectable_value(&mut self.edit_tag_idx, i, lbl);
                         }
                     });
 
-                let tag = &mut self.sim.tags[self.edit_tag_idx];
+                let tag = &mut self.sim.nodes[self.edit_tag_idx];
 
                 let cur_state = tag.state;
                 egui::ComboBox::from_label("State")

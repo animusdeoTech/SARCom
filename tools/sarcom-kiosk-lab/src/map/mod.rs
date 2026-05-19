@@ -207,26 +207,22 @@ impl KioskLabApp {
         }
 
         if self.show_track {
-            markers::draw_tracks(&painter, &self.sim.tags, &view);
+            markers::draw_tracks(&painter, &self.sim, &view);
         }
 
         markers::draw_relay(&painter, &self.sim, &view);
         markers::draw_gateway(&painter, &self.sim, &view);
-        markers::draw_tags(
-            &painter,
-            &self.sim.tags,
-            self.selected_tag,
-            t,
-            &view,
-            self.sim.clock_valid,
-        );
+        markers::draw_tags(&painter, &self.sim, self.selected_tag, t, &view);
 
-        // Click-to-select uses the visible position (ghost for no-fix).
+        // Click-to-select uses the visible position. Iterates all nodes;
+        // dispatch on kind happens inside `markers::node_visible_pos`. Per
+        // dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md, the
+        // selection is a single Node(usize) over `sim.nodes`.
         if response.clicked() {
             if let Some(ptr) = response.interact_pointer_pos() {
                 let mut found = false;
-                for (i, tag) in self.sim.tags.iter().enumerate() {
-                    if let Some(p) = markers::tag_visible_pos(tag) {
+                for (i, node) in self.sim.nodes.iter().enumerate() {
+                    if let Some(p) = markers::node_visible_pos(node) {
                         if (ptr - markers::n2s(p, &view)).length() < 16.0 {
                             self.selected_tag = if self.selected_tag == Some(i) {
                                 None

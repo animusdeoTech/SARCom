@@ -129,8 +129,10 @@ The bias rules in [`tickets/CLAUDE-DESIGN-PROMPT-v1a-operator-map.md:24-29`](../
       faded points joined by a thin line at 0.5 alpha — not a heavy
       interpolated path.
 - [x] No invented RSSI/SNR/hop fields. The detail view explicitly carries a
-      `NOT SHOWN` block listing them with the reason (data model does not
-      carry them). The map and sidebar surfaces do not mention RSSI/SNR/hop.
+      `NOT SHOWN` block listing them, citing ADR-013 §10 (reception-log
+      telemetry closed as v2+ deferral; v1 wire protocol does not carry
+      per-hop telemetry, and the kiosk data model follows the wire). The
+      map and sidebar surfaces do not mention RSSI/SNR/hop.
 - [x] No acknowledgement affordance rendered as if accepted. The Variant A
       button is labelled `ACKNOWLEDGE — pressure-test against ADR-007:46` so
       it cannot be read as an endorsement of the flow.

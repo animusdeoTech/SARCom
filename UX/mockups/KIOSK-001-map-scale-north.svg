@@ -123,7 +123,6 @@
     <g>
       <rect x="252" y="372" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
       <text x="274" y="384" fill="#40d080" font-size="10">gw-0</text>
-      <text x="274" y="395" fill="#5a6a7a" font-size="8">RTC ok</text>
     </g>
   </g>
 
@@ -142,7 +141,7 @@
     <text x="520" y="252" fill="#5a6a7a" font-size="9">tag-3 · …</text>
     <text x="520" y="300" fill="#5a6a7a" font-size="9">tag-4 · …</text>
     <text x="520" y="348" fill="#5a6a7a" font-size="9">relay-1 · 14 m</text>
-    <text x="520" y="396" fill="#5a6a7a" font-size="9">gw-0 · RTC ok</text>
+    <text x="520" y="396" fill="#5a6a7a" font-size="9">gw-0</text>
   </g>
 
   <g id="bottom-strip">

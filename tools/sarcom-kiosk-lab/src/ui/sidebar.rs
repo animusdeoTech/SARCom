@@ -1,18 +1,21 @@
 use crate::app::KioskLabApp;
 use crate::data::{
-    freshness_for_relay, freshness_for_tag, Freshness, GatewayData, RelayData, TagData,
+    freshness_for_relay, freshness_for_tag, Freshness, NodeData, NodeKind, SimState,
 };
-use crate::map::markers::tag_display_color;
+use crate::map::markers::node_display_color;
 use crate::ui::palette::{
     freshness_color, AMBER, GREEN, GREY, ORANGE, RED, TEXT_BRIGHT, TEXT_DIM,
 };
 use crate::ui::{format_age, format_wall};
 use eframe::egui;
 
-enum Row<'a> {
-    Hiker { idx: usize, tag: &'a TagData },
-    Relay(&'a RelayData),
-    Gateway(&'a GatewayData),
+/// Sidebar row — single row variant per
+/// `dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`. The kind-distinction
+/// (icon glyph + label colour + age-suffix elision) is applied inside
+/// `render_node_row` by looking up `sim.inventory[node_id]`.
+struct Row<'a> {
+    idx: usize,
+    node: &'a NodeData,
 }
 
 impl KioskLabApp {
@@ -24,16 +27,11 @@ impl KioskLabApp {
 
             let rows = build_rows(&self.sim);
             for row in rows {
-                match row {
-                    Row::Hiker { idx, tag } => {
-                        let is_sel = self.selected_tag == Some(idx);
-                        let resp = render_hiker_row(ui, tag, is_sel, t);
-                        if resp.clicked() {
-                            self.selected_tag = if is_sel { None } else { Some(idx) };
-                        }
-                    }
-                    Row::Relay(relay) => render_relay_row(ui, relay, t),
-                    Row::Gateway(gw) => render_gateway_row(ui, gw),
+                let kind = self.sim.kind_for_id(row.node.node_id);
+                let is_sel = self.selected_tag == Some(row.idx);
+                let resp = render_node_row(ui, row.node, kind, is_sel, t);
+                if resp.clicked() {
+                    self.selected_tag = if is_sel { None } else { Some(row.idx) };
                 }
             }
 
@@ -51,40 +49,56 @@ impl KioskLabApp {
     }
 }
 
-/// Mission-first ordering inside the node list: SOS → no-fix → stale/very-stale → normal,
-/// with relays and the gateway pinned at the bottom.
-fn hiker_priority(tag: &TagData) -> u8 {
-    if tag.sos {
-        return 0;
-    }
-    if !tag.gps_valid {
-        return 1;
-    }
-    match freshness_for_tag(tag.last_seen_secs, false) {
-        Freshness::VeryStale | Freshness::Stale => 2,
-        _ => 3,
+/// Mission-first ordering inside the node list:
+/// SOS → no-fix → stale/very-stale → normal tags → relays → gateway.
+/// Priority is computed per node + inventory kind.
+fn row_priority(node: &NodeData, kind: NodeKind) -> u8 {
+    match kind {
+        NodeKind::Tag => {
+            if node.sos {
+                return 0;
+            }
+            if !node.gps_valid {
+                return 1;
+            }
+            match freshness_for_tag(node.last_seen_secs, false) {
+                Freshness::VeryStale | Freshness::Stale => 2,
+                _ => 3,
+            }
+        }
+        NodeKind::Relay => 4,
+        NodeKind::Gateway => 5,
     }
 }
 
-fn build_rows(sim: &crate::data::SimState) -> Vec<Row<'_>> {
-    let mut tag_idxs: Vec<usize> = (0..sim.tags.len()).collect();
-    tag_idxs.sort_by_key(|&i| (hiker_priority(&sim.tags[i]), sim.tags[i].node_id));
-
-    let mut rows: Vec<Row<'_>> = Vec::with_capacity(sim.tags.len() + 2);
-    for i in tag_idxs {
-        rows.push(Row::Hiker {
+fn build_rows(sim: &SimState) -> Vec<Row<'_>> {
+    let mut indices: Vec<usize> = (0..sim.nodes.len()).collect();
+    indices.sort_by_key(|&i| {
+        let n = &sim.nodes[i];
+        (row_priority(n, sim.kind_for_id(n.node_id)), n.node_id)
+    });
+    indices
+        .into_iter()
+        .map(|i| Row {
             idx: i,
-            tag: &sim.tags[i],
-        });
-    }
-    rows.push(Row::Relay(&sim.relay));
-    rows.push(Row::Gateway(&sim.gateway));
-    rows
+            node: &sim.nodes[i],
+        })
+        .collect()
 }
 
-fn render_hiker_row(
+/// Render any node — uniform layout. Kind affects:
+///   - state-bullet colour (tag uses `node_display_color` per state;
+///     relay uses `freshness_for_relay` thresholds; gateway is GREEN
+///     because it's local).
+///   - label colour (tag = TEXT_BRIGHT, relay = ORANGE, gateway = GREEN).
+///   - age-suffix elision (gateway has `last_seen_secs == 0` sentinel →
+///     no age line; gateway is local).
+///
+/// Field set is the same. No per-kind layout branch beyond presentation.
+fn render_node_row(
     ui: &mut egui::Ui,
-    tag: &TagData,
+    node: &NodeData,
+    kind: NodeKind,
     is_sel: bool,
     t: f64,
 ) -> egui::Response {
@@ -93,7 +107,15 @@ fn render_hiker_row(
     } else {
         egui::Color32::TRANSPARENT
     };
-    let dot = tag_display_color(tag);
+
+    let (dot, label_color) = match kind {
+        NodeKind::Tag => (node_display_color(node), TEXT_BRIGHT),
+        NodeKind::Relay => {
+            let f = freshness_for_relay(node.last_seen_secs);
+            (freshness_color(f), ORANGE)
+        }
+        NodeKind::Gateway => (GREEN, GREEN),
+    };
 
     egui::Frame::NONE
         .fill(bg)
@@ -101,8 +123,9 @@ fn render_hiker_row(
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
 
-            if tag.sos {
-                let since = format!("since {}", format_wall(t - tag.last_seen_secs as f64));
+            // SOS sticky-alert prefix (tag-only — only tags emit SOS per ADR-010).
+            if node.sos && kind == NodeKind::Tag {
+                let since = format!("since {}", format_wall(t - node.last_seen_secs as f64));
                 ui.horizontal(|ui| {
                     ui.label(
                         egui::RichText::new("⚠ SOS")
@@ -120,62 +143,78 @@ fn render_hiker_row(
                 });
             }
 
+            // Primary line: bullet + label.
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("●").color(dot).size(11.0));
                 ui.label(
-                    egui::RichText::new(&tag.label)
-                        .color(TEXT_BRIGHT)
+                    egui::RichText::new(&node.label)
+                        .color(label_color)
                         .strong()
                         .monospace()
                         .size(11.0),
                 );
             });
 
-            if !tag.gps_valid {
-                ui.label(
-                    egui::RichText::new("  last —")
-                        .color(TEXT_DIM)
-                        .monospace()
-                        .size(10.0),
-                );
-                ui.label(
-                    egui::RichText::new("  GPS_VALID=0 · sentinels")
-                        .color(GREY)
-                        .monospace()
-                        .size(10.0),
-                );
-                if let Some(age) = tag.last_valid_fix_age_secs {
+            // last_seen line. Gateway elides this (it's local; sentinel-zero
+            // `last_seen_secs` is not a meaningful age).
+            if kind != NodeKind::Gateway {
+                if !node.gps_valid {
+                    // No-fix tag: GPS_VALID=0 + last-fix-age (if any).
                     ui.label(
-                        egui::RichText::new(format!("  last fix {}", format_age(age)))
+                        egui::RichText::new("  last —")
                             .color(TEXT_DIM)
                             .monospace()
                             .size(10.0),
                     );
-                }
-            } else {
-                let line = format!(
-                    "  last {} · {}",
-                    format_wall(t - tag.last_seen_secs as f64),
-                    format_age(tag.last_seen_secs),
-                );
-                ui.label(
-                    egui::RichText::new(line)
+                    ui.label(
+                        egui::RichText::new("  GPS_VALID=0 · sentinels")
+                            .color(GREY)
+                            .monospace()
+                            .size(10.0),
+                    );
+                    if let Some(age) = node.last_valid_fix_age_secs {
+                        ui.label(
+                            egui::RichText::new(format!("  last fix {}", format_age(age)))
+                                .color(TEXT_DIM)
+                                .monospace()
+                                .size(10.0),
+                        );
+                    }
+                } else {
+                    let frame_label = if kind == NodeKind::Relay {
+                        "POSITION"
+                    } else {
+                        "last"
+                    };
+                    let line = format!(
+                        "  {} {} · {}",
+                        frame_label,
+                        format_wall(t - node.last_seen_secs as f64),
+                        format_age(node.last_seen_secs),
+                    );
+                    ui.label(
+                        egui::RichText::new(line)
+                            .color(TEXT_DIM)
+                            .monospace()
+                            .size(10.0),
+                    );
+                    let coord_suffix = match kind {
+                        NodeKind::Relay => " · solar",
+                        _ => "",
+                    };
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "  {:.5}, {:.5}{}",
+                            node.pos[0], node.pos[1], coord_suffix
+                        ))
                         .color(TEXT_DIM)
                         .monospace()
                         .size(10.0),
-                );
-                ui.label(
-                    egui::RichText::new(format!(
-                        "  {:.5}, {:.5}",
-                        tag.pos[0], tag.pos[1]
-                    ))
-                    .color(TEXT_DIM)
-                    .monospace()
-                    .size(10.0),
-                );
+                    );
+                }
             }
 
-            if tag.battery_low {
+            if node.battery_low {
                 ui.label(
                     egui::RichText::new("  BATT LOW")
                         .color(AMBER)
@@ -187,93 +226,4 @@ fn render_hiker_row(
         })
         .response
         .interact(egui::Sense::click())
-}
-
-fn render_relay_row(ui: &mut egui::Ui, relay: &RelayData, t: f64) {
-    let dot = match relay.last_seen_secs {
-        Some(age) => freshness_color(freshness_for_relay(age)),
-        None => GREY,
-    };
-
-    egui::Frame::NONE
-        .inner_margin(egui::Margin::symmetric(10, 5))
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("●").color(dot).size(11.0));
-                ui.label(
-                    egui::RichText::new(&relay.label)
-                        .color(ORANGE)
-                        .strong()
-                        .monospace()
-                        .size(11.0),
-                );
-            });
-
-            match relay.last_seen_secs {
-                Some(age) => {
-                    let line = format!(
-                        "  POSITION {} · {}",
-                        format_wall(t - age as f64),
-                        format_age(age),
-                    );
-                    ui.label(
-                        egui::RichText::new(line)
-                            .color(TEXT_DIM)
-                            .monospace()
-                            .size(10.0),
-                    );
-                }
-                None => {
-                    ui.label(
-                        egui::RichText::new("  POSITION — · no frame rx")
-                            .color(TEXT_DIM)
-                            .monospace()
-                            .size(10.0),
-                    );
-                }
-            }
-
-            ui.label(
-                egui::RichText::new(format!(
-                    "  {:.5}, {:.5} · solar",
-                    relay.pos[0], relay.pos[1]
-                ))
-                .color(TEXT_DIM)
-                .monospace()
-                .size(10.0),
-            );
-        });
-}
-
-fn render_gateway_row(ui: &mut egui::Ui, gw: &GatewayData) {
-    egui::Frame::NONE
-        .inner_margin(egui::Margin::symmetric(10, 5))
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("●").color(GREEN).size(11.0));
-                ui.label(
-                    egui::RichText::new(&gw.label)
-                        .color(GREEN)
-                        .strong()
-                        .monospace()
-                        .size(11.0),
-                );
-            });
-            ui.label(
-                egui::RichText::new("  RPi5 · Dragino HAT")
-                    .color(TEXT_DIM)
-                    .monospace()
-                    .size(10.0),
-            );
-            ui.label(
-                egui::RichText::new("  RTC: DS3231 ok")
-                    .color(GREEN)
-                    .monospace()
-                    .size(10.0),
-            );
-        });
 }

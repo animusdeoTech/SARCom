@@ -1,26 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1620" font-family="Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1100" font-family="Menlo, Consolas, monospace">
   <!--
     SARCOM KIOSK-004 — Selection → recenter + sidebar-replacement detail.
-    Single-design v1a mockup. Three stacked 800x480 lab fixtures (Panel A tag,
-    Panel B relay, Panel C gateway) per tools/sarcom-kiosk-lab/README.md:53.
-    Map areas in all three panels render the three-layer basemap stack per
-    pmtiles_map.rs:82-125 (basemap + LIDAR hillshade + OSM XML overlays).
-    Sidebar-replacement detail; no overlay; no tap-outside dismiss; 150 ms eased
-    pan recenter; tag-3 ghost with LAST FIX · {age} framing per KIOSK-004:50, 91.
+    Single-design v1a mockup. Two stacked 800x480 lab fixtures.
+
+    Per dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md, the v1a
+    UI data model is one uniform NodeData struct. The detail surface is
+    ONE layout that renders the same field set for any selected node;
+    icon glyph + colour come from inventory.kind lookup, not from a
+    per-kind layout branch.
+
+    Panel A: tag-3 selected (no-fix; rich case with LAST FIX · {age}
+             framing scoping lat/lon to last_valid_fix_pos)
+    Panel B: relay-2 selected (overdue; identical layout, different
+             NodeData fields populated)
+
+    Both panels surface the three-layer basemap composition per
+    pmtiles_map.rs:82-125 (PMTiles basemap + LIDAR hillshade + OSM XML
+    overlays). Sidebar-replacement detail; no overlay; no tap-outside
+    dismiss; 150 ms eased pan recenter.
+
+    Gateway detail (formerly Panel C) is removed: gateway-self status is
+    deferred from v1a per KIOSK-005 (deferred stub).
   -->
 
   <defs>
-    <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <pattern id="map-grid-4" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a2530" stroke-width="0.5"/>
     </pattern>
-    <linearGradient id="hillshade-a" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="hillshade-4" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="rgb(180,180,185)" stop-opacity="0.0"/>
       <stop offset="35%" stop-color="rgb(200,200,205)" stop-opacity="0.30"/>
       <stop offset="65%" stop-color="rgb(70,70,75)" stop-opacity="0.36"/>
       <stop offset="100%" stop-color="rgb(40,40,45)" stop-opacity="0.16"/>
     </linearGradient>
-    <radialGradient id="ridge-a" cx="55%" cy="40%" r="55%">
+    <radialGradient id="ridge-4" cx="55%" cy="40%" r="55%">
       <stop offset="0%" stop-color="rgb(210,210,215)" stop-opacity="0.38"/>
       <stop offset="55%" stop-color="rgb(150,150,155)" stop-opacity="0.20"/>
       <stop offset="100%" stop-color="rgb(40,40,45)" stop-opacity="0.0"/>
@@ -28,507 +42,403 @@
   </defs>
 
   <g id="background">
-    <title>Viewport background, three panel frames, header + footer bands</title>
-    <rect x="0" y="0" width="1100" height="1620" fill="#070b10"/>
+    <title>Viewport background, two panel frames, header + footer bands</title>
+    <rect x="0" y="0" width="1100" height="1100" fill="#070b10"/>
 
     <text x="20" y="26" fill="#ff8232" font-size="14" font-weight="bold">SARCOM</text>
-    <text x="86" y="26" fill="#6c7f92" font-size="11">KIOSK-004 · selection → recenter + sidebar-replacement detail · 2026-05-19 · single-design v1a · rev 2 (three-layer basemap)</text>
-    <text x="20" y="44" fill="#c0ccd8" font-size="11">Lab fixture 800x480 × 3 stacked panels · ADR-015-pending; substrate open per README.md:36</text>
+    <text x="86" y="26" fill="#6c7f92" font-size="11">KIOSK-004 · selection → recenter + sidebar-replacement detail · 2026-05-19 · single-design v1a · rev 3 (NodeData collapse)</text>
+    <text x="20" y="44" fill="#c0ccd8" font-size="11">Lab fixture 800×480 × 2 stacked panels · ADR-015-pending substrate per README.md:36 · uniform detail layout for any node (kind from inventory)</text>
 
+    <!-- Panel A frame -->
     <rect x="20" y="60" width="800" height="480" fill="#0a0f14"/>
     <rect x="20" y="60" width="800" height="30" fill="#070b10"/>
-    <rect x="500" y="90" width="320" height="450" fill="#0c1118"/>
-    <line x1="500" y1="90" x2="500" y2="540" stroke="#1a2530" stroke-width="1"/>
-    <text x="28" y="80" fill="#c0ccd8" font-size="11" font-weight="bold">Panel A — tag detail (tag-3 selected, no-fix)</text>
+    <rect x="500" y="90" width="320" height="426" fill="#0c1118"/>
+    <line x1="500" y1="90" x2="500" y2="516" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="80" fill="#c0ccd8" font-size="11" font-weight="bold">Panel A — tag-3 selected (no-fix · LAST FIX framing)</text>
 
+    <!-- Panel B frame -->
     <rect x="20" y="580" width="800" height="480" fill="#0a0f14"/>
     <rect x="20" y="580" width="800" height="30" fill="#070b10"/>
-    <rect x="500" y="610" width="320" height="450" fill="#0c1118"/>
-    <line x1="500" y1="610" x2="500" y2="1060" stroke="#1a2530" stroke-width="1"/>
-    <text x="28" y="600" fill="#c0ccd8" font-size="11" font-weight="bold">Panel B — relay detail (relay-2 selected, overdue)</text>
+    <rect x="500" y="610" width="320" height="426" fill="#0c1118"/>
+    <line x1="500" y1="610" x2="500" y2="1036" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="600" fill="#c0ccd8" font-size="11" font-weight="bold">Panel B — relay-2 selected (overdue · SAME layout as Panel A, different NodeData fields)</text>
 
-    <rect x="20" y="1100" width="800" height="480" fill="#0a0f14"/>
-    <rect x="20" y="1100" width="800" height="30" fill="#070b10"/>
-    <rect x="500" y="1130" width="320" height="450" fill="#0c1118"/>
-    <line x1="500" y1="1130" x2="500" y2="1580" stroke="#1a2530" stroke-width="1"/>
-    <text x="28" y="1120" fill="#c0ccd8" font-size="11" font-weight="bold">Panel C — gateway detail (gw-0 selected, healthy)</text>
-
-    <text x="20" y="1602" fill="#6c7f92" font-size="9">Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs · TEXT_BRIGHT #c0ccd8 · TEXT_DIM #6c7f92 · AMBER #eab308 · GREEN #40d080 · BLUE #32b4ff · RED #ff3c3c · ORANGE #f0a030 · GREY #6b7280</text>
-    <text x="20" y="1614" fill="#6c7f92" font-size="9">Three-layer map per pmtiles_map.rs:82-125 (basemap + LIDAR hillshade @ 0.5 + OSM overlays) · sidebar IS detail surface · KIOSK-004:24, 28, 76, 92 · ADR-007:38-46 · SPIKE-001 closed strict</text>
+    <text x="20" y="1080" fill="#6c7f92" font-size="9">Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs · BLUE #32b4ff · ORANGE #f0a030 · GREEN #40d080 · AMBER #eab308 · RED #ff3c3c · TEXT_BRIGHT #c0ccd8 · TEXT_DIM #6c7f92</text>
+    <text x="20" y="1092" fill="#6c7f92" font-size="9">Source-of-truth: KIOSK-004 ticket (post-collapse) · dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md · data.rs NodeData (post-refactor) · markers.rs:32-38, 231-237, 265-302 · pmtiles_map.rs:82-125</text>
   </g>
 
   <!-- ===================================================================== -->
-  <!--                       PANEL A — TAG-3 NO-FIX DETAIL                   -->
+  <!--                 PANEL A — tag-3 SELECTED (NO-FIX)                     -->
   <!-- ===================================================================== -->
 
-  <g id="map">
-    <title>Panel A map area 480x426 at x=20..500, y=90..516. Three layers per
-           pmtiles_map.rs:82-125. tag-3 ghost at last_valid_fix_pos with dashed ring.</title>
+  <g id="map-a">
+    <title>Panel A map area at x=20..500, y=90..516. Three-layer basemap per
+           pmtiles_map.rs:82-125. tag-3 ghost at last_valid_fix_pos with selection halo.
+           Other markers dimmed. Map performs 150 ms eased pan onto tag_visible_pos.</title>
+
     <!-- L1 basemap -->
     <rect x="20" y="90" width="480" height="426" fill="#0a0f14"/>
-    <rect x="20" y="90" width="480" height="426" fill="url(#map-grid)"/>
-    <path d="M 30 220 Q 130 180 220 215 T 380 230 T 495 215" stroke="#1a2530" stroke-width="1.2" fill="none"/>
+    <rect x="20" y="90" width="480" height="426" fill="url(#map-grid-4)"/>
+    <path d="M 30 220 Q 130 195 220 220 T 380 235 T 495 225" stroke="#1a2530" stroke-width="1.2" fill="none"/>
     <path d="M 30 320 Q 150 295 250 310 T 420 325 T 495 315" stroke="#1a2530" stroke-width="1" fill="none"/>
     <path d="M 80 410 Q 120 400 160 408 Q 180 415 165 425 Q 130 432 90 425 Z" fill="#0d1620" stroke="#1c3040" stroke-width="0.6"/>
 
-    <!-- L2 LIDAR hillshade -->
+    <!-- L2 hillshade -->
     <g opacity="0.55">
-      <rect x="20" y="90" width="480" height="426" fill="url(#hillshade-a)"/>
-      <ellipse cx="260" cy="270" rx="220" ry="160" fill="url(#ridge-a)"/>
-      <path d="M 30 250 Q 140 220 240 245 T 410 265 T 495 255" stroke="#b8babd" stroke-opacity="0.22" stroke-width="0.8" fill="none"/>
-      <path d="M 30 350 Q 160 330 270 345 T 440 358 T 495 348" stroke="#888a8d" stroke-opacity="0.16" stroke-width="0.6" fill="none"/>
+      <rect x="20" y="90" width="480" height="426" fill="url(#hillshade-4)"/>
+      <ellipse cx="260" cy="270" rx="220" ry="160" fill="url(#ridge-4)"/>
+      <path d="M 30 250 Q 140 220 240 245 T 410 265 T 495 255" stroke="#b8babd" stroke-opacity="0.20" stroke-width="0.8" fill="none"/>
+      <path d="M 30 350 Q 160 330 270 345 T 440 358 T 495 348" stroke="#888a8d" stroke-opacity="0.15" stroke-width="0.6" fill="none"/>
     </g>
 
     <!-- L3 OSM overlays -->
     <g>
       <rect x="148" y="248" width="22" height="14" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
       <rect x="174" y="244" width="14" height="18" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
-      <path d="M 90 460 L 150 420 L 210 380 L 270 340 L 330 300 L 370 250 L 410 200"
-            stroke="#c0a060" stroke-width="1.1" stroke-dasharray="3 3" fill="none" opacity="0.75"/>
+      <polygon points="220,338 246,332 252,348 230,354" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
     </g>
+  </g>
 
-    <!-- Other markers, reduced prominence -->
-    <g opacity="0.35">
-      <circle cx="180" cy="220" r="6" fill="#32b4ff"/>
-      <text x="192" y="223" fill="#6c7f92" font-size="9">tag-1</text>
-      <circle cx="240" cy="280" r="7" fill="#ff3c3c"/>
-      <text x="252" y="283" fill="#6c7f92" font-size="9">tag-2</text>
-      <g transform="translate(330,260)">
-        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030"/>
-        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030"/>
+  <g id="markers-a">
+    <title>Panel A markers — tag-3 selected (ghost at last_valid_fix_pos, amber halo).
+           Other markers dimmed.</title>
+
+    <!-- Dimmed other markers -->
+    <g opacity="0.40">
+      <circle cx="200" cy="200" r="7" fill="#32b4ff"/>
+      <text x="214" y="197" fill="#c0ccd8" font-size="9">tag-1</text>
+      <g transform="translate(340,180)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
       </g>
-      <text x="344" y="263" fill="#6c7f92" font-size="9">relay-1</text>
-      <rect x="252" y="372" width="14" height="14" fill="none" stroke="#40d080" stroke-width="1.5"/>
-      <text x="272" y="384" fill="#6c7f92" font-size="9">gw-0</text>
+      <text x="354" y="178" fill="#f0a030" font-size="9">relay-1</text>
+      <rect x="232" y="460" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
+      <text x="254" y="472" fill="#40d080" font-size="9">gw-0</text>
     </g>
 
-    <!-- tag-3 no-fix ghost at last_valid_fix_pos, SELECTED -->
+    <!-- tag-3 SELECTED: ghost at last_valid_fix_pos + amber halo -->
     <g>
+      <!-- selection halo (amber dashed) -->
       <circle cx="280" cy="380" r="22" fill="none" stroke="#eab308" stroke-opacity="0.55" stroke-width="1.6" stroke-dasharray="2 2"/>
-      <circle cx="280" cy="380" r="13" fill="none" stroke="#c0ccd8" stroke-opacity="0.6" stroke-dasharray="3.5 3.5" stroke-width="1"/>
-      <circle cx="280" cy="380" r="8" fill="#6b7280" fill-opacity="0.35"/>
-      <text x="296" y="377" fill="#c0ccd8" fill-opacity="0.7" font-size="11">tag-3 · last fix</text>
-      <text x="296" y="389" fill="#eab308" font-size="9">NO FIX · 8 m ago</text>
+      <!-- ghost dashed outer ring per markers.rs:265-302 -->
+      <circle cx="280" cy="380" r="12" fill="none" stroke="#6c7f92" stroke-opacity="0.7" stroke-dasharray="3 3" stroke-width="1.0"/>
+      <!-- faded ghost fill -->
+      <circle cx="280" cy="380" r="8" fill="#32b4ff" fill-opacity="0.25"/>
+      <text x="298" y="376" fill="#c0ccd8" font-size="10" font-weight="bold">tag-3 ◀ selected</text>
+      <text x="298" y="388" fill="#eab308" font-size="9">NO FIX · last fix 8 m</text>
     </g>
 
-    <!-- Recenter pan arrow -->
+    <!-- Recenter arrow (150 ms eased pan onto tag_visible_pos) -->
     <g opacity="0.65">
-      <path d="M 130 130 Q 200 240 270 370" stroke="#ff8232" stroke-width="0.8" stroke-dasharray="3 3" fill="none"/>
-      <polygon points="270,370 263,362 269,358" fill="#ff8232"/>
-      <text x="140" y="125" fill="#ff8232" font-size="9">150 ms eased pan</text>
+      <path d="M 120 200 Q 200 280 270 370" fill="none" stroke="#ff8232" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <polygon points="270,370 263,363 269,358" fill="#ff8232"/>
+      <text x="130" y="195" fill="#ff8232" font-size="9">150 ms eased pan onto tag_visible_pos</text>
+      <text x="130" y="208" fill="#ff8232" font-size="8" font-style="italic">(markers.rs:32-38 · KIOSK-004:35-36, 87)</text>
     </g>
   </g>
 
-  <g id="markers">
-    <title>Markers folded into #map (Panel A) for adjacency.</title>
+  <g id="sidebar-a">
+    <title>Panel A sidebar-replacement detail — UNIFORM LAYOUT (same as Panel B).
+           Back row → Node header → State strip → Key/value rows → NOT SHOWN block.
+           tag-3 no-fix-specific: LAST FIX · {age} framing scoping lat/lon to
+           last_valid_fix_pos, not sentinel current pos.</title>
+
+    <!-- Back row -->
+    <rect x="500" y="90" width="320" height="32" fill="#10171f"/>
+    <line x1="500" y1="122" x2="820" y2="122" stroke="#1a2530" stroke-width="0.6"/>
+    <text x="510" y="111" fill="#c0ccd8" font-size="12">← Back to list</text>
+
+    <!-- Node header: icon + label -->
+    <text x="510" y="148" fill="#6c7f92" font-size="9">NODE</text>
+    <circle cx="525" cy="178" r="9" fill="#32b4ff" fill-opacity="0.25"/>
+    <circle cx="525" cy="178" r="13" fill="none" stroke="#6c7f92" stroke-opacity="0.6" stroke-dasharray="3 3" stroke-width="1"/>
+    <text x="555" y="184" fill="#c0ccd8" font-size="22" font-weight="bold">tag-3</text>
+    <text x="555" y="200" fill="#6c7f92" font-size="9">inventory.kind = Tag · BLUE icon</text>
+
+    <!-- State strip -->
+    <rect x="500" y="214" width="320" height="22" fill="#1a1404"/>
+    <text x="510" y="229" fill="#eab308" font-size="11" font-weight="bold">⚠ NO FIX</text>
+    <text x="595" y="229" fill="#6c7f92" font-size="10">gps_valid=false</text>
+
+    <!-- Key/value rows -->
+    <text x="510" y="256" fill="#6c7f92" font-size="10">last frame</text>
+    <text x="812" y="256" fill="#c0ccd8" font-size="10" text-anchor="end">30 s</text>
+
+    <text x="510" y="274" fill="#6c7f92" font-size="10">last fix</text>
+    <text x="812" y="274" fill="#eab308" font-size="10" text-anchor="end">8 m</text>
+
+    <!-- LAST FIX framing label scoping lat/lon -->
+    <rect x="500" y="282" width="320" height="18" fill="#0c1118"/>
+    <text x="510" y="295" fill="#eab308" font-size="9" font-style="italic">LAST FIX · 8 m ago — scopes lat/lon below</text>
+
+    <text x="510" y="316" fill="#6c7f92" font-size="10">lat</text>
+    <text x="812" y="316" fill="#c0ccd8" font-size="10" text-anchor="end">50.92471° N</text>
+    <text x="510" y="334" fill="#6c7f92" font-size="10">lon</text>
+    <text x="812" y="334" fill="#c0ccd8" font-size="10" text-anchor="end">5.41856° E</text>
+
+    <text x="510" y="358" fill="#6c7f92" font-size="9" font-style="italic">(last_valid_fix_pos · NOT sentinel current pos · KIOSK-004:50, 91)</text>
+
+    <!-- NOT SHOWN block: protocol-closure only -->
+    <rect x="500" y="388" width="320" height="80" fill="#0c1118"/>
+    <text x="510" y="403" fill="#6c7f92" font-size="9">NOT SHOWN</text>
+    <text x="510" y="419" fill="#6c7f92" font-size="9">RSSI · SNR · hop count</text>
+    <text x="510" y="433" fill="#6c7f92" font-size="9" font-style="italic">per ADR-013 §10 — reception-log telemetry</text>
+    <text x="510" y="446" fill="#6c7f92" font-size="9" font-style="italic">closed as v2+ deferral. Wire protocol does</text>
+    <text x="510" y="459" fill="#6c7f92" font-size="9" font-style="italic">not carry them; data model follows wire.</text>
   </g>
 
-  <g id="sidebar">
-    <title>Panel A sidebar-replacement detail for tag-3 (no-fix). NO overlay; this REPLACES
-           the row list. Back-to-list row is the only dismissal affordance.</title>
-
-    <rect x="500" y="90" width="320" height="48" fill="#10171f"/>
-    <line x1="500" y1="138" x2="820" y2="138" stroke="#1a2530" stroke-width="0.6"/>
-    <text x="510" y="115" fill="#c0ccd8" font-size="12">← Back to list</text>
-    <text x="510" y="130" fill="#6c7f92" font-size="9">(tag-3 selected — tap to return)</text>
-
-    <text x="510" y="158" fill="#6c7f92" font-size="9">NODE</text>
-    <text x="510" y="184" fill="#eab308" font-size="22" font-weight="bold">tag-3</text>
-    <text x="510" y="200" fill="#6c7f92" font-size="10">hiker · last fix 8 m ago</text>
-
-    <rect x="500" y="208" width="320" height="22" fill="#1a1404"/>
-    <text x="510" y="223" fill="#eab308" font-size="11" font-weight="bold">⚠ NO FIX</text>
-    <text x="585" y="223" fill="#6c7f92" font-size="10">gps_valid=false</text>
-
-    <text x="510" y="250" fill="#6c7f92" font-size="10">last frame age</text>
-    <text x="812" y="250" fill="#c0ccd8" font-size="10" text-anchor="end">30 s</text>
-
-    <line x1="510" y1="262" x2="812" y2="262" stroke="#eab308" stroke-opacity="0.4" stroke-width="0.6"/>
-    <text x="510" y="278" fill="#eab308" font-size="11" font-weight="bold">LAST FIX · 8 m ago</text>
-    <text x="812" y="278" fill="#6c7f92" font-size="9" font-style="italic" text-anchor="end">(NOT sentinel current pos)</text>
-    <text x="518" y="297" fill="#6c7f92" font-size="10">last fix lat</text>
-    <text x="812" y="297" fill="#c0ccd8" font-size="10" text-anchor="end">50.92338° N</text>
-    <text x="518" y="313" fill="#6c7f92" font-size="10">last fix lon</text>
-    <text x="812" y="313" fill="#c0ccd8" font-size="10" text-anchor="end">5.41862° E</text>
-    <line x1="510" y1="320" x2="812" y2="320" stroke="#eab308" stroke-opacity="0.4" stroke-width="0.6"/>
-
-    <text x="510" y="340" fill="#6c7f92" font-size="10">battery</text>
-    <text x="812" y="340" fill="#40d080" font-size="10" text-anchor="end">ok</text>
-
-    <text x="510" y="370" fill="#6c7f92" font-size="9">FLAGS</text>
-    <rect x="510" y="378" width="78" height="22" rx="3" fill="#0c1118" stroke="#1a2530"/>
-    <text x="549" y="393" fill="#c0ccd8" font-size="10" text-anchor="middle">SOS · 0</text>
-    <rect x="596" y="378" width="106" height="22" rx="3" fill="#1a1404" stroke="#eab308"/>
-    <text x="649" y="393" fill="#eab308" font-size="10" text-anchor="middle" font-weight="bold">GPS_VALID · 0</text>
-    <rect x="710" y="378" width="78" height="22" rx="3" fill="#0c1118" stroke="#1a2530"/>
-    <text x="749" y="393" fill="#c0ccd8" font-size="10" text-anchor="middle">BATT · 0</text>
-
-    <text x="510" y="430" fill="#6c7f92" font-size="9">NOT SHOWN</text>
-    <text x="510" y="446" fill="#6c7f92" font-size="9">RSSI / SNR / hop count</text>
-    <text x="510" y="460" fill="#6c7f92" font-size="9" font-style="italic">kiosk-lab data model does not carry</text>
-    <text x="510" y="473" fill="#6c7f92" font-size="9" font-style="italic">these fields (data.rs:131-150)</text>
-
-    <text x="510" y="510" fill="#6c7f92" font-size="9" font-style="italic">no overlay · no slide-in · no tap-outside</text>
-    <text x="510" y="523" fill="#6c7f92" font-size="9" font-style="italic">dismiss · KIOSK-004:24, 28, 76, 92</text>
-  </g>
-
-  <g id="bottom-strip">
-    <rect x="20" y="516" width="480" height="24" fill="#0a0f14"/>
+  <g id="bottom-strip-a">
+    <title>Panel A bottom strip — existing read-only PMTiles strip per app.rs:283-344.</title>
+    <rect x="20" y="516" width="800" height="24" fill="#0a0f14"/>
     <text x="28" y="532" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
   </g>
 
-  <g id="controls">
-    <title>Panel A map chrome: compass rose + scale bar only. No floating buttons. No crosshair.</title>
-    <text x="32" y="105" fill="#5a6a7a" font-size="9">[compass]</text>
-    <text x="32" y="508" fill="#5a6a7a" font-size="9">[scale bar]</text>
-  </g>
-
-  <g id="annotations">
-    <title>Panel A + B + C annotations. Layer L1/L2/L3 anchors call out the three-layer
-           basemap composition per pmtiles_map.rs:82-125.</title>
-
-    <text x="836" y="84" fill="#c0ccd8" font-size="10" font-weight="bold">Panel A — tag-3 no-fix</text>
-
-    <circle cx="488" cy="114" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="117" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
-    <text x="836" y="106" fill="#ff8232" font-size="10" font-weight="bold">1 · Back-to-list (only dismiss)</text>
-    <text x="836" y="121" fill="#6c7f92" font-size="9">≥48 px tap target · explicit affordance</text>
-    <text x="836" y="134" fill="#6c7f92" font-size="9">no tap-outside dismiss · KIOSK-004:28, 77, 92</text>
-
-    <circle cx="488" cy="278" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="281" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
-    <text x="836" y="155" fill="#ff8232" font-size="10" font-weight="bold">2 · LAST FIX · {age} framing</text>
-    <text x="836" y="170" fill="#6c7f92" font-size="9">framed amber heading scopes the next</text>
-    <text x="836" y="183" fill="#6c7f92" font-size="9">two rows (lat/lon) to the last VALID fix.</text>
-    <text x="836" y="196" fill="#6c7f92" font-size="9">Sentinel current pos NOT rendered.</text>
-    <text x="836" y="209" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-004:50, 91 · markers.rs:32-38</text>
-
-    <circle cx="488" cy="389" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="392" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
-    <text x="836" y="231" fill="#ff8232" font-size="10" font-weight="bold">3 · flags pills row</text>
-    <text x="836" y="246" fill="#6c7f92" font-size="9">SOS · 0 · GPS_VALID · 0 (alert tint)</text>
-    <text x="836" y="259" fill="#6c7f92" font-size="9">· BATT · 0 — from data.rs</text>
-    <text x="836" y="272" fill="#6c7f92" font-size="9" font-style="italic">data.rs:131-150</text>
-
-    <circle cx="488" cy="450" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="453" fill="#ff8232" font-size="9" text-anchor="middle">4</text>
-    <text x="836" y="294" fill="#ff8232" font-size="10" font-weight="bold">4 · NOT SHOWN block</text>
-    <text x="836" y="309" fill="#6c7f92" font-size="9">RSSI · SNR · hop count — data model</text>
-    <text x="836" y="322" fill="#6c7f92" font-size="9">does not carry these · stated explicitly</text>
-    <text x="836" y="335" fill="#6c7f92" font-size="9">rather than rendering N/A placeholders.</text>
-    <text x="836" y="348" fill="#6c7f92" font-size="9" font-style="italic">data.rs:131-150 · KIOSK-004:80, 113</text>
-
-    <circle cx="260" cy="365" r="9" fill="none" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="260" y="368" fill="#ff8232" font-size="9" text-anchor="middle">5</text>
-    <text x="836" y="370" fill="#ff8232" font-size="10" font-weight="bold">5 · tag-3 ghost</text>
-    <text x="836" y="385" fill="#6c7f92" font-size="9">rendered at last_valid_fix_pos</text>
-    <text x="836" y="398" fill="#6c7f92" font-size="9">(NOT sentinel current pos)</text>
-    <text x="836" y="411" fill="#6c7f92" font-size="9">dashed ring + faded fill · amber halo</text>
-    <text x="836" y="424" fill="#6c7f92" font-size="9" font-style="italic">markers.rs:32-38, 265-302</text>
-
-    <!-- Layer anchors -->
-    <circle cx="280" cy="200" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="280" y="203" fill="#ff8232" font-size="9" text-anchor="middle">L1</text>
-    <circle cx="390" cy="285" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="390" y="288" fill="#ff8232" font-size="9" text-anchor="middle">L2</text>
-    <circle cx="160" cy="255" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="160" y="258" fill="#ff8232" font-size="9" text-anchor="middle">L3</text>
-
-    <text x="836" y="446" fill="#c0ccd8" font-size="10" font-weight="bold">Map basemap (Panel A; same in B+C)</text>
-    <text x="836" y="460" fill="#6c7f92" font-size="9">L1 · PMTiles basemap (Protomaps dark)</text>
-    <text x="836" y="473" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:61, 73, 106</text>
-    <text x="836" y="487" fill="#6c7f92" font-size="9">L2 · LIDAR hillshade @ 0.5</text>
-    <text x="836" y="500" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:25, 64-74, 107-113</text>
-    <text x="836" y="514" fill="#6c7f92" font-size="9">L3 · OSM XML overlays (Overpass + hand)</text>
-    <text x="836" y="527" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:115-125 · region.rs:25-71</text>
+  <g id="controls-a">
+    <title>Panel A map chrome — compass rose + scale bar only per tickets/README.md:26.</title>
+    <g transform="translate(58,128)">
+      <circle r="24" fill="#0c1118" fill-opacity="0.65" stroke="#6c7f92" stroke-width="0.7"/>
+      <polygon points="0,-16 4,4 0,0 -4,4" fill="#c0ccd8"/>
+      <text x="0" y="-8" fill="#c0ccd8" font-size="8" font-weight="bold" text-anchor="middle">N</text>
+    </g>
+    <g transform="translate(28,496)">
+      <rect x="0" y="0" width="80" height="6" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+      <rect x="0" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <rect x="40" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <text x="0" y="18" fill="#6c7f92" font-size="9">0</text>
+      <text x="80" y="18" fill="#6c7f92" font-size="9" text-anchor="end">250 m</text>
+    </g>
   </g>
 
   <!-- ===================================================================== -->
-  <!--                       PANEL B — RELAY-2 OVERDUE                       -->
+  <!--                PANEL B — relay-2 SELECTED (OVERDUE)                   -->
   <!-- ===================================================================== -->
 
   <g id="map-b">
-    <title>Panel B map. Three-layer render per pmtiles_map.rs:82-125. relay-2 selected.</title>
+    <title>Panel B map area at x=20..500, y=610..1036. Same three-layer basemap as
+           Panel A. relay-2 selected with amber halo around the cross marker.</title>
+
+    <!-- L1 basemap -->
     <rect x="20" y="610" width="480" height="426" fill="#0a0f14"/>
-    <rect x="20" y="610" width="480" height="426" fill="url(#map-grid)"/>
-    <path d="M 30 740 Q 130 700 220 735 T 380 750 T 495 735" stroke="#1a2530" stroke-width="1.2" fill="none"/>
+    <rect x="20" y="610" width="480" height="426" fill="url(#map-grid-4)"/>
+    <path d="M 30 740 Q 130 715 220 740 T 380 755 T 495 745" stroke="#1a2530" stroke-width="1.2" fill="none"/>
     <path d="M 30 840 Q 150 815 250 830 T 420 845 T 495 835" stroke="#1a2530" stroke-width="1" fill="none"/>
     <path d="M 80 930 Q 120 920 160 928 Q 180 935 165 945 Q 130 952 90 945 Z" fill="#0d1620" stroke="#1c3040" stroke-width="0.6"/>
 
+    <!-- L2 hillshade -->
     <g opacity="0.55">
-      <rect x="20" y="610" width="480" height="426" fill="url(#hillshade-a)"/>
-      <ellipse cx="260" cy="790" rx="220" ry="160" fill="url(#ridge-a)"/>
-      <path d="M 30 770 Q 140 740 240 765 T 410 785 T 495 775" stroke="#b8babd" stroke-opacity="0.22" stroke-width="0.8" fill="none"/>
-      <path d="M 30 870 Q 160 850 270 865 T 440 878 T 495 868" stroke="#888a8d" stroke-opacity="0.16" stroke-width="0.6" fill="none"/>
+      <rect x="20" y="610" width="480" height="426" fill="url(#hillshade-4)"/>
+      <ellipse cx="260" cy="790" rx="220" ry="160" fill="url(#ridge-4)"/>
+      <path d="M 30 770 Q 140 740 240 765 T 410 785 T 495 775" stroke="#b8babd" stroke-opacity="0.20" stroke-width="0.8" fill="none"/>
+      <path d="M 30 870 Q 160 850 270 865 T 440 878 T 495 868" stroke="#888a8d" stroke-opacity="0.15" stroke-width="0.6" fill="none"/>
     </g>
 
+    <!-- L3 OSM overlays -->
     <g>
       <rect x="148" y="768" width="22" height="14" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
       <rect x="174" y="764" width="14" height="18" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
-      <path d="M 90 980 L 150 940 L 210 900 L 270 860 L 330 820 L 370 770 L 410 720"
-            stroke="#c0a060" stroke-width="1.1" stroke-dasharray="3 3" fill="none" opacity="0.75"/>
+      <polygon points="220,858 246,852 252,868 230,874" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
     </g>
+  </g>
 
-    <g opacity="0.35">
-      <circle cx="180" cy="740" r="6" fill="#32b4ff"/>
-      <text x="192" y="743" fill="#6c7f92" font-size="9">tag-1</text>
-      <g transform="translate(330,780)">
-        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030"/>
-        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030"/>
+  <g id="markers-b">
+    <title>Panel B markers — relay-2 selected (overdue, amber halo around cross).
+           Other markers dimmed.</title>
+
+    <!-- Dimmed other markers -->
+    <g opacity="0.40">
+      <circle cx="200" cy="720" r="7" fill="#32b4ff"/>
+      <text x="214" y="717" fill="#c0ccd8" font-size="9">tag-1</text>
+      <g transform="translate(220,830)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
       </g>
-      <text x="344" y="783" fill="#6c7f92" font-size="9">relay-1</text>
-      <rect x="252" y="892" width="14" height="14" fill="none" stroke="#40d080" stroke-width="1.5"/>
-      <text x="272" y="904" fill="#6c7f92" font-size="9">gw-0</text>
+      <text x="234" y="828" fill="#f0a030" font-size="9">relay-1</text>
+      <rect x="232" y="980" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
+      <text x="254" y="992" fill="#40d080" font-size="9">gw-0</text>
     </g>
 
-    <!-- relay-2 overdue, SELECTED -->
+    <!-- relay-2 SELECTED: amber overdue cross + halo -->
     <g>
-      <circle cx="400" cy="850" r="22" fill="none" stroke="#eab308" stroke-opacity="0.55" stroke-width="1.6" stroke-dasharray="2 2"/>
-      <g transform="translate(400,850)">
+      <circle cx="400" cy="870" r="22" fill="none" stroke="#eab308" stroke-opacity="0.55" stroke-width="1.6" stroke-dasharray="2 2"/>
+      <g transform="translate(400,870)">
         <rect x="-2.5" y="-9" width="5" height="18" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
         <rect x="-9" y="-2.5" width="18" height="5" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
       </g>
-      <text x="414" y="848" fill="#eab308" font-size="10">relay-2 ⚠</text>
-      <text x="414" y="860" fill="#6c7f92" font-size="9">POSITION 65 m</text>
+      <text x="416" y="866" fill="#eab308" font-size="10" font-weight="bold">relay-2 ◀ selected</text>
+      <text x="416" y="878" fill="#eab308" font-size="9">overdue · 65 m</text>
     </g>
 
+    <!-- Recenter arrow -->
     <g opacity="0.65">
-      <path d="M 250 690 Q 320 770 390 845" stroke="#ff8232" stroke-width="0.8" stroke-dasharray="3 3" fill="none"/>
-      <polygon points="390,845 383,839 389,834" fill="#ff8232"/>
-      <text x="260" y="685" fill="#ff8232" font-size="9">150 ms eased pan</text>
+      <path d="M 250 710 Q 320 790 390 860" fill="none" stroke="#ff8232" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <polygon points="390,860 383,853 389,848" fill="#ff8232"/>
+      <text x="260" y="705" fill="#ff8232" font-size="9">150 ms eased pan onto relay pos</text>
     </g>
   </g>
 
   <g id="sidebar-b">
-    <title>Panel B compact relay detail. RelayData fields only.</title>
-    <rect x="500" y="610" width="320" height="48" fill="#10171f"/>
-    <line x1="500" y1="658" x2="820" y2="658" stroke="#1a2530" stroke-width="0.6"/>
-    <text x="510" y="635" fill="#c0ccd8" font-size="12">← Back to list</text>
-    <text x="510" y="650" fill="#6c7f92" font-size="9">(relay-2 selected — tap to return)</text>
+    <title>Panel B sidebar-replacement detail — IDENTICAL LAYOUT TO PANEL A.
+           Different NodeData fields populated (relay-2 is gps_valid=true, no
+           LAST FIX framing; no_battery_low so no battery row). Same NOT SHOWN block.</title>
 
-    <text x="510" y="678" fill="#6c7f92" font-size="9">NODE</text>
-    <text x="510" y="704" fill="#eab308" font-size="22" font-weight="bold">relay-2</text>
-    <text x="510" y="720" fill="#6c7f92" font-size="10">relay · overdue</text>
+    <!-- Back row -->
+    <rect x="500" y="610" width="320" height="32" fill="#10171f"/>
+    <line x1="500" y1="642" x2="820" y2="642" stroke="#1a2530" stroke-width="0.6"/>
+    <text x="510" y="631" fill="#c0ccd8" font-size="12">← Back to list</text>
 
-    <rect x="500" y="728" width="320" height="22" fill="#1a1404"/>
-    <text x="510" y="743" fill="#eab308" font-size="11" font-weight="bold">⚠ OVERDUE</text>
-    <text x="595" y="743" fill="#6c7f92" font-size="10">POSITION 65 m (> 3600 s)</text>
+    <!-- Node header: icon + label -->
+    <text x="510" y="668" fill="#6c7f92" font-size="9">NODE</text>
+    <g transform="translate(525,698)">
+      <rect x="-2" y="-7" width="4" height="14" fill="#f0a030"/>
+      <rect x="-7" y="-2" width="14" height="4" fill="#f0a030"/>
+    </g>
+    <text x="555" y="704" fill="#c0ccd8" font-size="22" font-weight="bold">relay-2</text>
+    <text x="555" y="720" fill="#6c7f92" font-size="9">inventory.kind = Relay · ORANGE icon</text>
 
-    <text x="510" y="770" fill="#6c7f92" font-size="10">last frame</text>
-    <text x="812" y="770" fill="#eab308" font-size="10" text-anchor="end">65 m</text>
-    <text x="510" y="788" fill="#6c7f92" font-size="10">lat</text>
-    <text x="812" y="788" fill="#c0ccd8" font-size="10" text-anchor="end">50.92414° N</text>
-    <text x="510" y="806" fill="#6c7f92" font-size="10">lon</text>
-    <text x="812" y="806" fill="#c0ccd8" font-size="10" text-anchor="end">5.41972° E</text>
+    <!-- State strip -->
+    <rect x="500" y="734" width="320" height="22" fill="#1a1404"/>
+    <text x="510" y="749" fill="#eab308" font-size="11" font-weight="bold">⚠ OVERDUE</text>
+    <text x="595" y="749" fill="#6c7f92" font-size="10">last_seen 65 m (> 3600 s)</text>
 
-    <text x="510" y="860" fill="#6c7f92" font-size="9">NOT SHOWN</text>
-    <text x="510" y="876" fill="#6c7f92" font-size="9">flags / battery</text>
-    <text x="510" y="890" fill="#6c7f92" font-size="9" font-style="italic">relay data model does not carry these</text>
-    <text x="510" y="903" fill="#6c7f92" font-size="9" font-style="italic">fields (data.rs:153-160)</text>
+    <!-- Key/value rows: SAME shape as Panel A, different fields populated -->
+    <text x="510" y="776" fill="#6c7f92" font-size="10">last frame</text>
+    <text x="812" y="776" fill="#eab308" font-size="10" text-anchor="end">POSITION 65 m</text>
 
-    <text x="510" y="945" fill="#6c7f92" font-size="9" font-style="italic">compact per-node-type layout · no N/A</text>
-    <text x="510" y="958" fill="#6c7f92" font-size="9" font-style="italic">placeholders · KIOSK-004:38-44, 80, 91</text>
+    <!-- No "last fix" row (relay-2 has gps_valid=true, last_seen IS last fix) -->
+    <text x="510" y="800" fill="#6c7f92" font-size="10">lat</text>
+    <text x="812" y="800" fill="#c0ccd8" font-size="10" text-anchor="end">50.92414° N</text>
+    <text x="510" y="818" fill="#6c7f92" font-size="10">lon</text>
+    <text x="812" y="818" fill="#c0ccd8" font-size="10" text-anchor="end">5.41972° E</text>
+
+    <text x="510" y="848" fill="#6c7f92" font-size="9" font-style="italic">(relay gps_valid=true · current pos is the last fix · no LAST FIX framing needed)</text>
+
+    <!-- NOT SHOWN block — IDENTICAL to Panel A -->
+    <rect x="500" y="878" width="320" height="80" fill="#0c1118"/>
+    <text x="510" y="893" fill="#6c7f92" font-size="9">NOT SHOWN</text>
+    <text x="510" y="909" fill="#6c7f92" font-size="9">RSSI · SNR · hop count</text>
+    <text x="510" y="923" fill="#6c7f92" font-size="9" font-style="italic">per ADR-013 §10 — reception-log telemetry</text>
+    <text x="510" y="936" fill="#6c7f92" font-size="9" font-style="italic">closed as v2+ deferral. Wire protocol does</text>
+    <text x="510" y="949" fill="#6c7f92" font-size="9" font-style="italic">not carry them; data model follows wire.</text>
   </g>
 
   <g id="bottom-strip-b">
-    <rect x="20" y="1036" width="480" height="24" fill="#0a0f14"/>
+    <title>Panel B bottom strip — existing read-only PMTiles strip per app.rs:283-344.</title>
+    <rect x="20" y="1036" width="800" height="24" fill="#0a0f14"/>
     <text x="28" y="1052" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
   </g>
 
   <g id="controls-b">
-    <text x="32" y="625" fill="#5a6a7a" font-size="9">[compass]</text>
-    <text x="32" y="1028" fill="#5a6a7a" font-size="9">[scale bar]</text>
-  </g>
-
-  <g id="annotations-b">
-    <title>Panel B annotations</title>
-    <text x="836" y="600" fill="#c0ccd8" font-size="10" font-weight="bold">Panel B — relay-2 overdue</text>
-
-    <circle cx="488" cy="704" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="707" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
-    <text x="836" y="624" fill="#ff8232" font-size="10" font-weight="bold">1 · compact relay detail</text>
-    <text x="836" y="639" fill="#6c7f92" font-size="9">RelayData: node_id, label, pos,</text>
-    <text x="836" y="652" fill="#6c7f92" font-size="9">last_seen_secs · NO flags pills</text>
-    <text x="836" y="665" fill="#6c7f92" font-size="9">NO battery row · NO RSSI/SNR</text>
-    <text x="836" y="678" fill="#6c7f92" font-size="9" font-style="italic">data.rs:153-160 · KIOSK-004:53-58, 80</text>
-
-    <circle cx="488" cy="876" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="879" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
-    <text x="836" y="700" fill="#ff8232" font-size="10" font-weight="bold">2 · NOT SHOWN (relay)</text>
-    <text x="836" y="715" fill="#6c7f92" font-size="9">flags / battery — relay data model</text>
-    <text x="836" y="728" fill="#6c7f92" font-size="9">does not carry them</text>
-    <text x="836" y="741" fill="#6c7f92" font-size="9" font-style="italic">data.rs:153-160 · KIOSK-004:80, 117</text>
-
-    <circle cx="380" cy="855" r="9" fill="none" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="380" y="858" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
-    <text x="836" y="763" fill="#ff8232" font-size="10" font-weight="bold">3 · relay-2 SELECTED</text>
-    <text x="836" y="778" fill="#6c7f92" font-size="9">amber halo around the cross marker</text>
-    <text x="836" y="791" fill="#6c7f92" font-size="9">overdue threshold > 3600 s</text>
-    <text x="836" y="804" fill="#6c7f92" font-size="9" font-style="italic">data.rs:42-48 · KIOSK-004:57, 102</text>
-
-    <!-- Layer anchors in Panel B -->
-    <circle cx="280" cy="720" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="280" y="723" fill="#ff8232" font-size="9" text-anchor="middle">L1</text>
-    <circle cx="390" cy="805" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="390" y="808" fill="#ff8232" font-size="9" text-anchor="middle">L2</text>
-    <circle cx="160" cy="775" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="160" y="778" fill="#ff8232" font-size="9" text-anchor="middle">L3</text>
-
-    <text x="836" y="824" fill="#ff8232" font-size="10" font-weight="bold">recenter</text>
-    <text x="836" y="839" fill="#6c7f92" font-size="9">target = relay's pos (not tag_visible_pos)</text>
-    <text x="836" y="852" fill="#6c7f92" font-size="9">150 ms eased pan, one-shot</text>
-    <text x="836" y="865" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-004:35, 86</text>
-
-    <text x="836" y="888" fill="#c0ccd8" font-size="10" font-weight="bold">L1/L2/L3 (same as Panel A)</text>
-    <text x="836" y="902" fill="#6c7f92" font-size="9">basemap + LIDAR hillshade + OSM overlays</text>
-    <text x="836" y="915" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:82-125 · region.rs:25-71</text>
-  </g>
-
-  <!-- ===================================================================== -->
-  <!--                       PANEL C — GW-0 HEALTHY                          -->
-  <!-- ===================================================================== -->
-
-  <g id="map-c">
-    <title>Panel C map. Three-layer render. gw-0 selected (green halo).</title>
-    <rect x="20" y="1130" width="480" height="426" fill="#0a0f14"/>
-    <rect x="20" y="1130" width="480" height="426" fill="url(#map-grid)"/>
-    <path d="M 30 1260 Q 130 1220 220 1255 T 380 1270 T 495 1255" stroke="#1a2530" stroke-width="1.2" fill="none"/>
-    <path d="M 30 1360 Q 150 1335 250 1350 T 420 1365 T 495 1355" stroke="#1a2530" stroke-width="1" fill="none"/>
-    <path d="M 80 1450 Q 120 1440 160 1448 Q 180 1455 165 1465 Q 130 1472 90 1465 Z" fill="#0d1620" stroke="#1c3040" stroke-width="0.6"/>
-
-    <g opacity="0.55">
-      <rect x="20" y="1130" width="480" height="426" fill="url(#hillshade-a)"/>
-      <ellipse cx="260" cy="1310" rx="220" ry="160" fill="url(#ridge-a)"/>
-      <path d="M 30 1290 Q 140 1260 240 1285 T 410 1305 T 495 1295" stroke="#b8babd" stroke-opacity="0.22" stroke-width="0.8" fill="none"/>
-      <path d="M 30 1390 Q 160 1370 270 1385 T 440 1398 T 495 1388" stroke="#888a8d" stroke-opacity="0.16" stroke-width="0.6" fill="none"/>
+    <title>Panel B map chrome — same as Panel A.</title>
+    <g transform="translate(58,648)">
+      <circle r="24" fill="#0c1118" fill-opacity="0.65" stroke="#6c7f92" stroke-width="0.7"/>
+      <polygon points="0,-16 4,4 0,0 -4,4" fill="#c0ccd8"/>
+      <text x="0" y="-8" fill="#c0ccd8" font-size="8" font-weight="bold" text-anchor="middle">N</text>
     </g>
-
-    <g>
-      <rect x="148" y="1288" width="22" height="14" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
-      <rect x="174" y="1284" width="14" height="18" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
-      <path d="M 90 1500 L 150 1460 L 210 1420 L 270 1380 L 330 1340 L 370 1290 L 410 1240"
-            stroke="#c0a060" stroke-width="1.1" stroke-dasharray="3 3" fill="none" opacity="0.75"/>
-    </g>
-
-    <g opacity="0.35">
-      <circle cx="180" cy="1260" r="6" fill="#32b4ff"/>
-      <text x="192" y="1263" fill="#6c7f92" font-size="9">tag-1</text>
-      <g transform="translate(330,1300)">
-        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030"/>
-        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030"/>
-      </g>
-      <text x="344" y="1303" fill="#6c7f92" font-size="9">relay-1</text>
-    </g>
-
-    <!-- gw-0 SELECTED -->
-    <g>
-      <rect x="245" y="1405" width="30" height="30" fill="none" stroke="#40d080" stroke-opacity="0.5" stroke-width="1.6" stroke-dasharray="2 2"/>
-      <rect x="252" y="1412" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
-      <text x="274" y="1424" fill="#40d080" font-size="10">gw-0</text>
-      <text x="274" y="1435" fill="#6c7f92" font-size="9">RTC ok</text>
-    </g>
-
-    <g opacity="0.65">
-      <path d="M 130 1180 Q 200 1300 260 1410" stroke="#ff8232" stroke-width="0.8" stroke-dasharray="3 3" fill="none"/>
-      <polygon points="260,1410 253,1402 259,1398" fill="#ff8232"/>
-      <text x="140" y="1175" fill="#ff8232" font-size="9">150 ms eased pan</text>
+    <g transform="translate(28,1016)">
+      <rect x="0" y="0" width="80" height="6" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+      <rect x="0" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <rect x="40" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <text x="0" y="18" fill="#6c7f92" font-size="9">0</text>
+      <text x="80" y="18" fill="#6c7f92" font-size="9" text-anchor="end">250 m</text>
     </g>
   </g>
 
-  <g id="sidebar-c">
-    <title>Panel C most-compact gateway detail. GatewayData base + KIOSK-005 ext.</title>
-    <rect x="500" y="1130" width="320" height="48" fill="#10171f"/>
-    <line x1="500" y1="1178" x2="820" y2="1178" stroke="#1a2530" stroke-width="0.6"/>
-    <text x="510" y="1155" fill="#c0ccd8" font-size="12">← Back to list</text>
-    <text x="510" y="1170" fill="#6c7f92" font-size="9">(gw-0 selected — tap to return)</text>
+  <g id="annotations">
+    <title>Marginal callouts at x=830..1080. Layer L1/L2/L3 anchors + uniformity proof.</title>
 
-    <text x="510" y="1198" fill="#6c7f92" font-size="9">NODE</text>
-    <text x="510" y="1224" fill="#40d080" font-size="22" font-weight="bold">gw-0</text>
-    <text x="510" y="1240" fill="#6c7f92" font-size="10">gateway · local</text>
+    <!-- Layer anchors Panel A -->
+    <circle cx="270" cy="200" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="270" y="203" fill="#ff8232" font-size="9" text-anchor="middle">L1</text>
+    <circle cx="380" cy="290" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="380" y="293" fill="#ff8232" font-size="9" text-anchor="middle">L2</text>
+    <circle cx="160" cy="255" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="160" y="258" fill="#ff8232" font-size="9" text-anchor="middle">L3</text>
+    <!-- Layer anchors Panel B -->
+    <circle cx="270" cy="720" r="6" fill="#070b10" stroke="#ff8232" stroke-width="0.6"/>
+    <text x="270" y="723" fill="#ff8232" font-size="8" text-anchor="middle">L1</text>
+    <circle cx="380" cy="810" r="6" fill="#070b10" stroke="#ff8232" stroke-width="0.6"/>
+    <text x="380" y="813" fill="#ff8232" font-size="8" text-anchor="middle">L2</text>
+    <circle cx="160" cy="775" r="6" fill="#070b10" stroke="#ff8232" stroke-width="0.6"/>
+    <text x="160" y="778" fill="#ff8232" font-size="8" text-anchor="middle">L3</text>
 
-    <rect x="500" y="1248" width="320" height="22" fill="#0a1410"/>
-    <text x="510" y="1263" fill="#40d080" font-size="11" font-weight="bold">● HEALTHY</text>
-    <text x="595" y="1263" fill="#6c7f92" font-size="10">RTC ok</text>
+    <!-- Numbered callouts in Panel A -->
+    <circle cx="488" cy="178" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="181" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <circle cx="488" cy="225" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="228" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
+    <circle cx="488" cy="290" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="293" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
+    <circle cx="488" cy="420" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="423" fill="#ff8232" font-size="9" text-anchor="middle">4</text>
 
-    <text x="510" y="1290" fill="#6c7f92" font-size="10">lat</text>
-    <text x="812" y="1290" fill="#c0ccd8" font-size="10" text-anchor="end">50.92365° N</text>
-    <text x="510" y="1308" fill="#6c7f92" font-size="10">lon</text>
-    <text x="812" y="1308" fill="#c0ccd8" font-size="10" text-anchor="end">5.41902° E</text>
-    <text x="510" y="1326" fill="#6c7f92" font-size="10">battery</text>
-    <text x="812" y="1326" fill="#40d080" font-size="10" text-anchor="end">78%</text>
-    <text x="510" y="1344" fill="#6c7f92" font-size="10">charging</text>
-    <text x="812" y="1344" fill="#40d080" font-size="10" text-anchor="end">yes</text>
+    <!-- Right margin text column -->
+    <text x="836" y="80" fill="#c0ccd8" font-size="10" font-weight="bold">Uniform detail layout (post-collapse)</text>
+    <text x="836" y="94" fill="#6c7f92" font-size="9">One NodeData shape for every node.</text>
+    <text x="836" y="107" fill="#6c7f92" font-size="9">Same detail layout for tag / relay /</text>
+    <text x="836" y="120" fill="#6c7f92" font-size="9">gateway. Icon glyph + colour from</text>
+    <text x="836" y="133" fill="#6c7f92" font-size="9">inventory.kind lookup, not from a</text>
+    <text x="836" y="146" fill="#6c7f92" font-size="9">per-kind layout branch.</text>
+    <text x="836" y="159" fill="#6c7f92" font-size="9" font-style="italic">dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md</text>
 
-    <text x="510" y="1390" fill="#6c7f92" font-size="9">NOT SHOWN</text>
-    <text x="510" y="1406" fill="#6c7f92" font-size="9">frame age</text>
-    <text x="510" y="1420" fill="#6c7f92" font-size="9" font-style="italic">gateway is local · concept is N/A · OMITTED</text>
-    <text x="510" y="1433" fill="#6c7f92" font-size="9" font-style="italic">(NOT rendered as `N/A` placeholder)</text>
+    <text x="836" y="186" fill="#ff8232" font-size="10" font-weight="bold">1 · Node header</text>
+    <text x="836" y="200" fill="#6c7f92" font-size="9">kind-icon glyph (from inventory)</text>
+    <text x="836" y="213" fill="#6c7f92" font-size="9">+ {label}. Same shape Panel B.</text>
 
-    <text x="510" y="1475" fill="#6c7f92" font-size="9" font-style="italic">battery/charging render IF KIOSK-005</text>
-    <text x="510" y="1488" fill="#6c7f92" font-size="9" font-style="italic">has landed; else omit (BAT unknown if</text>
-    <text x="510" y="1501" fill="#6c7f92" font-size="9" font-style="italic">a placeholder is required, per K-005:46, 79)</text>
-    <text x="510" y="1514" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-004:62-67 · KIOSK-005:33-48</text>
-  </g>
+    <text x="836" y="236" fill="#ff8232" font-size="10" font-weight="bold">2 · State strip</text>
+    <text x="836" y="250" fill="#6c7f92" font-size="9">worst-priority POSITION-derived state.</text>
+    <text x="836" y="263" fill="#6c7f92" font-size="9">DISTRESS &gt; NO FIX &gt; STALE &gt; HEALTHY.</text>
+    <text x="836" y="276" fill="#6c7f92" font-size="9">NO RTC ok / RTC unset chrome — gateway-</text>
+    <text x="836" y="289" fill="#6c7f92" font-size="9">self status deferred per KIOSK-005.</text>
 
-  <g id="bottom-strip-c">
-    <rect x="20" y="1556" width="480" height="24" fill="#0a0f14"/>
-    <text x="28" y="1572" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
-  </g>
+    <text x="836" y="312" fill="#ff8232" font-size="10" font-weight="bold">3 · LAST FIX framing (no-fix only)</text>
+    <text x="836" y="326" fill="#6c7f92" font-size="9">when !gps_valid: scopes lat/lon below</text>
+    <text x="836" y="339" fill="#6c7f92" font-size="9">to last_valid_fix_pos, not sentinel.</text>
+    <text x="836" y="352" fill="#6c7f92" font-size="9" font-style="italic">markers.rs:32-38 · KIOSK-004:50</text>
 
-  <g id="controls-c">
-    <text x="32" y="1145" fill="#5a6a7a" font-size="9">[compass]</text>
-    <text x="32" y="1548" fill="#5a6a7a" font-size="9">[scale bar]</text>
-  </g>
+    <text x="836" y="378" fill="#ff8232" font-size="10" font-weight="bold">4 · NOT SHOWN block</text>
+    <text x="836" y="392" fill="#6c7f92" font-size="9">RSSI / SNR / hop count — protocol</text>
+    <text x="836" y="405" fill="#6c7f92" font-size="9">closure per ADR-013 §10 (v2+ deferral).</text>
+    <text x="836" y="418" fill="#6c7f92" font-size="9">IDENTICAL in Panel B — proves the block</text>
+    <text x="836" y="431" fill="#6c7f92" font-size="9">applies to ANY node, not relay-specific.</text>
+    <text x="836" y="444" fill="#6c7f92" font-size="9" font-style="italic">No sim-fixture-gap NOT SHOWN entries.</text>
 
-  <g id="annotations-c">
-    <title>Panel C annotations</title>
-    <text x="836" y="1120" fill="#c0ccd8" font-size="10" font-weight="bold">Panel C — gw-0 healthy</text>
+    <!-- Panel B annotations -->
+    <text x="836" y="476" fill="#c0ccd8" font-size="10" font-weight="bold">Panel B — relay-2 selected</text>
+    <text x="836" y="490" fill="#6c7f92" font-size="9">SAME layout. Only differences:</text>
+    <text x="836" y="503" fill="#6c7f92" font-size="9">· ORANGE icon (inventory.kind=Relay)</text>
+    <text x="836" y="516" fill="#6c7f92" font-size="9">· state strip = ⚠ OVERDUE</text>
+    <text x="836" y="529" fill="#6c7f92" font-size="9">· last frame = POSITION 65 m (vs 30 s)</text>
+    <text x="836" y="542" fill="#6c7f92" font-size="9">· no LAST FIX framing (gps_valid=true)</text>
+    <text x="836" y="555" fill="#6c7f92" font-size="9">· lat/lon = current pos (not last_valid)</text>
+    <text x="836" y="568" fill="#6c7f92" font-size="9">· NOT SHOWN block = IDENTICAL.</text>
 
-    <circle cx="488" cy="1224" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="1227" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
-    <text x="836" y="1144" fill="#ff8232" font-size="10" font-weight="bold">1 · most-compact gateway</text>
-    <text x="836" y="1159" fill="#6c7f92" font-size="9">GatewayData base + KIOSK-005 ext</text>
-    <text x="836" y="1172" fill="#6c7f92" font-size="9">render IF KIOSK-005 landed; else omit</text>
-    <text x="836" y="1185" fill="#6c7f92" font-size="9">(or use `BAT unknown` placeholder)</text>
-    <text x="836" y="1198" fill="#6c7f92" font-size="9" font-style="italic">data.rs:163-167 · KIOSK-005:33-48, 46, 79</text>
+    <text x="836" y="595" fill="#c0ccd8" font-size="10" font-weight="bold">Gateway (formerly Panel C)</text>
+    <text x="836" y="609" fill="#6c7f92" font-size="9">Gateway-self detail (battery / RTC /</text>
+    <text x="836" y="622" fill="#6c7f92" font-size="9">render-tick) DEFERRED from v1a per</text>
+    <text x="836" y="635" fill="#6c7f92" font-size="9">tickets/KIOSK-005-gateway-status-surface.md.</text>
+    <text x="836" y="648" fill="#6c7f92" font-size="9">In v1a a gateway node renders the SAME</text>
+    <text x="836" y="661" fill="#6c7f92" font-size="9">uniform detail layout: header (■ GREEN +</text>
+    <text x="836" y="674" fill="#6c7f92" font-size="9">label), state strip ● HEALTHY, last_frame</text>
+    <text x="836" y="687" fill="#6c7f92" font-size="9">row reads "— (local)" since gateway is</text>
+    <text x="836" y="700" fill="#6c7f92" font-size="9">local, lat/lon. No extra chrome.</text>
 
-    <circle cx="488" cy="1406" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="488" y="1409" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
-    <text x="836" y="1220" fill="#ff8232" font-size="10" font-weight="bold">2 · NOT SHOWN (gateway)</text>
-    <text x="836" y="1235" fill="#6c7f92" font-size="9">frame age — gateway is local, concept</text>
-    <text x="836" y="1248" fill="#6c7f92" font-size="9">is N/A and is OMITTED (not "N/A")</text>
-    <text x="836" y="1261" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-004:79, 81, 117</text>
+    <text x="836" y="730" fill="#c0ccd8" font-size="10" font-weight="bold">Map basemap composition</text>
+    <text x="836" y="744" fill="#6c7f92" font-size="9">(per pmtiles_map.rs:82-125; z-order:</text>
+    <text x="836" y="757" fill="#6c7f92" font-size="9">basemap → hillshade → OSM → markers)</text>
 
-    <circle cx="260" cy="1418" r="9" fill="none" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="260" y="1421" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
-    <text x="836" y="1283" fill="#ff8232" font-size="10" font-weight="bold">3 · gw-0 SELECTED</text>
-    <text x="836" y="1298" fill="#6c7f92" font-size="9">green halo around the square outline</text>
-    <text x="836" y="1311" fill="#6c7f92" font-size="9">gateway marker</text>
+    <text x="836" y="784" fill="#ff8232" font-size="10" font-weight="bold">L1 · PMTiles basemap</text>
+    <text x="836" y="797" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:61, 73, 106</text>
+    <text x="836" y="818" fill="#ff8232" font-size="10" font-weight="bold">L2 · LIDAR hillshade @ 0.5</text>
+    <text x="836" y="831" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:25, 64-74, 107-113</text>
+    <text x="836" y="852" fill="#ff8232" font-size="10" font-weight="bold">L3 · OSM XML overlays</text>
+    <text x="836" y="865" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:115-125 · region.rs:25-71</text>
 
-    <!-- Layer anchors in Panel C -->
-    <circle cx="280" cy="1240" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="280" y="1243" fill="#ff8232" font-size="9" text-anchor="middle">L1</text>
-    <circle cx="390" cy="1325" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="390" y="1328" fill="#ff8232" font-size="9" text-anchor="middle">L2</text>
-    <circle cx="160" cy="1295" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
-    <text x="160" y="1298" fill="#ff8232" font-size="9" text-anchor="middle">L3</text>
-
-    <text x="836" y="1334" fill="#ff8232" font-size="10" font-weight="bold">recenter</text>
-    <text x="836" y="1349" fill="#6c7f92" font-size="9">target = gateway's pos · 150 ms eased</text>
-    <text x="836" y="1362" fill="#6c7f92" font-size="9">pan · one-shot · no follow mode</text>
-    <text x="836" y="1375" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-004:35, 36, 87</text>
-
-    <text x="836" y="1402" fill="#c0ccd8" font-size="10" font-weight="bold">L1/L2/L3 (same as A+B)</text>
-    <text x="836" y="1416" fill="#6c7f92" font-size="9">basemap + LIDAR hillshade + OSM overlays</text>
-    <text x="836" y="1429" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:82-125 · region.rs:25-71</text>
-    <text x="836" y="1442" fill="#6c7f92" font-size="9" font-style="italic">dev-log/2026-05-16-lidar-overlay-implementation.md</text>
-
-    <text x="836" y="1486" fill="#c0ccd8" font-size="10" font-weight="bold">Cross-panel discipline</text>
-    <text x="836" y="1502" fill="#6c7f92" font-size="9">sidebar IS the detail surface in every</text>
-    <text x="836" y="1515" fill="#6c7f92" font-size="9">panel · no overlay · no slide-in panel</text>
-    <text x="836" y="1528" fill="#6c7f92" font-size="9">no tap-outside dismiss · Back-to-list</text>
-    <text x="836" y="1541" fill="#6c7f92" font-size="9">is the only dismissal affordance</text>
-    <text x="836" y="1554" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-004:24, 28, 76, 77, 92</text>
-    <text x="836" y="1567" fill="#6c7f92" font-size="9" font-style="italic">ADR-007:38-46 · SPIKE-001 closed strict</text>
+    <text x="836" y="895" fill="#c0ccd8" font-size="10" font-weight="bold">Non-goals</text>
+    <text x="836" y="909" fill="#6c7f92" font-size="9">no overlay / slide-in / popover / banner</text>
+    <text x="836" y="922" fill="#6c7f92" font-size="9">no tap-outside dismiss; back row only</text>
+    <text x="836" y="935" fill="#6c7f92" font-size="9">no follow-mode lock (one-shot recenter)</text>
+    <text x="836" y="948" fill="#6c7f92" font-size="9">no new NodeData fields</text>
+    <text x="836" y="961" fill="#6c7f92" font-size="9">no gateway-self status (KIOSK-005 def.)</text>
+    <text x="836" y="974" fill="#6c7f92" font-size="9" font-style="italic">ADR-007:38-46 · SPIKE-001 closed strict</text>
   </g>
 </svg>

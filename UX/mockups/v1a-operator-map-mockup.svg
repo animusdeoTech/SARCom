@@ -153,7 +153,6 @@
     <g>
       <rect x="32" y="464" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
       <text x="55" y="476" fill="#40d080" font-size="10">gw-0</text>
-      <text x="55" y="487" fill="#5a6a7a" font-size="9">RTC ok</text>
     </g>
   </g>
 
@@ -427,7 +426,6 @@
     <g>
       <rect x="872" y="486" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
       <text x="895" y="498" fill="#40d080" font-size="10">gw-0</text>
-      <text x="895" y="509" fill="#5a6a7a" font-size="9">RTC ok</text>
     </g>
   </g>
 
@@ -574,7 +572,6 @@
       <rect x="1320" y="400" width="320" height="40" fill="#0c1118"/>
       <rect x="1334" y="414" width="10" height="10" fill="none" stroke="#40d080" stroke-width="1.5"/>
       <text x="1352" y="417" fill="#c0ccd8" font-size="11">gw-0</text>
-      <text x="1352" y="431" fill="#5a6a7a" font-size="10">RTC ok</text>
     </g>
   </g>
 
@@ -677,6 +674,6 @@
   <!-- FOOTER non-goal exception markers (forbidden-term laundry list) -->
   <!-- ============================================================== -->
   <g id="footer-non-goals">
-    <text x="20" y="558" fill="#5a6a7a" font-size="8">non-goal · neither variant renders: login screens, settings panes, CRUD forms, a remote dashboard, or any data entry (ADR-007:38-46; ARCHITECTURE.md:493-496). non-goal · no RSSI/SNR/hop fields (data model does not carry them). non-goal · no uncertainty disc on tag-3 (SPIKE-002 open). non-goal · no sentinel coordinates rendered as a marker (tag-3 ghost drawn at last_valid_fix_pos, not current sentinel pos).</text>
+    <text x="20" y="558" fill="#5a6a7a" font-size="8">non-goal · neither variant renders: login screens, settings panes, CRUD forms, a remote dashboard, or any data entry (ADR-007:38-46; ARCHITECTURE.md:493-496). non-goal · no RSSI/SNR/hop fields (per ADR-013 §10 — reception-log telemetry closed as v2+ deferral). non-goal · no uncertainty disc on tag-3 (SPIKE-002 open). non-goal · no sentinel coordinates rendered as a marker (tag-3 ghost drawn at last_valid_fix_pos, not current sentinel pos).</text>
   </g>
 </svg>

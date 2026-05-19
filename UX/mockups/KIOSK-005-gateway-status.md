@@ -1,102 +1,52 @@
-# KIOSK-005 — Gateway status surface — v1a mockup rationale
+# KIOSK-005 — Gateway status surface — DEFERRED FROM v1a (no mockup)
 
-Single-design strict-ADR mockup. Four stacked 800×480 lab fixtures
-showing the sidebar `gw-0` row in four states: healthy + charging,
-healthy not charging, low battery, and battery unknown. The render-tick
-indicator lives **in the sidebar gw-0 row** (NOT in the header) per
-`tickets/KIOSK-005-gateway-status-surface.md:52, 55, 82-83`. Map areas
-abstracted with three-layer label per `pmtiles_map.rs:82-125`. SVG at
-`UX/mockups/KIOSK-005-gateway-status.svg`.
+## Status: deferred — no mockup produced
 
-## Scenario summary (four states)
+This mockup is **deferred from v1a along with its parent ticket** per
+the v1a UI data-model collapse decision recorded in
+[`dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`](../../dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md).
 
-| State | Description | Battery icon fill | Charging icon | Primary glyph |
-|---|---|---|---|---|
-| 1 | Healthy, **charging**, 78% | GREEN, fill 78% | lightning bolt, GREEN | `●` (GREEN) |
-| 2 | Healthy, not charging, 45% | AMBER, fill 45% | omitted | `●` (GREEN) |
-| 3 | Low battery, 12% (not charging) | RED, fill 12% | omitted | `⚠` (AMBER) |
-| 4 | Battery **unknown** (Option = None) | outline only, dim grey | omitted | `●` (GREEN) |
+The original mockup proposed rendering gateway-self status (battery
+percentage, charging state, RTC status, `ui` render-tick liveness) in
+the sidebar `gw-0` row. Per the post-collapse principle:
 
-In every state the **render-tick pulse dot** is rendered at the
-right edge of the gw-0 row with adjacent label `ui` in 8-9 pt
-`TEXT_DIM`. The dot is `GREEN` (matches healthy state) and pulses on
-every egui render frame.
+- The v1a UI data model is one uniform `NodeData` derived from
+  POSITION packets that any node broadcasts.
+- The kind-distinction (tag / relay / gateway) is reduced to an
+  inventory lookup (`HashMap<u8, NodeKind>`) used for icon glyph +
+  colour only.
+- The gateway-self status surface (battery / charging / RTC /
+  render-tick) is **local knowledge** the gateway has about itself,
+  not POSITION-derived. It is the one explicit loophole Pieter named
+  ("het enige 'extra' dat KAN komen in de detail view is dat van
+  uzelf als ge een gateway zijt"), but it is **NOT v1a**.
 
-The map area is abstracted in all four panels; the abstract label
-names the three layers (basemap + LIDAR hillshade + OSM XML overlays)
-per `pmtiles_map.rs:82-125`. KIOSK-001 owns the full map chrome render.
+## Source-of-truth for the deferral
 
-## Per-element source-of-truth citations
+- [`dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`](../../dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md) — architecture decision driving this deferral.
+- [`tickets/KIOSK-005-gateway-status-surface.md`](../../tickets/KIOSK-005-gateway-status-surface.md) — parent ticket, now a deferred-from-v1a stub.
+- [`tickets/KIOSK-003-sidebar-row-redesign.md`](../../tickets/KIOSK-003-sidebar-row-redesign.md) — sidebar gateway row in v1a renders as `● {label}` with no status suffix.
+- [`tickets/KIOSK-004-selection-detail-panel.md`](../../tickets/KIOSK-004-selection-detail-panel.md) — detail surface in v1a is one uniform layout; no gateway-specific battery / charging / RTC fields.
 
-| Element | Citation |
-|---|---|
-| `battery_pct: Option<u8>` + `charging: Option<bool>` extension | `KIOSK-005:33-48, 78` |
-| Battery icon ~24×10 px, outline + proportional fill | `KIOSK-005:80-88` |
-| Gradient by threshold (GREEN / AMBER / RED) | `KIOSK-005:42-44, 84-87` |
-| Charging icon lightning bolt, GREEN, ~8×10 px | `KIOSK-005:45, 90-94` |
-| Charging icon shown only when `Some(true)` | `KIOSK-005:81, 94` |
-| `BAT unknown` rendering (dim grey) | `KIOSK-005:46, 79` |
-| Render-tick in sidebar gw-0 row | `KIOSK-005:52, 55, 82` |
-| Render-tick label is `ui` | `KIOSK-005:53, 75-77, 83` |
-| Existing gateway row code | `tools/sarcom-kiosk-lab/src/ui/sidebar.rs:268-302` |
-| GatewayData base + KIOSK-005 ext | `tools/sarcom-kiosk-lab/src/data.rs:163-167` + `KIOSK-005:35-39` |
-| Three-layer map render stack (abstracted in this mockup) | `tools/sarcom-kiosk-lab/src/map/pmtiles_map.rs:82-125` |
-| Overlay schema | `tools/sarcom-kiosk-lab/src/map/region.rs:25-71` |
-| Hillshade implementation context | `dev-log/2026-05-16-lidar-overlay-implementation.md` |
-| ADR-007 read-only invariant | `decisions/ADR-007-touchscreen-primary-ui.md:38-46` |
-| 800×480 lab fixture (ADR-015-pending) | `tools/sarcom-kiosk-lab/README.md:53` + `README.md:36` |
-| Palette constants | `tools/sarcom-kiosk-lab/src/ui/palette.rs:8-19` |
-| No coord readout (KIOSK-002 deferred) | `tickets/README.md:30, 53, 71, 85` |
+## What v1a does instead
 
-## Render-tick scope
+- The gateway appears in the kiosk sidebar and detail surface as just another node (same uniform layout per KIOSK-003 / KIOSK-004).
+- `NodeData.last_seen_secs` is sentinel-zero for the gateway (gateway is the receiver; no POSITION packets received from itself). The sidebar renders the row as `● {label}` (no age suffix) when `inventory.kind == NodeKind::Gateway`.
+- No `RTC ok` / `RTC unset` / battery indicator / `ui` render-tick dot / `BAT unknown` chrome anywhere.
 
-**What `ui` proves:** the egui render loop is advancing. If the dot
-stops pulsing, the operator can read "the UI froze" — which is
-distinct from "no tag updates because no tag is moving."
+## What would unblock a future KIOSK-005 (out of scope here)
 
-**What `ui` does NOT prove:**
+A future ticket — e.g. "GW-001: gateway-self detail surface" — would add the gateway's local self-knowledge to its own detail view. That ticket would:
 
-- It does **not** prove the LoRa receiver task is alive.
-- It does **not** prove the gateway process is healthy.
-- It does **not** prove any radio is decoding frames.
+- Define a `GatewayLocalState` struct (or extension to `NodeData` gated on `inventory.kind == Gateway`) carrying battery, charging, RTC freshness, render-tick liveness.
+- Specify the rendering branch in the detail surface: when the selected node is `inventory.kind == Gateway`, render the uniform layout + the gateway-local extras.
+- Honour the honest-unknowns discipline (`BAT unknown` when the battery sensor is not yet implemented; `ui` dot pulsing when the render loop ticks, not when the LoRa RX task is healthy).
 
-Those are deferred-pending-real-gateway signals per `KIOSK-005:57-64`.
-**No mocked signal in this ticket. No fake radio. No fake process.**
+None of that is v1a's job.
 
-## What is NOT rendered
+## What this entry does NOT change
 
-- **NO header-side render-tick.** `KIOSK-005:55, 82, 92, 118`.
-- **NO LoRa-RX liveness rendering.** `KIOSK-005:57-60`.
-- **NO gateway-process liveness rendering.** `KIOSK-005:62-64`.
-- **NO `BAT 0%` when state is unknown.** Use `BAT unknown`. `KIOSK-005:46, 79`.
-- **NO `BAT —` placeholder.**
-- **NO synthetic mocks of signals the real gateway doesn't yet
-  expose.** `KIOSK-005:74`.
-- **NO floating buttons** on the map.
-- **NO coord readout** anywhere.
-
-## What a reviewer verifies
-
-- **Render-tick lives in the sidebar gw-0 row**, NOT in the header.
-- **Render-tick label is `ui`**.
-- **Battery icon uses a gradient by threshold**: GREEN / AMBER / RED
-  / none, with fill width proportional to charge level.
-- **Charging is `icon + colour change`** (lightning bolt GREEN).
-- **Unknown battery renders as `BAT unknown`** — never `0%`, never `BAT —`.
-- **Low-battery state (12%)** shows `⚠` glyph, RED battery, RED text.
-- **Render-tick positioned identically in all four states.**
-- **No header-side liveness indicator.**
-- **No fake radio, no fake process** signal.
-- Map area's abstract label names the three layers per
-  `pmtiles_map.rs:82-125`.
-
-## Open questions for Pieter
-
-1. **Battery-icon thresholds (3-bucket vs 2-bucket).** Mockup locks
-   ≥50% / 20-50% / <20%; `KIOSK-005:42-43` example is ≥40% / <20%
-   (`KIOSK-005:44` says "implementer chooses").
-2. **Render-tick visual treatment.** Mockup is static dot + margin
-   annotation per `KIOSK-005:76`; SVG `<animate>` is the alternative.
-3. **`gw-0` glyph in low-battery state.** Mockup flips `●` → `⚠`
-   when battery is low; `KIOSK-003:39` keeps the gateway glyph tied
-   to RTC.
+- ADR-007 (read-only UI) — unaffected.
+- ADR-013 (one packet type) — already says gateway-self is not in POSITION; this deferral aligns with it.
+- The existing v1a per-ticket mockups under `UX/mockups/` (KIOSK-001/003/004/006/008 + umbrella) — already RTC-stripped earlier in this session.
+- v2+ deferred lanes (coverage telemetry, no-fix uncertainty disc, GPS-less localisation, drone overlay) — unaffected.
