@@ -1,4 +1,4 @@
-use crate::app::KioskLabApp;
+use crate::app::{KioskLabApp, Selection};
 use crate::data::{
     freshness_for_relay, freshness_for_tag, Freshness, NodeData, NodeKind, SimState,
 };
@@ -28,10 +28,14 @@ impl KioskLabApp {
             let rows = build_rows(&self.sim);
             for row in rows {
                 let kind = self.sim.kind_for_id(row.node.node_id);
-                let is_sel = self.selected_tag == Some(row.idx);
+                let is_sel = self.selection.is(row.idx);
                 let resp = render_node_row(ui, row.node, kind, is_sel, t);
                 if resp.clicked() {
-                    self.selected_tag = if is_sel { None } else { Some(row.idx) };
+                    self.selection = if is_sel {
+                        Selection::None
+                    } else {
+                        Selection::Node(row.idx)
+                    };
                 }
             }
 
@@ -123,8 +127,12 @@ fn render_node_row(
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
 
-            // SOS sticky-alert prefix (tag-only — only tags emit SOS per ADR-010).
-            if node.sos && kind == NodeKind::Tag {
+            // SOS sticky-alert prefix. Renders on any node where node.sos is
+            // true — ADR-010 makes the behaviour tag-only at firmware level;
+            // the UI does not defensively filter. A relay or gateway showing
+            // SOS would be unusual state the operator should see, not silently
+            // swallowed.
+            if node.sos {
                 let since = format!("since {}", format_wall(t - node.last_seen_secs as f64));
                 ui.horizontal(|ui| {
                     ui.label(

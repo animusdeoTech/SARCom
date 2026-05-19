@@ -106,13 +106,11 @@ pub fn apply_drag(sim: &mut SimState, target: &DragTarget, ptr: egui::Pos2, view
 }
 
 /// 1 px dashed track of recent valid-fix points. Sentinel/no-fix coordinates
-/// never make it here — we only draw when `gps_valid`. Tag-only by current
-/// fixture (relays/gateway have empty tracks).
+/// never make it here — we only draw when `gps_valid` AND the node carries
+/// ≥2 track points. Relays / gateway have empty tracks in v1a fixtures, so
+/// they self-skip via the `< 2` check; no kind-gate needed.
 pub fn draw_tracks(painter: &egui::Painter, sim: &SimState, view: &Viewport) {
     for node in &sim.nodes {
-        if sim.kind_for_id(node.node_id) != NodeKind::Tag {
-            continue;
-        }
         if !node.gps_valid || node.track.len() < 2 {
             continue;
         }

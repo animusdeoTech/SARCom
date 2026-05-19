@@ -8,7 +8,7 @@ pub use markers::DragTarget;
 pub use osm_vector::OsmMap;
 pub use pmtiles_map::PmTilesMap;
 
-use crate::app::KioskLabApp;
+use crate::app::{KioskLabApp, Selection};
 use crate::ui::palette::{BLUE, GREEN, GREY, MAP_BG, ORANGE, RED, TEXT_DIM};
 use eframe::egui;
 
@@ -212,7 +212,7 @@ impl KioskLabApp {
 
         markers::draw_relay(&painter, &self.sim, &view);
         markers::draw_gateway(&painter, &self.sim, &view);
-        markers::draw_tags(&painter, &self.sim, self.selected_tag, t, &view);
+        markers::draw_tags(&painter, &self.sim, self.selection.idx(), t, &view);
 
         // Click-to-select uses the visible position. Iterates all nodes;
         // dispatch on kind happens inside `markers::node_visible_pos`. Per
@@ -224,10 +224,10 @@ impl KioskLabApp {
                 for (i, node) in self.sim.nodes.iter().enumerate() {
                     if let Some(p) = markers::node_visible_pos(node) {
                         if (ptr - markers::n2s(p, &view)).length() < 16.0 {
-                            self.selected_tag = if self.selected_tag == Some(i) {
-                                None
+                            self.selection = if self.selection.is(i) {
+                                Selection::None
                             } else {
-                                Some(i)
+                                Selection::Node(i)
                             };
                             found = true;
                             break;
@@ -235,7 +235,7 @@ impl KioskLabApp {
                     }
                 }
                 if !found {
-                    self.selected_tag = None;
+                    self.selection = Selection::None;
                 }
             }
         }

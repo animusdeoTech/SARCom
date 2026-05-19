@@ -7,10 +7,35 @@ use crate::ui::{
 };
 use eframe::egui;
 
+/// Operator selection state. One variant covers every node kind — per
+/// `dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md`, kind-distinction
+/// (tag / relay / gateway) is an inventory lookup, not a selection-state split.
+/// Index points into `SimState.nodes`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Selection {
+    None,
+    Node(usize),
+}
+
+impl Selection {
+    /// Convenience for the common pattern of "is this index the selected one?".
+    pub fn is(&self, idx: usize) -> bool {
+        matches!(self, Selection::Node(i) if *i == idx)
+    }
+
+    /// Unwrap to `Option<usize>` for internal APIs that take a positional index.
+    pub fn idx(&self) -> Option<usize> {
+        match self {
+            Selection::None => None,
+            Selection::Node(i) => Some(*i),
+        }
+    }
+}
+
 pub struct KioskLabApp {
     pub(crate) scenario: ScenarioKind,
     pub(crate) sim: SimState,
-    pub(crate) selected_tag: Option<usize>,
+    pub(crate) selection: Selection,
     pub(crate) show_track: bool,
     pub(crate) show_edit: bool,
     pub(crate) edit_tag_idx: usize,
@@ -78,7 +103,7 @@ impl KioskLabApp {
         Self {
             scenario,
             sim: SimState::from_scenario(scenario),
-            selected_tag: None,
+            selection: Selection::None,
             show_track: true,
             show_edit: false,
             edit_tag_idx: 0,
@@ -99,7 +124,7 @@ impl KioskLabApp {
     pub(crate) fn switch_scenario(&mut self, kind: ScenarioKind) {
         self.scenario = kind;
         self.sim = SimState::from_scenario(kind);
-        self.selected_tag = None;
+        self.selection = Selection::None;
         self.drag_target = None;
         self.edit_tag_idx = 0;
         self.view_offset = egui::Vec2::ZERO;
@@ -135,7 +160,7 @@ impl KioskLabApp {
                     self.show_track = file.show_track;
                     self.scenario = file.scenario;
                     self.sim = file.sim;
-                    self.selected_tag = None;
+                    self.selection = Selection::None;
                     self.drag_target = None;
                     self.edit_tag_idx = 0;
                     self.set_status(format!("Loaded {}", self.layout_path), t);

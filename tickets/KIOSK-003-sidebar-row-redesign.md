@@ -47,7 +47,7 @@ This ticket is **ADR-007-independent**. None of the changes introduce an overlay
   ```
   Selecting a node is selecting a node, regardless of kind. The detail surface (KIOSK-004) reads the selected `NodeData` and the inventory map looks up the kind for icon/colour assignment. **Earlier drafts of this ticket proposed `Tag(usize) / Relay(usize) / Gateway` per-kind variants** — that draft itself re-instantiated the subtype-fetish in UI state and is retracted. See the dev-log entry above.
 
-  Lift touches every callsite: [`tools/sarcom-kiosk-lab/src/ui/sidebar.rs:30-34`](../tools/sarcom-kiosk-lab/src/ui/sidebar.rs), [`tools/sarcom-kiosk-lab/src/app.rs:81, 102, 138`](../tools/sarcom-kiosk-lab/src/app.rs), [`tools/sarcom-kiosk-lab/src/map/markers.rs:194-203`](../tools/sarcom-kiosk-lab/src/map/markers.rs).
+  Lift touches every callsite that owned the old `selected_tag: Option<usize>` field — `app.rs` (field + `new()` default + `switch_scenario` reset + `load_layout` reset), `ui/sidebar.rs` (row click handler + `is_sel` check), `map/mod.rs` (click-to-select handler + `draw_tags` call). Internal function signatures (e.g. `markers::draw_tags`) can stay positional-index based; `Selection::idx()` unwraps for the call site.
 - **Multi-line per-row detail is removed from the sidebar entirely.** Full coordinates, last-valid-fix-age line, GPS_VALID=0 sentinels message, BATT LOW separate line, lat/lon, ui_kind — all move to KIOSK-004's detail panel.
 
 ## Non-goals
@@ -86,8 +86,7 @@ This ticket is **ADR-007-independent**. None of the changes introduce an overlay
   - line 102: reset in `switch_scenario`
   - line 138: reset in `load_layout`
 - [`tools/sarcom-kiosk-lab/src/map/markers.rs`](../tools/sarcom-kiosk-lab/src/map/markers.rs):
-  - line 186-203 `draw_tags` signature change from `selected_tag: Option<usize>` to `selection: &Selection`
-  - line 215-222 update map-render call site
+  - `draw_tags(painter, sim, selected_node: Option<usize>, t, view)` — call site at `src/map/mod.rs` passes `self.selection.idx()` (the post-lift `Selection` enum's unwrap helper). The function signature stays positional-index-based; the named `Selection` enum lives at app-state level.
 
 ## Risks / open questions
 
