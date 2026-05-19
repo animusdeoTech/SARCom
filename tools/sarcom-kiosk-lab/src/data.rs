@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 
 // Cadence-derived freshness. Normal heartbeat cadence 300–330 s per ADR-013.
 // SOS cadence 45–60 s jittered per ADR-010.
-// Relay self-announce cadence ~1800 s per ADR-006.
+// Relay POSITION cadence ~1800 s per ADR-006. Same packet kind as tag
+// POSITION per ADR-013 — there is no separate "self-announce" frame.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Freshness {
     Fresh,
@@ -37,7 +38,7 @@ pub fn freshness_for_tag(age_secs: f32, sos: bool) -> Freshness {
     }
 }
 
-/// Relay self-announce ~1800 s; don't penalise at tag thresholds.
+/// Relay POSITION cadence ~1800 s; don't penalise at tag thresholds.
 pub fn freshness_for_relay(age_secs: f32) -> Freshness {
     if age_secs < 1800.0 {
         Freshness::Fresh
@@ -55,7 +56,6 @@ pub enum ScenarioKind {
     Stale,
     NoFix,
     MultiTag,
-    ClockInvalid,
     SosNoFix,
 }
 
@@ -67,7 +67,6 @@ impl ScenarioKind {
             Self::Stale => "Stale",
             Self::NoFix => "No Fix",
             Self::MultiTag => "Multi-Tag",
-            Self::ClockInvalid => "Clock Invalid",
             Self::SosNoFix => "SOS + No Fix",
         }
     }
@@ -79,7 +78,6 @@ impl ScenarioKind {
             Self::Stale,
             Self::NoFix,
             Self::MultiTag,
-            Self::ClockInvalid,
             Self::SosNoFix,
         ]
     }
@@ -154,9 +152,9 @@ pub struct RelayData {
     pub node_id: u8,
     pub label: String,
     pub pos: [f32; 2],
-    /// Age of the most recent relay self-announce frame received by the gateway.
+    /// Age of the most recent frame from this relay (POSITION; one packet type per ADR-013).
     #[serde(default)]
-    pub self_ann_age_secs: Option<f32>,
+    pub last_seen_secs: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -171,14 +169,6 @@ pub struct SimState {
     pub tags: Vec<TagData>,
     pub relay: RelayData,
     pub gateway: GatewayData,
-    /// False when the RTC has not been set at boot.
-    /// All relative-time strings must be suppressed when false.
-    #[serde(default = "default_true")]
-    pub clock_valid: bool,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 impl SimState {
@@ -189,7 +179,6 @@ impl SimState {
             ScenarioKind::Stale => Self::stale(),
             ScenarioKind::NoFix => Self::no_fix(),
             ScenarioKind::MultiTag => Self::multi_tag(),
-            ScenarioKind::ClockInvalid => Self::clock_invalid(),
             ScenarioKind::SosNoFix => Self::sos_no_fix(),
         }
     }
@@ -198,7 +187,7 @@ impl SimState {
         Self {
             tags: vec![make_tag(
                 1,
-                "TAG-01",
+                "tag-1",
                 [0.55, 0.38],
                 NodeState::Normal,
                 8.0,
@@ -208,7 +197,6 @@ impl SimState {
             )],
             relay: default_relay(),
             gateway: default_gateway(),
-            clock_valid: true,
         }
     }
 
@@ -217,7 +205,7 @@ impl SimState {
             // 42 s: within the 45–60 s SOS cadence window
             tags: vec![make_tag(
                 2,
-                "TAG-02",
+                "tag-2",
                 [0.60, 0.44],
                 NodeState::Sos,
                 42.0,
@@ -227,7 +215,6 @@ impl SimState {
             )],
             relay: default_relay(),
             gateway: default_gateway(),
-            clock_valid: true,
         }
     }
 
@@ -237,7 +224,7 @@ impl SimState {
                 // 700 s crosses the 660 s aging→stale threshold
                 make_tag(
                     1,
-                    "TAG-01",
+                    "tag-1",
                     [0.50, 0.33],
                     NodeState::Stale,
                     700.0,
@@ -248,7 +235,7 @@ impl SimState {
                 // 1400 s crosses the 1320 s stale→very-stale threshold
                 make_tag(
                     3,
-                    "TAG-03",
+                    "tag-3",
                     [0.65, 0.52],
                     NodeState::VeryStale,
                     1400.0,
@@ -259,14 +246,13 @@ impl SimState {
             ],
             relay: default_relay(),
             gateway: default_gateway(),
-            clock_valid: true,
         }
     }
 
     fn no_fix() -> Self {
         let mut tag = make_tag(
             4,
-            "TAG-04",
+            "tag-4",
             [0.58, 0.47],
             NodeState::NoFix,
             45.0,
@@ -280,14 +266,13 @@ impl SimState {
             tags: vec![tag],
             relay: default_relay(),
             gateway: default_gateway(),
-            clock_valid: true,
         }
     }
 
     fn multi_tag() -> Self {
         let mut nf = make_tag(
             4,
-            "TAG-04",
+            "tag-4",
             [0.70, 0.48],
             NodeState::NoFix,
             30.0,
@@ -301,7 +286,7 @@ impl SimState {
             tags: vec![
                 make_tag(
                     1,
-                    "TAG-01",
+                    "tag-1",
                     [0.50, 0.28],
                     NodeState::Normal,
                     5.0,
@@ -311,7 +296,7 @@ impl SimState {
                 ),
                 make_tag(
                     2,
-                    "TAG-02",
+                    "tag-2",
                     [0.62, 0.41],
                     NodeState::Sos,
                     42.0,
@@ -321,7 +306,7 @@ impl SimState {
                 ),
                 make_tag(
                     3,
-                    "TAG-03",
+                    "tag-3",
                     [0.48, 0.54],
                     NodeState::Stale,
                     700.0,
@@ -333,26 +318,6 @@ impl SimState {
             ],
             relay: default_relay(),
             gateway: default_gateway(),
-            clock_valid: true,
-        }
-    }
-
-    /// RTC has not been set. Map still renders; all relative-time strings suppressed.
-    fn clock_invalid() -> Self {
-        Self {
-            tags: vec![make_tag(
-                1,
-                "TAG-01",
-                [0.55, 0.38],
-                NodeState::Normal,
-                0.0,
-                true,
-                false,
-                false,
-            )],
-            relay: default_relay(),
-            gateway: default_gateway(),
-            clock_valid: false,
         }
     }
 
@@ -361,7 +326,7 @@ impl SimState {
     fn sos_no_fix() -> Self {
         let mut tag = make_tag(
             2,
-            "TAG-02",
+            "tag-2",
             [0.60, 0.44],
             NodeState::Sos,
             55.0,
@@ -375,7 +340,6 @@ impl SimState {
             tags: vec![tag],
             relay: default_relay(),
             gateway: default_gateway(),
-            clock_valid: true,
         }
     }
 }
@@ -383,16 +347,16 @@ impl SimState {
 fn default_relay() -> RelayData {
     RelayData {
         node_id: 101,
-        label: "RELAY-01".into(),
+        label: "relay-1".into(),
         pos: [0.55, 0.60],
-        self_ann_age_secs: Some(840.0), // 14 min: well within relay's ~1800 s cadence
+        last_seen_secs: Some(840.0), // 14 min: well within relay's ~1800 s POSITION cadence
     }
 }
 
 fn default_gateway() -> GatewayData {
     GatewayData {
         node_id: 200,
-        label: "GATEWAY".into(),
+        label: "gw-0".into(),
         pos: [0.30, 0.65],
     }
 }
@@ -497,7 +461,7 @@ mod tests {
         assert_eq!(freshness_for_tag(600.0, true), Freshness::VeryStale);
     }
 
-    // Relay self-announce cadence ~1800 s — must NOT use tag thresholds.
+    // Relay POSITION cadence ~1800 s — must NOT use tag thresholds.
     #[test]
     fn relay_freshness_does_not_borrow_tag_thresholds() {
         // 14 min is "very stale" for a tag, but Fresh for a relay.
@@ -505,12 +469,6 @@ mod tests {
         assert_eq!(freshness_for_relay(1799.0), Freshness::Fresh);
         assert_eq!(freshness_for_relay(1800.0), Freshness::Aging);
         assert_eq!(freshness_for_relay(3600.0), Freshness::Stale);
-    }
-
-    #[test]
-    fn clock_invalid_scenario_carries_flag() {
-        let s = SimState::from_scenario(ScenarioKind::ClockInvalid);
-        assert!(!s.clock_valid);
     }
 
     // SOS+NoFix: current pos must NOT be advertised as a valid fix.

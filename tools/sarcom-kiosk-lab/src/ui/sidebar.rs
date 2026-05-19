@@ -1,274 +1,42 @@
 use crate::app::KioskLabApp;
-use crate::data::{freshness_for_relay, freshness_for_tag, Freshness, TagData};
-use crate::map::markers::tag_display_color;
-use crate::ui::format_age_or_unavailable;
-use crate::ui::palette::{
-    freshness_color, AMBER, DIVIDER, GREEN, GREY, ORANGE, RED, TEXT_BRIGHT, TEXT_DIM,
+use crate::data::{
+    freshness_for_relay, freshness_for_tag, Freshness, GatewayData, RelayData, TagData,
 };
+use crate::map::markers::tag_display_color;
+use crate::ui::palette::{
+    freshness_color, AMBER, GREEN, GREY, ORANGE, RED, TEXT_BRIGHT, TEXT_DIM,
+};
+use crate::ui::{format_age, format_wall};
 use eframe::egui;
+
+enum Row<'a> {
+    Hiker { idx: usize, tag: &'a TagData },
+    Relay(&'a RelayData),
+    Gateway(&'a GatewayData),
+}
 
 impl KioskLabApp {
     pub(crate) fn show_sidebar(&mut self, ui: &mut egui::Ui, t: f64) {
-        let clock_valid = self.sim.clock_valid;
+        let sidebar_w = self.sidebar_width;
 
         egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.set_width(self.sidebar_width);
+            ui.set_width(sidebar_w);
 
-            // ── HIKERS ────────────────────────────────────────────────────
-            sidebar_header(ui, "HIKERS");
-
-            // Sort indices by mission priority. Original indexing is preserved
-            // so `selected_tag` keeps pointing at the same tag across re-sorts.
-            let mut sorted: Vec<usize> = (0..self.sim.tags.len()).collect();
-            sorted.sort_by_key(|&i| hiker_priority(&self.sim.tags[i]));
-
-            if sorted.is_empty() {
-                ui.add_space(4.0);
-                ui.label(
-                    egui::RichText::new("  (no hikers)")
-                        .color(TEXT_DIM)
-                        .size(10.0),
-                );
-                ui.add_space(4.0);
-            }
-
-            for i in sorted {
-                let tag = &self.sim.tags[i];
-                let dot = tag_display_color(tag);
-                let is_sel = self.selected_tag == Some(i);
-                let bg = if is_sel {
-                    egui::Color32::from_rgb(20, 30, 45)
-                } else {
-                    egui::Color32::TRANSPARENT
-                };
-                let age_str = format_age_or_unavailable(tag.last_seen_secs, clock_valid);
-
-                let resp = egui::Frame::none()
-                    .fill(bg)
-                    .inner_margin(egui::Margin::symmetric(10.0, 5.0))
-                    .show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("●").color(dot).size(10.0));
-                            ui.label(
-                                egui::RichText::new(&tag.label)
-                                    .color(TEXT_BRIGHT)
-                                    .strong()
-                                    .size(11.0),
-                            );
-                            ui.with_layout(
-                                egui::Layout::right_to_left(egui::Align::Center),
-                                |ui| {
-                                    ui.label(
-                                        egui::RichText::new(&age_str)
-                                            .color(TEXT_DIM)
-                                            .monospace()
-                                            .size(10.0),
-                                    );
-                                    if tag.battery_low {
-                                        ui.label(
-                                            egui::RichText::new("BATT")
-                                                .color(AMBER)
-                                                .strong()
-                                                .size(9.0),
-                                        );
-                                    }
-                                    if !tag.gps_valid {
-                                        ui.label(
-                                            egui::RichText::new("NOFIX")
-                                                .color(GREY)
-                                                .strong()
-                                                .size(9.0),
-                                        );
-                                    }
-                                    if tag.sos {
-                                        ui.label(
-                                            egui::RichText::new("SOS")
-                                                .color(RED)
-                                                .strong()
-                                                .size(9.0),
-                                        );
-                                    }
-                                },
-                            );
-                        });
-                    })
-                    .response;
-
-                if resp.interact(egui::Sense::click()).clicked() {
-                    self.selected_tag = if is_sel { None } else { Some(i) };
-                }
-            }
-
-            divider_line(ui);
-
-            // ── TAG DETAILS (selected) ────────────────────────────────────
-            if let Some(idx) = self.selected_tag {
-                if let Some(tag) = self.sim.tags.get(idx) {
-                    sidebar_header(ui, "TAG DETAILS");
-                    let dot = tag_display_color(tag);
-                    egui::Frame::none()
-                        .fill(egui::Color32::from_rgb(15, 22, 32))
-                        .inner_margin(egui::Margin::symmetric(10.0, 8.0))
-                        .show(ui, |ui| {
-                            // Force the card to span the full sidebar width
-                            // — without this the Frame fill shrinks to the
-                            // longest kv row.
-                            ui.set_width(ui.available_width());
-                            kv_row(ui, "id", &format!("#{}", tag.node_id));
-                            kv_row_color(ui, "state", tag.state.label(), dot);
-                            kv_row(
-                                ui,
-                                "last seen",
-                                &format_age_or_unavailable(tag.last_seen_secs, clock_valid),
-                            );
-                            kv_row_color(
-                                ui,
-                                "gps",
-                                if tag.gps_valid { "fix" } else { "no fix" },
-                                if tag.gps_valid { GREEN } else { AMBER },
-                            );
-                            // Show last valid fix only when current GPS is invalid;
-                            // otherwise the current marker is the answer.
-                            if !tag.gps_valid {
-                                if let Some(age) = tag.last_valid_fix_age_secs {
-                                    kv_row(
-                                        ui,
-                                        "last fix",
-                                        &format_age_or_unavailable(age, clock_valid),
-                                    );
-                                    if let Some(p) = tag.last_valid_fix_pos {
-                                        kv_row(ui, "at", &format!("{:.5}, {:.5}", p[0], p[1]));
-                                    }
-                                } else {
-                                    kv_row_color(ui, "last fix", "none on record", TEXT_DIM);
-                                }
-                            }
-                            kv_row_color(
-                                ui,
-                                "sos",
-                                if tag.sos { "active" } else { "—" },
-                                if tag.sos { RED } else { TEXT_DIM },
-                            );
-                            kv_row_color(
-                                ui,
-                                "battery",
-                                if tag.battery_low { "low" } else { "ok" },
-                                if tag.battery_low { RED } else { GREEN },
-                            );
-                            // Current pos is meaningless when gps_valid=false; hide it.
-                            if tag.gps_valid {
-                                kv_row(ui, "pos", &format!("{:.5}, {:.5}", tag.pos[0], tag.pos[1]));
-                            }
-                        });
-                }
-            }
-
-            ui.add_space(4.0);
-
-            // ── INFRA ─────────────────────────────────────────────────────
-            sidebar_header(ui, "INFRA");
-            egui::Frame::none()
-                .fill(egui::Color32::from_rgb(15, 22, 32))
-                .inner_margin(egui::Margin::symmetric(10.0, 6.0))
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.label(
-                        egui::RichText::new(&self.sim.relay.label)
-                            .color(ORANGE)
-                            .strong()
-                            .size(11.0),
-                    );
-                    // Relay self-announce uses its own freshness rule (~1800 s cadence).
-                    // Phrase it as relay-only — never apply tag thresholds here.
-                    match self.sim.relay.self_ann_age_secs {
-                        Some(age) => {
-                            let age_str = format_age_or_unavailable(age, clock_valid);
-                            let color = if clock_valid {
-                                freshness_color(freshness_for_relay(age))
-                            } else {
-                                TEXT_DIM
-                            };
-                            kv_row_color(ui, "self-ann", &age_str, color);
-                        }
-                        None => {
-                            kv_row_color(ui, "self-ann", "no frame rx", TEXT_DIM);
+            let rows = build_rows(&self.sim);
+            for row in rows {
+                match row {
+                    Row::Hiker { idx, tag } => {
+                        let is_sel = self.selected_tag == Some(idx);
+                        let resp = render_hiker_row(ui, tag, is_sel, t);
+                        if resp.clicked() {
+                            self.selected_tag = if is_sel { None } else { Some(idx) };
                         }
                     }
-                    kv_row(
-                        ui,
-                        "pos",
-                        &format!("{:.5}, {:.5}", self.sim.relay.pos[0], self.sim.relay.pos[1]),
-                    );
-                });
-
-            ui.add_space(4.0);
-
-            // ── SYSTEM ────────────────────────────────────────────────────
-            sidebar_header(ui, "SYSTEM");
-            egui::Frame::none()
-                .fill(egui::Color32::from_rgb(15, 22, 32))
-                .inner_margin(egui::Margin::symmetric(10.0, 6.0))
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.label(
-                        egui::RichText::new(&self.sim.gateway.label)
-                            .color(GREEN)
-                            .strong()
-                            .size(11.0),
-                    );
-                    kv_row_color(ui, "gateway", "online", GREEN);
-                    kv_row_color(ui, "radio", "rx", GREEN);
-                    kv_row_color(
-                        ui,
-                        "rtc",
-                        if clock_valid { "ok" } else { "not set" },
-                        if clock_valid { GREEN } else { AMBER },
-                    );
-                });
-
-            // ── SIGHTING LOG ──────────────────────────────────────────────
-            if self.show_sighting_log {
-                if let Some(idx) = self.selected_tag {
-                    if let Some(tag) = self.sim.tags.get(idx) {
-                        ui.add_space(4.0);
-                        sidebar_header(ui, "SIGHTING LOG");
-                        egui::Frame::none()
-                            .inner_margin(egui::Margin::symmetric(10.0, 4.0))
-                            .show(ui, |ui| {
-                                ui.set_width(self.sidebar_width - 2.0);
-                                for s in tag.sightings.iter().take(8) {
-                                    let age_part =
-                                        format_age_or_unavailable(s.age_secs, clock_valid);
-                                    let mut line = format!(
-                                        "{:>16}  seq={:<4}  {}",
-                                        age_part,
-                                        s.seq,
-                                        if s.gps_valid { "FIX" } else { "NOFIX" },
-                                    );
-                                    if s.sos {
-                                        line.push_str("  SOS");
-                                    }
-                                    let color = if s.sos { RED } else { TEXT_DIM };
-                                    ui.label(
-                                        egui::RichText::new(&line)
-                                            .color(color)
-                                            .monospace()
-                                            .size(9.0),
-                                    );
-                                }
-                                if tag.sightings.is_empty() {
-                                    ui.label(
-                                        egui::RichText::new("No sightings")
-                                            .color(TEXT_DIM)
-                                            .size(10.0),
-                                    );
-                                }
-                            });
-                    }
+                    Row::Relay(relay) => render_relay_row(ui, relay, t),
+                    Row::Gateway(gw) => render_gateway_row(ui, gw),
                 }
             }
 
-            // ── Status message ────────────────────────────────────────────
             if !self.status_msg.is_empty() && t < self.status_expire {
                 ui.add_space(8.0);
                 ui.label(
@@ -277,11 +45,14 @@ impl KioskLabApp {
                         .size(10.0),
                 );
             }
+
+            ui.add_space(8.0);
         });
     }
 }
 
-/// Mission-first ordering: SOS → no-fix → stale/very-stale → normal.
+/// Mission-first ordering inside the node list: SOS → no-fix → stale/very-stale → normal,
+/// with relays and the gateway pinned at the bottom.
 fn hiker_priority(tag: &TagData) -> u8 {
     if tag.sos {
         return 0;
@@ -295,82 +66,214 @@ fn hiker_priority(tag: &TagData) -> u8 {
     }
 }
 
-fn divider_line(ui: &mut egui::Ui) {
-    ui.add_space(4.0);
-    let y = ui.cursor().min.y;
-    ui.painter().line_segment(
-        [
-            egui::pos2(ui.min_rect().left(), y),
-            egui::pos2(ui.min_rect().right(), y),
-        ],
-        egui::Stroke::new(1.0, DIVIDER),
-    );
+fn build_rows(sim: &crate::data::SimState) -> Vec<Row<'_>> {
+    let mut tag_idxs: Vec<usize> = (0..sim.tags.len()).collect();
+    tag_idxs.sort_by_key(|&i| (hiker_priority(&sim.tags[i]), sim.tags[i].node_id));
+
+    let mut rows: Vec<Row<'_>> = Vec::with_capacity(sim.tags.len() + 2);
+    for i in tag_idxs {
+        rows.push(Row::Hiker {
+            idx: i,
+            tag: &sim.tags[i],
+        });
+    }
+    rows.push(Row::Relay(&sim.relay));
+    rows.push(Row::Gateway(&sim.gateway));
+    rows
 }
 
-pub fn sidebar_header(ui: &mut egui::Ui, label: &str) {
-    egui::Frame::none()
-        .fill(egui::Color32::from_rgb(7, 11, 16))
-        .inner_margin(egui::Margin::symmetric(10.0, 4.0))
+fn render_hiker_row(
+    ui: &mut egui::Ui,
+    tag: &TagData,
+    is_sel: bool,
+    t: f64,
+) -> egui::Response {
+    let bg = if is_sel {
+        egui::Color32::from_rgb(20, 30, 45)
+    } else {
+        egui::Color32::TRANSPARENT
+    };
+    let dot = tag_display_color(tag);
+
+    egui::Frame::NONE
+        .fill(bg)
+        .inner_margin(egui::Margin::symmetric(10, 5))
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
-            ui.label(
-                egui::RichText::new(label)
+
+            if tag.sos {
+                let since = format!("since {}", format_wall(t - tag.last_seen_secs as f64));
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new("⚠ SOS")
+                            .color(RED)
+                            .strong()
+                            .monospace()
+                            .size(10.0),
+                    );
+                    ui.label(
+                        egui::RichText::new(format!("· {}", since))
+                            .color(RED)
+                            .monospace()
+                            .size(10.0),
+                    );
+                });
+            }
+
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("●").color(dot).size(11.0));
+                ui.label(
+                    egui::RichText::new(&tag.label)
+                        .color(TEXT_BRIGHT)
+                        .strong()
+                        .monospace()
+                        .size(11.0),
+                );
+            });
+
+            if !tag.gps_valid {
+                ui.label(
+                    egui::RichText::new("  last —")
+                        .color(TEXT_DIM)
+                        .monospace()
+                        .size(10.0),
+                );
+                ui.label(
+                    egui::RichText::new("  GPS_VALID=0 · sentinels")
+                        .color(GREY)
+                        .monospace()
+                        .size(10.0),
+                );
+                if let Some(age) = tag.last_valid_fix_age_secs {
+                    ui.label(
+                        egui::RichText::new(format!("  last fix {}", format_age(age)))
+                            .color(TEXT_DIM)
+                            .monospace()
+                            .size(10.0),
+                    );
+                }
+            } else {
+                let line = format!(
+                    "  last {} · {}",
+                    format_wall(t - tag.last_seen_secs as f64),
+                    format_age(tag.last_seen_secs),
+                );
+                ui.label(
+                    egui::RichText::new(line)
+                        .color(TEXT_DIM)
+                        .monospace()
+                        .size(10.0),
+                );
+                ui.label(
+                    egui::RichText::new(format!(
+                        "  {:.5}, {:.5}",
+                        tag.pos[0], tag.pos[1]
+                    ))
                     .color(TEXT_DIM)
-                    .size(9.0)
-                    .extra_letter_spacing(1.5),
+                    .monospace()
+                    .size(10.0),
+                );
+            }
+
+            if tag.battery_low {
+                ui.label(
+                    egui::RichText::new("  BATT LOW")
+                        .color(AMBER)
+                        .strong()
+                        .monospace()
+                        .size(9.5),
+                );
+            }
+        })
+        .response
+        .interact(egui::Sense::click())
+}
+
+fn render_relay_row(ui: &mut egui::Ui, relay: &RelayData, t: f64) {
+    let dot = match relay.last_seen_secs {
+        Some(age) => freshness_color(freshness_for_relay(age)),
+        None => GREY,
+    };
+
+    egui::Frame::NONE
+        .inner_margin(egui::Margin::symmetric(10, 5))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("●").color(dot).size(11.0));
+                ui.label(
+                    egui::RichText::new(&relay.label)
+                        .color(ORANGE)
+                        .strong()
+                        .monospace()
+                        .size(11.0),
+                );
+            });
+
+            match relay.last_seen_secs {
+                Some(age) => {
+                    let line = format!(
+                        "  POSITION {} · {}",
+                        format_wall(t - age as f64),
+                        format_age(age),
+                    );
+                    ui.label(
+                        egui::RichText::new(line)
+                            .color(TEXT_DIM)
+                            .monospace()
+                            .size(10.0),
+                    );
+                }
+                None => {
+                    ui.label(
+                        egui::RichText::new("  POSITION — · no frame rx")
+                            .color(TEXT_DIM)
+                            .monospace()
+                            .size(10.0),
+                    );
+                }
+            }
+
+            ui.label(
+                egui::RichText::new(format!(
+                    "  {:.5}, {:.5} · solar",
+                    relay.pos[0], relay.pos[1]
+                ))
+                .color(TEXT_DIM)
+                .monospace()
+                .size(10.0),
             );
         });
 }
 
-/// Width of the key column inside INFRA / SYSTEM / TAG DETAILS cards.
-/// Tuned to fit the longest current key ("self-ann", "last seen") plus
-/// a couple of pixels of breathing room at monospace 10 pt.
-const KV_KEY_COL_W: f32 = 80.0;
-const KV_GAP: f32 = 8.0;
+fn render_gateway_row(ui: &mut egui::Ui, gw: &GatewayData) {
+    egui::Frame::NONE
+        .inner_margin(egui::Margin::symmetric(10, 5))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
 
-/// Compact two-column status row: dim monospace key in a fixed-width
-/// cell on the left, bright/coloured monospace value in a flexible cell
-/// on the right. Both cells are left-aligned. The value cell uses
-/// `Label::wrap()` so strings longer than the value cell break onto
-/// extra lines inside the cell instead of painting past the sidebar
-/// edge — no `right_to_left` layout, which was the original clipping
-/// source under `SidePanel` + `ScrollArea`.
-pub fn kv_row(ui: &mut egui::Ui, key: &str, val: &str) {
-    kv_row_color(ui, key, val, TEXT_BRIGHT);
-}
-
-pub fn kv_row_color(ui: &mut egui::Ui, key: &str, val: &str, color: egui::Color32) {
-    let total_w = ui.available_width();
-    // Cap the key column at 40 % of the row in an unusually narrow card,
-    // so the value always has room to breathe.
-    let key_w = KV_KEY_COL_W.min(total_w * 0.4);
-    let val_w = (total_w - key_w - KV_GAP).max(40.0);
-
-    let key_rich = egui::RichText::new(key)
-        .color(TEXT_DIM)
-        .monospace()
-        .size(10.0);
-    let val_rich = egui::RichText::new(val)
-        .color(color)
-        .monospace()
-        .strong()
-        .size(10.0);
-
-    ui.horizontal(|ui| {
-        ui.allocate_ui_with_layout(
-            egui::vec2(key_w, 0.0),
-            egui::Layout::left_to_right(egui::Align::TOP),
-            |ui| {
-                ui.label(key_rich);
-            },
-        );
-        ui.add_space(KV_GAP);
-        ui.allocate_ui_with_layout(
-            egui::vec2(val_w, 0.0),
-            egui::Layout::left_to_right(egui::Align::TOP),
-            |ui| {
-                ui.add(egui::Label::new(val_rich).wrap());
-            },
-        );
-    });
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("●").color(GREEN).size(11.0));
+                ui.label(
+                    egui::RichText::new(&gw.label)
+                        .color(GREEN)
+                        .strong()
+                        .monospace()
+                        .size(11.0),
+                );
+            });
+            ui.label(
+                egui::RichText::new("  RPi5 · Dragino HAT")
+                    .color(TEXT_DIM)
+                    .monospace()
+                    .size(10.0),
+            );
+            ui.label(
+                egui::RichText::new("  RTC: DS3231 ok")
+                    .color(GREEN)
+                    .monospace()
+                    .size(10.0),
+            );
+        });
 }

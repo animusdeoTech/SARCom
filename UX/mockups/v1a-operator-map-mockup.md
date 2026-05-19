@@ -23,8 +23,8 @@ Per the design prompt [`tickets/CLAUDE-DESIGN-PROMPT-v1a-operator-map.md:60-69`]
 | tag-2 | hiker | SOS | last seen 42 s, `gps_valid=true`, batt ok, flags.SOS=1 |
 | tag-3 | hiker | No-fix + last-valid-fix | `gps_valid=false`, `last_valid_fix_age_secs ≈ 480` (= 8 m) — ghost drawn at `last_valid_fix_pos`, NOT at the sentinel current `pos` per [`tools/sarcom-kiosk-lab/src/map/markers.rs:265-302`](../../tools/sarcom-kiosk-lab/src/map/markers.rs) |
 | tag-4 | hiker | Stale | last seen ~700 s (crosses 660 s aging→stale boundary per `data.rs:33`) — dim grey dot |
-| relay-1 | relay | Healthy | `self_ann_age_secs ≈ 840` (14 m), within 1800 s cadence per `data.rs:42-48` — blue ✚ |
-| relay-2 | relay | Overdue | `self_ann_age_secs ≈ 3900` (65 m), past 3600 s threshold — amber ✚ |
+| relay-1 | relay | Healthy | `last_seen_secs ≈ 840` (14 m), within 1800 s POSITION cadence per `data.rs:42-48` — blue ✚ |
+| relay-2 | relay | Overdue | `last_seen_secs ≈ 3900` (65 m), past 3600 s threshold — amber ✚ |
 | gw-0 | gateway | Healthy | clock valid — square outline per [`tools/sarcom-kiosk-lab/src/map/markers.rs:168-184`](../../tools/sarcom-kiosk-lab/src/map/markers.rs) |
 
 Detail view is rendered for **tag-3** in both panels so the no-fix case is
@@ -160,7 +160,7 @@ The bias rules in [`tickets/CLAUDE-DESIGN-PROMPT-v1a-operator-map.md:24-29`](../
    single strongest argument for Variant A on this surface.
 
 3. **Relay-1 / relay-2 selection content.** KIOSK-004 makes relay rows
-   selectable. Tapping relay-2 would surface `self-ann age = 65 m`. What
+   selectable. Tapping relay-2 would surface `last frame = POSITION 65 m`. What
    does the operator do with that? If the answer is "go check the relay
    physically," the detail view's job is done; if the answer is "trigger
    BLE commissioning," that crosses the precedent at

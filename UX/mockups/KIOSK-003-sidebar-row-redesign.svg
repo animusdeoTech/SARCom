@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 620" font-family="Menlo, Consolas, monospace">
+  <!--
+    SARCOM KIOSK-003 — Sidebar row redesign.
+    Single-design v1a mockup. Fixture 800x480 per tools/sarcom-kiosk-lab/README.md:53.
+    Focus: sidebar (320 wide on right). Map left of sidebar rendered as a greyed/abstract
+    block per the prompt — but labelled to acknowledge the three layers exist underneath
+    per pmtiles_map.rs:82-125 (basemap + LIDAR hillshade + OSM XML overlays).
+    All row formats per tickets/KIOSK-003-sidebar-row-redesign.md:29-39, 34-35.
+  -->
+
+  <g id="background">
+    <title>Viewport background, fixture frame, header band, palette/citation footer</title>
+    <rect x="0" y="0" width="1100" height="620" fill="#070b10"/>
+    <rect x="20" y="60" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="60" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="90" width="320" height="450" fill="#0c1118"/>
+    <line x1="500" y1="90" x2="500" y2="540" stroke="#1a2530" stroke-width="1"/>
+
+    <text x="20" y="26" fill="#ff8232" font-size="14" font-weight="bold">SARCOM</text>
+    <text x="86" y="26" fill="#6c7f92" font-size="11">KIOSK-003 · sidebar row redesign · 2026-05-19 · single-design v1a · rev 2 (three-layer-aware abstract)</text>
+    <text x="20" y="44" fill="#c0ccd8" font-size="11">Lab fixture 800x480 (tools/sarcom-kiosk-lab/README.md:53) — ADR-015-pending; substrate open per README.md:36</text>
+
+    <text x="20" y="568" fill="#6c7f92" font-size="9">Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs · SIDEBAR_BG #0c1118 · TEXT_DIM #6c7f92 · TEXT_BRIGHT #c0ccd8 · RED #ff3c3c · AMBER #eab308 · GREEN #40d080 · GREY #6b7280</text>
+    <text x="20" y="582" fill="#6c7f92" font-size="9">Source of truth: tickets/KIOSK-003-sidebar-row-redesign.md:29-39, 34 (very-stale), 35 (🔋 BATT), 41 (sticky distress), 67 (relay+gateway selectable), 72 (48px), 77 (full-row tint)</text>
+    <text x="20" y="596" fill="#6c7f92" font-size="9">Map abstracted; three layers (basemap + LIDAR hillshade + OSM XML overlays) live underneath per pmtiles_map.rs:82-125. No counter footer card; no overlay; no popover.</text>
+  </g>
+
+  <g id="map">
+    <title>Map area abstracted — KIOSK-001 owns chrome detail. Rendered as a dim grey
+           block per the prompt: focus of THIS mockup is the sidebar. Label names the
+           three-layer composition per pmtiles_map.rs:82-125.</title>
+    <rect x="20" y="90" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="90" width="480" height="426" fill="#1a2530" fill-opacity="0.15"/>
+    <text x="260" y="276" fill="#5a6a7a" font-size="11" text-anchor="middle">[ map abstracted — KIOSK-001 owns chrome ]</text>
+    <text x="260" y="294" fill="#5a6a7a" font-size="10" text-anchor="middle">full render = basemap (Protomaps dark)</text>
+    <text x="260" y="308" fill="#5a6a7a" font-size="10" text-anchor="middle">+ LIDAR hillshade (DHMV-II DSM, 0.5)</text>
+    <text x="260" y="322" fill="#5a6a7a" font-size="10" text-anchor="middle">+ OSM XML overlays (Overpass + hand-drawn)</text>
+    <text x="260" y="338" fill="#5a6a7a" font-size="9" font-style="italic" text-anchor="middle">per pmtiles_map.rs:82-125 · region.rs:25-71</text>
+  </g>
+
+  <g id="markers">
+    <title>Map markers omitted — KIOSK-003 focus is the sidebar list. Reference scenario
+           below shows what each sidebar row corresponds to.</title>
+  </g>
+
+  <g id="sidebar">
+    <title>Sidebar 320x450 at x=500..820, y=90..540. Sticky DISTRESS section + scrollable
+           NODES section. tag-2 rendered as selected (full-row tint).</title>
+
+    <!-- ==== Sticky DISTRESS section ==== -->
+    <rect x="500" y="90" width="320" height="22" fill="#1a0a0a"/>
+    <text x="508" y="105" fill="#ff3c3c" font-size="10" font-weight="bold">DISTRESS</text>
+    <text x="812" y="105" fill="#ff3c3c" font-size="9" text-anchor="end" font-weight="bold">· 2</text>
+
+    <!-- tag-2 SOS row · SELECTED (full-row tint per KIOSK-003:77) -->
+    <rect x="500" y="112" width="320" height="48" fill="#c0ccd8" fill-opacity="0.08"/>
+    <line x1="500" y1="160" x2="820" y2="160" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="138" fill="#ff3c3c" font-size="13" font-weight="bold">🔴 SOS · tag-2 · 42 s</text>
+    <text x="510" y="153" fill="#6c7f92" font-size="9" font-style="italic">selected · full-row tint</text>
+
+    <!-- tag-3 NO-FIX row -->
+    <line x1="500" y1="208" x2="820" y2="208" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="187" fill="#eab308" font-size="13">⚠ tag-3 · NO FIX · last fix 8 m</text>
+    <text x="510" y="200" fill="#6c7f92" font-size="9" font-style="italic">no-fix → KIOSK-004 detail: LAST FIX · {age}</text>
+
+    <!-- Sticky/scroll boundary -->
+    <line x1="500" y1="208" x2="820" y2="208" stroke="#1a2530" stroke-width="1.4"/>
+
+    <!-- Scrollable NODES section header -->
+    <rect x="500" y="208" width="320" height="22" fill="#10171f"/>
+    <text x="508" y="223" fill="#6c7f92" font-size="10" font-weight="bold">NODES · 5</text>
+    <text x="812" y="223" fill="#6c7f92" font-size="9" text-anchor="end">mission-first sort</text>
+
+    <!-- tag-1 normal -->
+    <line x1="500" y1="278" x2="820" y2="278" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="259" fill="#c0ccd8" font-size="13">● tag-1</text>
+    <text x="600" y="259" fill="#6c7f92" font-size="13">·  12 s ago</text>
+
+    <!-- tag-4 stale -->
+    <line x1="500" y1="326" x2="820" y2="326" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="307" fill="#6c7f92" font-size="13">● tag-4 · stale · 12 m</text>
+
+    <!-- tag-5 very-stale -->
+    <line x1="500" y1="374" x2="820" y2="374" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="355" fill="#6c7f92" font-size="13" fill-opacity="0.65">● tag-5 · very stale · 24 m</text>
+
+    <!-- tag-6 battery-low (🔋 BATT icon + suffix together on primary line per KIOSK-003:35) -->
+    <line x1="500" y1="422" x2="820" y2="422" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="403" fill="#c0ccd8" font-size="13">● tag-6 · 18 s</text>
+    <text x="660" y="403" fill="#eab308" font-size="13" font-weight="bold">·  🔋 BATT</text>
+
+    <!-- relay-1 healthy -->
+    <line x1="500" y1="470" x2="820" y2="470" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="451" fill="#c0ccd8" font-size="13">● relay-1 · POSITION 14 m</text>
+    <text x="510" y="465" fill="#6c7f92" font-size="9" font-style="italic">selectable (KIOSK-003 scope change)</text>
+
+    <!-- gw-0 healthy -->
+    <text x="510" y="499" fill="#40d080" font-size="13">● gw-0 · RTC ok</text>
+    <text x="510" y="513" fill="#6c7f92" font-size="9" font-style="italic">selectable (KIOSK-003 scope change)</text>
+  </g>
+
+  <g id="bottom-strip">
+    <title>Bottom strip at y=516..540 over the map area only. Existing read-only PMTiles
+           rendering per app.rs:283-344. No coord readout (KIOSK-002 deferred).</title>
+    <rect x="20" y="516" width="480" height="24" fill="#0a0f14"/>
+    <text x="28" y="532" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
+  </g>
+
+  <g id="controls">
+    <title>Map chrome (scale bar + compass rose) abstracted — KIOSK-001 owns this detail.
+           No floating buttons.</title>
+    <text x="36" y="108" fill="#5a6a7a" font-size="9">[compass]</text>
+    <text x="36" y="510" fill="#5a6a7a" font-size="9">[scale bar 80px]</text>
+  </g>
+
+  <g id="annotations">
+    <title>Marginal callouts. Each load-bearing sidebar feature cited path:line.</title>
+
+    <!-- Numbered callout markers inside the kiosk -->
+    <circle cx="488" cy="101" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="104" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <circle cx="488" cy="136" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="139" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
+    <circle cx="488" cy="187" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="190" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
+    <circle cx="488" cy="219" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="222" fill="#ff8232" font-size="9" text-anchor="middle">4</text>
+    <circle cx="488" cy="355" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="358" fill="#ff8232" font-size="9" text-anchor="middle">5</text>
+    <circle cx="488" cy="403" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="406" fill="#ff8232" font-size="9" text-anchor="middle">6</text>
+    <circle cx="488" cy="451" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="454" fill="#ff8232" font-size="9" text-anchor="middle">7</text>
+
+    <text x="836" y="84" fill="#c0ccd8" font-size="10" font-weight="bold">Sidebar row redesign</text>
+    <text x="836" y="100" fill="#6c7f92" font-size="9">320 px wide · all rows ≥48 px touch target</text>
+    <text x="836" y="113" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-003:20, 21 (320 wide); :40, 72 (48 px)</text>
+
+    <text x="836" y="138" fill="#ff8232" font-size="10" font-weight="bold">1 · sticky DISTRESS section</text>
+    <text x="836" y="154" fill="#6c7f92" font-size="9">pinned above scrollable list</text>
+    <text x="836" y="167" fill="#6c7f92" font-size="9">SOS + no-fix rows do not scroll off</text>
+    <text x="836" y="180" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-003:41, 73</text>
+
+    <text x="836" y="204" fill="#ff8232" font-size="10" font-weight="bold">2 · selected row · full-row tint</text>
+    <text x="836" y="220" fill="#6c7f92" font-size="9">subtle TEXT_BRIGHT @ 8% opacity</text>
+    <text x="836" y="233" fill="#6c7f92" font-size="9">extends across full 320 px width</text>
+    <text x="836" y="246" fill="#6c7f92" font-size="9">text colour unchanged · only bg</text>
+    <text x="836" y="259" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-003:77 · src/ui/sidebar.rs:93-97</text>
+
+    <text x="836" y="284" fill="#ff8232" font-size="10" font-weight="bold">3 · no-fix row → KIOSK-004</text>
+    <text x="836" y="300" fill="#6c7f92" font-size="9">tap → sidebar replacement detail</text>
+    <text x="836" y="313" fill="#6c7f92" font-size="9">with LAST FIX · {age} framing</text>
+    <text x="836" y="326" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-004:50, 91</text>
+
+    <text x="836" y="350" fill="#ff8232" font-size="10" font-weight="bold">4 · NODES · n header</text>
+    <text x="836" y="366" fill="#6c7f92" font-size="9">n = count of non-alert nodes</text>
+    <text x="836" y="379" fill="#6c7f92" font-size="9">mission-first sort preserved</text>
+    <text x="836" y="392" fill="#6c7f92" font-size="9" font-style="italic">src/ui/sidebar.rs:57-84</text>
+
+    <text x="836" y="416" fill="#ff8232" font-size="10" font-weight="bold">5 · very-stale row</text>
+    <text x="836" y="432" fill="#6c7f92" font-size="9">● tag-5 · very stale · 24 m</text>
+    <text x="836" y="445" fill="#6c7f92" font-size="9">very dim · distinct from `stale`</text>
+    <text x="836" y="458" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-003:34</text>
+
+    <text x="836" y="482" fill="#ff8232" font-size="10" font-weight="bold">6 · battery-low · 🔋 BATT</text>
+    <text x="836" y="498" fill="#6c7f92" font-size="9">icon + suffix together on primary</text>
+    <text x="836" y="511" fill="#6c7f92" font-size="9">line · AMBER tint · both signals</text>
+    <text x="836" y="524" fill="#6c7f92" font-size="9">carry: icon for glance + text for</text>
+    <text x="836" y="537" fill="#6c7f92" font-size="9">unambiguous readout</text>
+    <text x="836" y="550" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-003:35</text>
+
+    <text x="836" y="574" fill="#ff8232" font-size="10" font-weight="bold">7 · relay+gateway selectable</text>
+    <text x="836" y="590" fill="#6c7f92" font-size="9">KIOSK-003 scope change · Selection</text>
+    <text x="836" y="603" fill="#6c7f92" font-size="9">enum at KIOSK-003:43-56, 67, 74</text>
+  </g>
+</svg>

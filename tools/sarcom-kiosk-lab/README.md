@@ -40,25 +40,21 @@ cargo build --release
 Sidebar defaults to **320 px**. The `Edit → Layout` slider clamps to
 **300–420 px**.
 
-INFRA, SYSTEM, and TAG DETAILS render as **full-width status cards**
-(the inner Frame is forced to `ui.available_width()` so the card
-background spans the sidebar instead of shrinking to text width).
-Inside each card, key/value status rows use a **compact two-column
-layout**: a fixed-width dim monospace key cell (~80 px) on the left, a
-flexible value cell on the right with `Label::wrap()` enabled, both
-left-aligned. Long values like `time unavailable` or `none on record`
-fall back to wrapping inside the value cell — no `right_to_left`
-layout, which was the original right-edge clipping source under
-`SidePanel` + `ScrollArea`. The HIKERS list rows stay inline (compact,
-short content with badges on the right).
+The sidebar follows the canonical project model from
+[ADR-013 §9](../../decisions/ADR-013-multi-hop-flood-via-packet-id.md): a
+flat list of **nodes** distinguished by `ui_kind`. Each node row carries
+a status bullet, the lowercase node label (`tag-1`, `relay-1`, `gw-0`),
+and a kind-specific summary.
 
 800×480-ish window (resizable) with:
 
 | Area | Description |
 |---|---|
-| **Header** | Scenario selector, GW online dot, clock (or `RTC NOT SET` warning), Edit toggle |
-| **Map** | Dark grid, current-fix tag markers, ghost markers for last-valid-fix when no current fix, relay diamond, gateway square, track lines |
-| **Sidebar** | `HIKERS` (mission-sorted) → `TAG DETAILS` → `INFRA` (relay self-announce) → `SYSTEM` (gateway/RTC/radio) → `SIGHTING LOG` |
+| **Header** | `SARCOM` brand wordmark, scenario badge (combobox in dim text), centred "last RX" with freshness dot and relative-age string, monospace wall clock, Edit toggle |
+| **RTC band** | Amber strip directly under the header, shown only when `clock_valid=false` (ADR-011) |
+| **Map** | Subdued OSM line-art on near-black slate, current-fix tag dots, ghost markers for last-valid-fix when no current fix, ✚ relay marker, house-outline gateway, 1 px dashed track lines |
+| **Sidebar** | `▼ NODES (n)` — collapsible flat list of hikers, relays, gateway. `▼ NO FIX (n)` — collapsible list of hikers whose latest report had `GPS_VALID=0`. **Counters footer card** at the bottom: `POSITION rx today`, `via relay`, `direct`, `dedup'd`, `CRC fail` (gateway-side counters; see ADR-013 §10 — coverage telemetry is a v2+ deferral, the lab values are synthetic). |
+| **Bottom strip** | Read-only hint plus `PMTiles · OSM · zoom 17`. Replaced by a red `● DISTRESS` band when any tag has `flags.SOS=1` |
 | **Edit panel** | Floating window — layout tweaks, tag state overrides, save/load |
 
 ## Scenarios
@@ -122,16 +118,23 @@ The kiosk lab mirrors what the v1 protocol and gateway actually know. Per
 carries one packet type (`POSITION`) with **no FORWARD envelope, no hop
 count, no path array, and no per-hop RSSI/SNR**. The gateway therefore
 cannot tell "via relay-1" from "direct" for a given packet, so the kiosk
-must not pretend it can. None of the following appear in the UI:
+must not pretend it can on a per-row basis. None of the following appear
+in the UI:
 
 - hop counts
-- "via relay-X" annotations on tag rows
-- direct vs. via-relay counters
+- "via relay-X" annotations on individual tag rows
 - inferred radio routes / path lines from gateway to tag
 - per-packet RSSI/SNR or coverage maps
 
 A reception-log / coverage layer is an explicit v2+ deferral
 ([ADR-013 §10](../../decisions/ADR-013-multi-hop-flood-via-packet-id.md)).
+
+**Counters footer footnote.** The sidebar's gateway counters card
+includes `via relay` and `direct` lines. These are **synthetic mockup
+values** rendered from a `Counters` struct on `SimState`; the v1 wire
+protocol does not let the gateway derive them. They are present as a
+design exploration of where v2+ telemetry might surface in the kiosk —
+not a claim that v1 can compute them.
 
 ## Freshness model
 
@@ -142,10 +145,12 @@ Stale thresholds are **cadence-derived**, not generic dashboard heuristics
 |---|---|---|---|---|---|
 | Tag heartbeat | 300–330 s | < 330 s | < 660 s | < 1320 s | ≥ 1320 s |
 | Tag in SOS | 45–60 s jittered | < 180 s | — | — | ≥ 180 s |
-| Relay self-announce | ~1800 s | < 1800 s | < 3600 s | ≥ 3600 s | — |
+| Relay POSITION | ~1800 s | < 1800 s | < 3600 s | ≥ 3600 s | — |
 
-Relay status is phrased as `self-ann Xm ago` and never colored stale at
-tag thresholds — a 14-minute-old relay self-announce is healthy, not late.
+Relay status is phrased as `POSITION Xm ago` and never colored stale at
+tag thresholds — a 14-minute-old relay POSITION frame is healthy, not late.
+Same packet kind as tag POSITION per ADR-013 (one packet type); there is
+no separate "self-announce" frame on the wire.
 
 ## Clock validity
 

@@ -12,8 +12,8 @@
         tag-3   no-fix     gps_valid=false, last_valid_fix_age 480 s (8 m), ghost
                             drawn at last_valid_fix_pos per markers.rs:265-302
         tag-4   stale      last seen 700 s (~12 m), dim
-        relay-1 healthy    self_ann_age ~840 s (14 m), within 1800 s cadence
-        relay-2 overdue    self_ann_age ~3900 s (65 m), past 3600 s threshold
+        relay-1 healthy    last_seen ~840 s (14 m), within 1800 s POSITION cadence
+        relay-2 overdue    last_seen ~3900 s (65 m), past 3600 s threshold
         gw-0    gateway    clock valid
     Detail view rendered for tag-3 in BOTH panels so the no-fix case is fully
     visible per the design prompt.
@@ -101,7 +101,7 @@
         <rect x="-9" y="-2.5" width="18" height="5" fill="#32b4ff" stroke="#0a0f14" stroke-width="0.6"/>
       </g>
       <text x="384" y="196" fill="#32b4ff" font-size="10">relay-1</text>
-      <text x="384" y="208" fill="#5a6a7a" font-size="9">self-ann 14 m</text>
+      <text x="384" y="208" fill="#5a6a7a" font-size="9">POSITION 14 m</text>
     </g>
 
     <!-- tag-2 SOS — pulse ring + bright red dot -->
@@ -139,14 +139,14 @@
       <text x="186" y="404" fill="#eab308" font-size="9">NO FIX · 8 m</text>
     </g>
 
-    <!-- relay-2 OVERDUE: cross ✚ glyph, amber (self-ann 65 m, past 3600 s) -->
+    <!-- relay-2 OVERDUE: cross ✚ glyph, amber (POSITION 65 m, past 3600 s) -->
     <g>
       <g transform="translate(415,420)">
         <rect x="-2.5" y="-9" width="5" height="18" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
         <rect x="-9" y="-2.5" width="18" height="5" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
       </g>
       <text x="365" y="445" fill="#eab308" font-size="10" text-anchor="end">relay-2 ⚠</text>
-      <text x="365" y="457" fill="#5a6a7a" font-size="9" text-anchor="end">self-ann 65 m</text>
+      <text x="365" y="457" fill="#5a6a7a" font-size="9" text-anchor="end">POSITION 65 m</text>
     </g>
 
     <!-- gw-0 GATEWAY: square outline -->
@@ -379,7 +379,7 @@
         <rect x="-9" y="-2.5" width="18" height="5" fill="#32b4ff" stroke="#0a0f14" stroke-width="0.6"/>
       </g>
       <text x="1224" y="218" fill="#32b4ff" font-size="10">relay-1</text>
-      <text x="1224" y="230" fill="#5a6a7a" font-size="9">self-ann 14 m</text>
+      <text x="1224" y="230" fill="#5a6a7a" font-size="9">POSITION 14 m</text>
     </g>
 
     <!-- tag-2 SOS -->
@@ -420,7 +420,7 @@
         <rect x="-9" y="-2.5" width="18" height="5" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
       </g>
       <text x="1205" y="467" fill="#eab308" font-size="10" text-anchor="end">relay-2 ⚠</text>
-      <text x="1205" y="479" fill="#5a6a7a" font-size="9" text-anchor="end">self-ann 65 m</text>
+      <text x="1205" y="479" fill="#5a6a7a" font-size="9" text-anchor="end">POSITION 65 m</text>
     </g>
 
     <!-- gw-0 GATEWAY -->
@@ -555,7 +555,7 @@
         <rect x="-6" y="-1.5" width="12" height="3" fill="#32b4ff"/>
       </g>
       <text x="1352" y="337" fill="#c0ccd8" font-size="11">relay-1</text>
-      <text x="1352" y="351" fill="#5a6a7a" font-size="10">self-ann 14 m</text>
+      <text x="1352" y="351" fill="#5a6a7a" font-size="10">POSITION 14 m</text>
     </g>
 
     <!-- Row: relay-2 overdue -->
@@ -566,7 +566,7 @@
         <rect x="-6" y="-1.5" width="12" height="3" fill="#eab308"/>
       </g>
       <text x="1352" y="377" fill="#eab308" font-size="11">⚠ relay-2</text>
-      <text x="1352" y="391" fill="#c0ccd8" font-size="10">self-ann 65 m</text>
+      <text x="1352" y="391" fill="#c0ccd8" font-size="10">POSITION 65 m</text>
     </g>
 
     <!-- Row: gw-0 gateway -->

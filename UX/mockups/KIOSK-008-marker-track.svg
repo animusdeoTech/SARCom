@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1100" font-family="Menlo, Consolas, monospace">
+  <!--
+    SARCOM KIOSK-008 — Map marker + track rendering.
+    Single-design v1a mockup. Two stacked 800x480 lab fixtures.
+    Map areas render three layers per pmtiles_map.rs:82-125 (basemap +
+    LIDAR hillshade + OSM XML overlays). KIOSK-008 content (tag tails
+    and selection polyline) paints inside the same Map::show closure
+    after the three basemap layers, before current-position dots and
+    SOS pulse rings.
+
+    Panel A: MultiTag baseline (no selection). Three-fix tail per
+    eligible tag; SOS = no tail (Decisions pinned #4); no-fix ghost =
+    no tail; stale = per-state colour from freshness_color (Decisions
+    pinned #8).
+
+    Panel B: same MultiTag scenario with tag-1 selected. tag-1's
+    three-fix tail is replaced by the full polyline through every fix
+    in TagData.track at tag colour (BLUE) at opacity 0.5 (Decisions
+    pinned #7). All other tags render their baseline tail (or no
+    tail) unchanged. tag-1 current dot paints on top of the polyline
+    with the selection outline halo per markers.rs:231-237.
+
+    Five concrete design values (fade triple, tail-dot size,
+    connector-line presence, no-fix selection behaviour, polyline
+    thickness) remain open. Mockup-render-only choices below are NOT
+    implementer locks.
+  -->
+
+  <defs>
+    <radialGradient id="pulse-sos-8" cx="50%" cy="50%" r="50%">
+      <stop offset="55%" stop-color="#ff3c3c" stop-opacity="0"/>
+      <stop offset="82%" stop-color="#ff3c3c" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ff3c3c" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="map-grid-8" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a2530" stroke-width="0.5"/>
+    </pattern>
+    <linearGradient id="hillshade-8" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgb(180,180,185)" stop-opacity="0.0"/>
+      <stop offset="35%" stop-color="rgb(200,200,205)" stop-opacity="0.30"/>
+      <stop offset="65%" stop-color="rgb(70,70,75)" stop-opacity="0.36"/>
+      <stop offset="100%" stop-color="rgb(40,40,45)" stop-opacity="0.16"/>
+    </linearGradient>
+    <radialGradient id="ridge-8" cx="55%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="rgb(210,210,215)" stop-opacity="0.38"/>
+      <stop offset="55%" stop-color="rgb(150,150,155)" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="rgb(40,40,45)" stop-opacity="0.0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="background">
+    <title>Viewport background, two panel frames, header + footer bands</title>
+    <rect x="0" y="0" width="1100" height="1100" fill="#070b10"/>
+
+    <text x="20" y="26" fill="#ff8232" font-size="14" font-weight="bold">SARCOM</text>
+    <text x="86" y="26" fill="#6c7f92" font-size="11">KIOSK-008 · map marker + track rendering (three-fix tail baseline + selection polyline) · 2026-05-19 · single-design v1a</text>
+    <text x="20" y="44" fill="#c0ccd8" font-size="11">Lab fixture 800x480 × 2 stacked panels · ADR-015-pending substrate per README.md:36 · five values are mockup-render-only — see rationale</text>
+
+    <!-- Panel A frame -->
+    <rect x="20" y="60" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="60" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="90" width="320" height="426" fill="#0c1118"/>
+    <line x1="500" y1="90" x2="500" y2="516" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="80" fill="#c0ccd8" font-size="11" font-weight="bold">Panel A — MultiTag baseline (Selection::None) · three-fix tail where eligible</text>
+
+    <!-- Panel B frame -->
+    <rect x="20" y="580" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="580" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="610" width="320" height="426" fill="#0c1118"/>
+    <line x1="500" y1="610" x2="500" y2="1036" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="600" fill="#c0ccd8" font-size="11" font-weight="bold">Panel B — same scenario with Selection::Tag(1) · tag-1 tail replaced by full polyline</text>
+
+    <text x="20" y="1078" fill="#6c7f92" font-size="9">Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs · BLUE #32b4ff (Fresh) · ORANGE #f0a030 (Aging/relay) · GREEN #40d080 (gateway) · RED #ff3c3c (SOS) · freshness_color(Stale)=rgb(180,83,9) per markers.rs:40-48</text>
+    <text x="20" y="1090" fill="#6c7f92" font-size="9">Source of truth: KIOSK-008 ticket Scope (l.50-91) · Decisions pinned (l.198-222) #4 SOS=no tail · #7 polyline=tag colour @ 0.5 · #8 freshness_color consistency · data.rs:131-150 (TagData.track at :142) · markers.rs:32-48, 216-227, 265-302 · pmtiles_map.rs:82-125, 161-202</text>
+    <text x="20" y="1098" fill="#6c7f92" font-size="9">Map chrome: scale bar + compass rose only (tickets/README.md:26, KIOSK-001:16, 31). No floating buttons. No crosshair (KIOSK-002 deferred per tickets/README.md:53, 85). No coord readout. Strict ADR-007 per tickets/README.md:14-33.</text>
+  </g>
+
+  <!-- ===================================================================== -->
+  <!--                     PANEL A — MULTITAG, NO SELECTION                  -->
+  <!-- ===================================================================== -->
+
+  <g id="map">
+    <title>Panel A map area 480x426 at x=20..500, y=90..516. Three layers in z-order
+           per pmtiles_map.rs:82-125: PMTiles basemap + LIDAR hillshade @ 0.5 + OSM XML
+           overlays. KIOSK-008 tail dots paint inside Map::show closure after L3 and before
+           the current-position dots / SOS pulse rings.</title>
+
+    <!-- Layer 1: PMTiles basemap (Protomaps dark) — dark slate + line-art -->
+    <rect x="20" y="90" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="90" width="480" height="426" fill="url(#map-grid-8)"/>
+    <path d="M 30 200 Q 130 175 220 200 T 380 215 T 495 205" stroke="#1a2530" stroke-width="1.2" fill="none"/>
+    <path d="M 30 310 Q 150 290 250 305 T 420 320 T 495 310" stroke="#1a2530" stroke-width="1" fill="none"/>
+    <path d="M 30 420 Q 150 400 260 412 T 430 422 T 495 412" stroke="#1a2530" stroke-width="0.9" fill="none"/>
+    <path d="M 70 460 Q 110 450 145 458 Q 165 466 150 476 Q 110 482 75 475 Z" fill="#0d1620" stroke="#1c3040" stroke-width="0.6"/>
+
+    <!-- Layer 2: LIDAR hillshade (DHMV-II DSM) @ ~0.5 transparency -->
+    <g opacity="0.55">
+      <rect x="20" y="90" width="480" height="426" fill="url(#hillshade-8)"/>
+      <ellipse cx="260" cy="270" rx="220" ry="160" fill="url(#ridge-8)"/>
+      <path d="M 30 250 Q 140 220 240 245 T 410 265 T 495 255" stroke="#b8babd" stroke-opacity="0.20" stroke-width="0.8" fill="none"/>
+      <path d="M 30 350 Q 160 330 270 345 T 440 358 T 495 348" stroke="#888a8d" stroke-opacity="0.15" stroke-width="0.6" fill="none"/>
+    </g>
+
+    <!-- Layer 3: OSM XML overlays (Overpass + hand-drawn) -->
+    <g>
+      <rect x="148" y="248" width="22" height="14" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <rect x="174" y="244" width="14" height="18" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <polygon points="220,338 246,332 252,348 230,354" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <path d="M 90 460 L 150 420 L 210 380 L 270 340 L 330 300 L 370 250 L 410 200"
+            stroke="#c0a060" stroke-width="1.0" stroke-dasharray="3 3" fill="none" opacity="0.55"/>
+      <path d="M 380 330 Q 420 325 460 340 Q 472 360 458 380 Q 420 390 386 372 Q 374 354 380 330 Z"
+            fill="#2a3528" fill-opacity="0.28" stroke="#4a5840" stroke-width="0.6" stroke-dasharray="4 2"/>
+    </g>
+  </g>
+
+  <g id="markers">
+    <title>Panel A markers + KIOSK-008 tails. Tails paint after L3 basemap and before
+           current dots / SOS pulse. SOS tag = NO tail (Decisions pinned #4). No-fix
+           ghost = NO tail. Stale tag = per-state colour from freshness_color
+           (Decisions pinned #8). Tag positions are illustrative; data model is
+           data.rs:131-150 (TagData) with track Vec at :142.</title>
+
+    <!-- ====== tag-1: NORMAL (BLUE, fresh), three-fix tail east-northeast ====== -->
+    <!-- Tail (dots only, faint connector). Order: oldest -> newest left to right.
+         Mockup fade triple: newest 1.0, middle 0.6, oldest 0.3. -->
+    <g>
+      <!-- faint connector between tail dots -->
+      <polyline points="148,262 178,250 212,238" fill="none" stroke="#32b4ff" stroke-opacity="0.30" stroke-width="0.9"/>
+      <!-- oldest -->
+      <circle cx="148" cy="262" r="4" fill="#32b4ff" fill-opacity="0.3"/>
+      <!-- middle -->
+      <circle cx="178" cy="250" r="4" fill="#32b4ff" fill-opacity="0.6"/>
+      <!-- newest -->
+      <circle cx="212" cy="238" r="4" fill="#32b4ff" fill-opacity="1.0"/>
+      <!-- current dot (8 px) -->
+      <circle cx="248" cy="222" r="8" fill="#32b4ff"/>
+      <text x="262" y="218" fill="#c0ccd8" font-size="10">tag-1</text>
+      <text x="262" y="230" fill="#5a6a7a" font-size="8">12 s · fresh</text>
+    </g>
+
+    <!-- ====== tag-2: SOS (RED + pulse ring) — NO TAIL ====== -->
+    <g>
+      <!-- pulse ring (radialGradient halo) per markers.rs:216-227 -->
+      <circle cx="392" cy="266" r="22" fill="url(#pulse-sos-8)"/>
+      <circle cx="392" cy="266" r="14" fill="none" stroke="#ff3c3c" stroke-opacity="0.7" stroke-width="0.8"/>
+      <!-- current dot -->
+      <circle cx="392" cy="266" r="8" fill="#ff3c3c"/>
+      <text x="406" y="262" fill="#ff3c3c" font-size="10" font-weight="bold">tag-2</text>
+      <text x="406" y="274" fill="#5a6a7a" font-size="8">SOS · 3 s · no tail</text>
+    </g>
+
+    <!-- ====== tag-3: NO-FIX (ghost at last_valid_fix_pos) — NO TAIL ====== -->
+    <g>
+      <!-- dashed outer ring per markers.rs:265-302 -->
+      <circle cx="280" cy="390" r="10" fill="none" stroke="#6c7f92" stroke-opacity="0.6" stroke-dasharray="3 3" stroke-width="1"/>
+      <!-- faded ghost fill -->
+      <circle cx="280" cy="390" r="6" fill="#32b4ff" fill-opacity="0.25"/>
+      <text x="294" y="386" fill="#c0ccd8" font-size="10">tag-3</text>
+      <text x="294" y="398" fill="#5a6a7a" font-size="8">NO FIX · last 4 m</text>
+    </g>
+
+    <!-- ====== tag-4: STALE, freshness_color(Stale)=rgb(180,83,9) — three-fix tail south ====== -->
+    <g>
+      <polyline points="100,290 108,318 116,344" fill="none" stroke="rgb(180,83,9)" stroke-opacity="0.30" stroke-width="0.9"/>
+      <!-- oldest -->
+      <circle cx="100" cy="290" r="4" fill="rgb(180,83,9)" fill-opacity="0.3"/>
+      <!-- middle -->
+      <circle cx="108" cy="318" r="4" fill="rgb(180,83,9)" fill-opacity="0.6"/>
+      <!-- newest -->
+      <circle cx="116" cy="344" r="4" fill="rgb(180,83,9)" fill-opacity="1.0"/>
+      <!-- current dot (per-state colour matches tail per Decisions pinned #8) -->
+      <circle cx="124" cy="370" r="8" fill="rgb(180,83,9)"/>
+      <text x="138" y="366" fill="#c0ccd8" font-size="10">tag-4</text>
+      <text x="138" y="378" fill="#5a6a7a" font-size="8">stale · 9 m · per-state colour</text>
+    </g>
+
+    <!-- ====== relay-1: orange cross (unchanged) ====== -->
+    <g>
+      <g transform="translate(340,140)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+      </g>
+      <text x="354" y="137" fill="#f0a030" font-size="10">relay-1</text>
+      <text x="354" y="148" fill="#5a6a7a" font-size="8">no track (relay)</text>
+    </g>
+
+    <!-- ====== gw-0: green square outline (unchanged) ====== -->
+    <g>
+      <rect x="232" y="462" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
+      <text x="254" y="474" fill="#40d080" font-size="10">gw-0</text>
+      <text x="254" y="485" fill="#5a6a7a" font-size="8">no track (gateway)</text>
+    </g>
+  </g>
+
+  <g id="sidebar">
+    <title>Panel A sidebar abstracted — KIOSK-003 owns row layout, KIOSK-004 owns
+           detail surface. KIOSK-008 is about the map render side. No row is selected
+           in Panel A (Selection::None).</title>
+    <text x="514" y="108" fill="#6c7f92" font-size="9">sidebar · abstracted (KIOSK-003)</text>
+    <text x="514" y="120" fill="#5a6a7a" font-size="8">Selection::None — no row highlighted</text>
+    <line x1="514" y1="138" x2="806" y2="138" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="186" x2="806" y2="186" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="234" x2="806" y2="234" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="282" x2="806" y2="282" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="330" x2="806" y2="330" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="378" x2="806" y2="378" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="520" y="156" fill="#ff3c3c" font-size="9" font-weight="bold">DISTRESS · tag-2 · 3 s</text>
+    <text x="520" y="204" fill="#5a6a7a" font-size="9">tag-1 · 12 s · fresh</text>
+    <text x="520" y="252" fill="#5a6a7a" font-size="9">tag-3 · NO FIX · last 4 m</text>
+    <text x="520" y="300" fill="#5a6a7a" font-size="9">tag-4 · 9 m · stale</text>
+    <text x="520" y="348" fill="#5a6a7a" font-size="9">relay-1 · 14 m</text>
+    <text x="520" y="396" fill="#5a6a7a" font-size="9">gw-0 · RTC ok</text>
+  </g>
+
+  <g id="bottom-strip">
+    <title>Existing non-SOS strip per app.rs:283-344. KIOSK-006 owns the SOS-active state.
+           Here SOS is active for tag-2; KIOSK-008 mockup keeps it minimal — the SOS strip
+           is illustrated by KIOSK-006, not redrawn here.</title>
+    <rect x="20" y="516" width="800" height="24" fill="rgb(160,28,28)"/>
+    <text x="28" y="532" fill="#ffffff" font-size="11" font-weight="bold">DISTRESS · tag-2 · last frame 3 s · ack at tag</text>
+    <text x="500" y="532" fill="#ffd0d0" font-size="9" font-style="italic">(SOS strip rendered for context · owned by KIOSK-006)</text>
+  </g>
+
+  <g id="controls">
+    <title>Panel A map chrome — compass rose + scale bar only per tickets/README.md:26,
+           KIOSK-001:16, 31. No zoom +/-, no fit-all, no home, no clear-UI, no crosshair.</title>
+    <g transform="translate(58,128)">
+      <circle r="24" fill="#0c1118" fill-opacity="0.65" stroke="#6c7f92" stroke-width="0.7"/>
+      <line x1="0" y1="-24" x2="0" y2="-20" stroke="#c0ccd8" stroke-width="1.2"/>
+      <polygon points="0,-16 4,4 0,0 -4,4" fill="#c0ccd8"/>
+      <text x="0" y="-8" fill="#c0ccd8" font-size="8" font-weight="bold" text-anchor="middle">N</text>
+    </g>
+    <g transform="translate(28,496)">
+      <rect x="0" y="0" width="80" height="6" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+      <rect x="0" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <rect x="40" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <text x="0" y="18" fill="#6c7f92" font-size="9">0</text>
+      <text x="80" y="18" fill="#6c7f92" font-size="9" text-anchor="end">250 m</text>
+    </g>
+  </g>
+
+  <!-- ===================================================================== -->
+  <!--                  PANEL B — MULTITAG, tag-1 SELECTED                   -->
+  <!-- ===================================================================== -->
+
+  <g id="map-b">
+    <title>Panel B map area 480x426 at x=20..500, y=610..1036. Same three-layer basemap as
+           Panel A. Selection::Tag(1) — tag-1 baseline three-fix tail is REPLACED by the
+           full polyline through every fix in TagData.track (data.rs:142). Style: tag colour
+           BLUE at opacity 0.5 (Decisions pinned #7). Other tags retain baseline behaviour.</title>
+
+    <!-- Layer 1: basemap -->
+    <rect x="20" y="610" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="610" width="480" height="426" fill="url(#map-grid-8)"/>
+    <path d="M 30 720 Q 130 695 220 720 T 380 735 T 495 725" stroke="#1a2530" stroke-width="1.2" fill="none"/>
+    <path d="M 30 830 Q 150 810 250 825 T 420 840 T 495 830" stroke="#1a2530" stroke-width="1" fill="none"/>
+    <path d="M 30 940 Q 150 920 260 932 T 430 942 T 495 932" stroke="#1a2530" stroke-width="0.9" fill="none"/>
+    <path d="M 70 980 Q 110 970 145 978 Q 165 986 150 996 Q 110 1002 75 995 Z" fill="#0d1620" stroke="#1c3040" stroke-width="0.6"/>
+
+    <!-- Layer 2: hillshade -->
+    <g opacity="0.55">
+      <rect x="20" y="610" width="480" height="426" fill="url(#hillshade-8)"/>
+      <ellipse cx="260" cy="790" rx="220" ry="160" fill="url(#ridge-8)"/>
+      <path d="M 30 770 Q 140 740 240 765 T 410 785 T 495 775" stroke="#b8babd" stroke-opacity="0.20" stroke-width="0.8" fill="none"/>
+      <path d="M 30 870 Q 160 850 270 865 T 440 878 T 495 868" stroke="#888a8d" stroke-opacity="0.15" stroke-width="0.6" fill="none"/>
+    </g>
+
+    <!-- Layer 3: OSM overlays -->
+    <g>
+      <rect x="148" y="768" width="22" height="14" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <rect x="174" y="764" width="14" height="18" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <polygon points="220,858 246,852 252,868 230,874" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <path d="M 90 980 L 150 940 L 210 900 L 270 860 L 330 820 L 370 770 L 410 720"
+            stroke="#c0a060" stroke-width="1.0" stroke-dasharray="3 3" fill="none" opacity="0.55"/>
+      <path d="M 380 850 Q 420 845 460 860 Q 472 880 458 900 Q 420 910 386 892 Q 374 874 380 850 Z"
+            fill="#2a3528" fill-opacity="0.28" stroke="#4a5840" stroke-width="0.6" stroke-dasharray="4 2"/>
+    </g>
+  </g>
+
+  <g id="markers-b">
+    <title>Panel B markers. tag-1 selected: full polyline through TagData.track replaces
+           three-fix tail, tag colour BLUE at opacity 0.5 (Decisions pinned #7), thicker
+           stroke (mockup-render-only stroke-width=2). Selection halo around current dot
+           per markers.rs:231-237. tag-2/3/4 unchanged from Panel A.</title>
+
+    <!-- ====== tag-1 SELECTED: full polyline through track + current dot + halo ====== -->
+    <!-- Full polyline: 10 fixes representing TagData.track at data.rs:142 -->
+    <polyline points="62,810 80,790 96,772 118,752 138,742 168,758 198,760 220,752 250,742 282,754 312,748 348,742"
+              fill="none" stroke="#32b4ff" stroke-opacity="0.5" stroke-width="2"/>
+    <!-- A few fix-tick marks along the polyline to suggest individual track points -->
+    <circle cx="80" cy="790" r="2" fill="#32b4ff" fill-opacity="0.5"/>
+    <circle cx="118" cy="752" r="2" fill="#32b4ff" fill-opacity="0.5"/>
+    <circle cx="168" cy="758" r="2" fill="#32b4ff" fill-opacity="0.5"/>
+    <circle cx="220" cy="752" r="2" fill="#32b4ff" fill-opacity="0.5"/>
+    <circle cx="282" cy="754" r="2" fill="#32b4ff" fill-opacity="0.5"/>
+    <circle cx="312" cy="748" r="2" fill="#32b4ff" fill-opacity="0.5"/>
+    <!-- Selection halo: white outline +2 px radius per markers.rs:231-237 -->
+    <circle cx="348" cy="742" r="10" fill="none" stroke="#ffffff" stroke-opacity="0.85" stroke-width="1.4"/>
+    <!-- current dot (8 px) -->
+    <circle cx="348" cy="742" r="8" fill="#32b4ff"/>
+    <text x="362" y="738" fill="#c0ccd8" font-size="10" font-weight="bold">tag-1 ◀ selected</text>
+    <text x="362" y="750" fill="#32b4ff" font-size="8">12 s · fresh · full track shown</text>
+
+    <!-- ====== tag-2 SOS — unchanged from Panel A ====== -->
+    <g>
+      <circle cx="392" cy="786" r="22" fill="url(#pulse-sos-8)"/>
+      <circle cx="392" cy="786" r="14" fill="none" stroke="#ff3c3c" stroke-opacity="0.7" stroke-width="0.8"/>
+      <circle cx="392" cy="786" r="8" fill="#ff3c3c"/>
+      <text x="406" y="782" fill="#ff3c3c" font-size="10" font-weight="bold">tag-2</text>
+      <text x="406" y="794" fill="#5a6a7a" font-size="8">SOS · still no tail</text>
+    </g>
+
+    <!-- ====== tag-3 NO-FIX — unchanged ====== -->
+    <g>
+      <circle cx="280" cy="910" r="10" fill="none" stroke="#6c7f92" stroke-opacity="0.6" stroke-dasharray="3 3" stroke-width="1"/>
+      <circle cx="280" cy="910" r="6" fill="#32b4ff" fill-opacity="0.25"/>
+      <text x="294" y="906" fill="#c0ccd8" font-size="10">tag-3</text>
+      <text x="294" y="918" fill="#5a6a7a" font-size="8">still ghost only</text>
+    </g>
+
+    <!-- ====== tag-4 STALE — baseline three-fix tail unchanged ====== -->
+    <g>
+      <polyline points="100,810 108,838 116,864" fill="none" stroke="rgb(180,83,9)" stroke-opacity="0.30" stroke-width="0.9"/>
+      <circle cx="100" cy="810" r="4" fill="rgb(180,83,9)" fill-opacity="0.3"/>
+      <circle cx="108" cy="838" r="4" fill="rgb(180,83,9)" fill-opacity="0.6"/>
+      <circle cx="116" cy="864" r="4" fill="rgb(180,83,9)" fill-opacity="1.0"/>
+      <circle cx="124" cy="890" r="8" fill="rgb(180,83,9)"/>
+      <text x="138" y="886" fill="#c0ccd8" font-size="10">tag-4</text>
+      <text x="138" y="898" fill="#5a6a7a" font-size="8">stale · three-fix tail retained</text>
+    </g>
+
+    <!-- ====== relay-1 and gw-0: unchanged ====== -->
+    <g>
+      <g transform="translate(340,660)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+      </g>
+      <text x="354" y="657" fill="#f0a030" font-size="10">relay-1</text>
+    </g>
+    <g>
+      <rect x="232" y="982" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
+      <text x="254" y="994" fill="#40d080" font-size="10">gw-0</text>
+    </g>
+
+    <!-- Recenter arrow: prior tag-1 pos -> new center pan target (150ms ease) -->
+    <g>
+      <path d="M 230 720 Q 290 712 340 730" fill="none" stroke="#c0ccd8" stroke-opacity="0.55"
+            stroke-width="0.9" stroke-dasharray="4 3"/>
+      <polygon points="340,730 333,727 335,734" fill="#c0ccd8" fill-opacity="0.6"/>
+      <text x="240" y="710" fill="#c0ccd8" fill-opacity="0.55" font-size="8" font-style="italic">recenter · 150 ms ease (KIOSK-004:36, 87)</text>
+    </g>
+  </g>
+
+  <g id="sidebar-b">
+    <title>Panel B sidebar abstracted — selected row tag-1 highlighted (Selection::Tag(1)).
+           Actual sidebar detail-replacement is KIOSK-004's surface; this mockup is about
+           the map render side.</title>
+    <text x="514" y="628" fill="#6c7f92" font-size="9">sidebar · abstracted (KIOSK-003/004)</text>
+    <text x="514" y="640" fill="#32b4ff" font-size="8">Selection::Tag(1) — tag-1 detail visible (KIOSK-004)</text>
+    <rect x="510" y="650" width="306" height="44" fill="#162130" stroke="#32b4ff" stroke-width="1"/>
+    <text x="518" y="668" fill="#c0ccd8" font-size="10" font-weight="bold">tag-1 · DETAIL</text>
+    <text x="518" y="682" fill="#6c7f92" font-size="9">12 s · fresh · full track on map</text>
+    <text x="514" y="710" fill="#5a6a7a" font-size="9">[back to list]</text>
+    <line x1="514" y1="730" x2="806" y2="730" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="514" y="746" fill="#5a6a7a" font-size="8" font-style="italic">(other rows hidden during detail per KIOSK-004 sidebar replacement)</text>
+  </g>
+
+  <g id="bottom-strip-b">
+    <title>Panel B SOS strip same as Panel A — SOS persists across selection.
+           KIOSK-006 owns the strip; KIOSK-008 makes no change to it.</title>
+    <rect x="20" y="1036" width="800" height="24" fill="rgb(160,28,28)"/>
+    <text x="28" y="1052" fill="#ffffff" font-size="11" font-weight="bold">DISTRESS · tag-2 · last frame 3 s · ack at tag</text>
+    <text x="500" y="1052" fill="#ffd0d0" font-size="9" font-style="italic">(SOS strip persists across selection)</text>
+  </g>
+
+  <g id="controls-b">
+    <title>Panel B map chrome — same as Panel A. Strict chrome budget unchanged
+           by selection: compass rose + scale bar only.</title>
+    <g transform="translate(58,648)">
+      <circle r="24" fill="#0c1118" fill-opacity="0.65" stroke="#6c7f92" stroke-width="0.7"/>
+      <line x1="0" y1="-24" x2="0" y2="-20" stroke="#c0ccd8" stroke-width="1.2"/>
+      <polygon points="0,-16 4,4 0,0 -4,4" fill="#c0ccd8"/>
+      <text x="0" y="-8" fill="#c0ccd8" font-size="8" font-weight="bold" text-anchor="middle">N</text>
+    </g>
+    <g transform="translate(28,1016)">
+      <rect x="0" y="0" width="80" height="6" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+      <rect x="0" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <rect x="40" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <text x="0" y="18" fill="#6c7f92" font-size="9">0</text>
+      <text x="80" y="18" fill="#6c7f92" font-size="9" text-anchor="end">250 m</text>
+    </g>
+  </g>
+
+  <g id="annotations">
+    <title>Marginal callouts. L1/L2/L3 anchor each basemap layer; numbered callouts
+           tie each tag's tail/no-tail decision to its source-of-truth.</title>
+
+    <!-- Layer anchors Panel A -->
+    <circle cx="270" cy="180" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="270" y="183" fill="#ff8232" font-size="9" text-anchor="middle">L1</text>
+    <circle cx="380" cy="280" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="380" y="283" fill="#ff8232" font-size="9" text-anchor="middle">L2</text>
+    <circle cx="160" cy="255" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="160" y="258" fill="#ff8232" font-size="9" text-anchor="middle">L3</text>
+    <!-- Layer anchors Panel B (smaller) -->
+    <circle cx="270" cy="700" r="6" fill="#070b10" stroke="#ff8232" stroke-width="0.6"/>
+    <text x="270" y="703" fill="#ff8232" font-size="8" text-anchor="middle">L1</text>
+    <circle cx="380" cy="800" r="6" fill="#070b10" stroke="#ff8232" stroke-width="0.6"/>
+    <text x="380" y="803" fill="#ff8232" font-size="8" text-anchor="middle">L2</text>
+    <circle cx="160" cy="775" r="6" fill="#070b10" stroke="#ff8232" stroke-width="0.6"/>
+    <text x="160" y="778" fill="#ff8232" font-size="8" text-anchor="middle">L3</text>
+
+    <!-- Numbered callouts on Panel A -->
+    <circle cx="180" cy="250" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="180" y="253" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <circle cx="416" cy="240" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="416" y="243" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
+    <circle cx="310" cy="412" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="310" y="415" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
+    <circle cx="108" cy="332" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="108" y="335" fill="#ff8232" font-size="9" text-anchor="middle">4</text>
+
+    <!-- Numbered callouts on Panel B -->
+    <circle cx="180" cy="780" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="180" y="783" fill="#ff8232" font-size="9" text-anchor="middle">5</text>
+    <circle cx="416" cy="760" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="416" y="763" fill="#ff8232" font-size="9" text-anchor="middle">6</text>
+
+    <!-- Marginal text column x=830..1080 -->
+    <text x="836" y="80" fill="#c0ccd8" font-size="10" font-weight="bold">KIOSK-008 — Tails &amp; selection polyline</text>
+    <text x="836" y="94" fill="#6c7f92" font-size="9">Three-fix baseline tail per eligible tag</text>
+    <text x="836" y="107" fill="#6c7f92" font-size="9">+ selection-driven full polyline.</text>
+    <text x="836" y="120" fill="#6c7f92" font-size="9" font-style="italic">data.rs:142 (TagData.track) · pmtiles_map.rs:82-125</text>
+
+    <text x="836" y="146" fill="#ff8232" font-size="10" font-weight="bold">1 · tag-1 baseline tail (Panel A)</text>
+    <text x="836" y="160" fill="#6c7f92" font-size="9">three-fix tail · newest → oldest fade</text>
+    <text x="836" y="173" fill="#6c7f92" font-size="9">concrete fade values = mockup-render-only</text>
+    <text x="836" y="186" fill="#6c7f92" font-size="9">(see Open questions)</text>
+    <text x="836" y="199" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-008 Scope :50-68 · markers.rs:40-48</text>
+
+    <text x="836" y="222" fill="#ff8232" font-size="10" font-weight="bold">2 · tag-2 SOS</text>
+    <text x="836" y="236" fill="#6c7f92" font-size="9">current dot + pulse ring only</text>
+    <text x="836" y="249" fill="#6c7f92" font-size="9">NO tail (Decisions pinned #4)</text>
+    <text x="836" y="262" fill="#6c7f92" font-size="9" font-style="italic">markers.rs:216-227 · KIOSK-008 :198-209</text>
+
+    <text x="836" y="285" fill="#ff8232" font-size="10" font-weight="bold">3 · tag-3 no-fix ghost</text>
+    <text x="836" y="299" fill="#6c7f92" font-size="9">ghost only · NO tail</text>
+    <text x="836" y="312" fill="#6c7f92" font-size="9">render at last_valid_fix_pos</text>
+    <text x="836" y="325" fill="#6c7f92" font-size="9" font-style="italic">markers.rs:265-302 · data.rs:146-149</text>
+
+    <text x="836" y="348" fill="#ff8232" font-size="10" font-weight="bold">4 · tag-4 stale</text>
+    <text x="836" y="362" fill="#6c7f92" font-size="9">tail + current dot both render in</text>
+    <text x="836" y="375" fill="#6c7f92" font-size="9">freshness_color(Stale)=rgb(180,83,9)</text>
+    <text x="836" y="388" fill="#6c7f92" font-size="9">per-state colour parity</text>
+    <text x="836" y="401" fill="#6c7f92" font-size="9" font-style="italic">Decisions pinned #8 · markers.rs:40-48</text>
+    <text x="836" y="414" fill="#6c7f92" font-size="9">KIOSK-008 fixes pmtiles_map.rs:173-179</text>
+    <text x="836" y="427" fill="#6c7f92" font-size="9">inline draw (BLUE-only) to use</text>
+    <text x="836" y="440" fill="#6c7f92" font-size="9">freshness_color (AC #11).</text>
+
+    <text x="836" y="466" fill="#ff8232" font-size="10" font-weight="bold">5 · tag-1 SELECTED (Panel B)</text>
+    <text x="836" y="480" fill="#6c7f92" font-size="9">full track polyline · TagData.track</text>
+    <text x="836" y="493" fill="#6c7f92" font-size="9">tag colour (BLUE) at opacity 0.5</text>
+    <text x="836" y="506" fill="#6c7f92" font-size="9">stroke-width = mockup-render-only</text>
+    <text x="836" y="519" fill="#6c7f92" font-size="9">replaces three-fix tail during selection</text>
+    <text x="836" y="532" fill="#6c7f92" font-size="9" font-style="italic">Decisions pinned #7 · KIOSK-008 :210-213</text>
+
+    <text x="836" y="555" fill="#ff8232" font-size="10" font-weight="bold">6 · other tags in Panel B</text>
+    <text x="836" y="569" fill="#6c7f92" font-size="9">retain three-fix tail (or no-tail)</text>
+    <text x="836" y="582" fill="#6c7f92" font-size="9">when one tag is selected — AC#5</text>
+    <text x="836" y="595" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-008 :130-132</text>
+
+    <text x="836" y="618" fill="#c0ccd8" font-size="10" font-weight="bold">Map basemap composition</text>
+    <text x="836" y="632" fill="#6c7f92" font-size="9">(per pmtiles_map.rs:82-125; z-order:</text>
+    <text x="836" y="645" fill="#6c7f92" font-size="9">basemap → hillshade → OSM overlays</text>
+    <text x="836" y="658" fill="#6c7f92" font-size="9">→ tails → current dots / pulse rings)</text>
+
+    <text x="836" y="681" fill="#ff8232" font-size="10" font-weight="bold">L1 · PMTiles basemap</text>
+    <text x="836" y="694" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:61, 73, 106</text>
+    <text x="836" y="715" fill="#ff8232" font-size="10" font-weight="bold">L2 · LIDAR hillshade @ 0.5</text>
+    <text x="836" y="728" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:25, 64-74, 107-113</text>
+    <text x="836" y="749" fill="#ff8232" font-size="10" font-weight="bold">L3 · OSM XML overlays</text>
+    <text x="836" y="762" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:115-125 · region.rs:25-71</text>
+
+    <text x="836" y="788" fill="#c0ccd8" font-size="10" font-weight="bold">Mockup-render-only values</text>
+    <text x="836" y="802" fill="#6c7f92" font-size="9">(not implementer locks — see rationale)</text>
+    <text x="836" y="816" fill="#6c7f92" font-size="9">· tail fade triple: 1.0 / 0.6 / 0.3</text>
+    <text x="836" y="829" fill="#6c7f92" font-size="9">· tail-dot size: 4 px (vs 8 px current)</text>
+    <text x="836" y="842" fill="#6c7f92" font-size="9">· faint connector: included @ opacity 0.3</text>
+    <text x="836" y="855" fill="#6c7f92" font-size="9">· no-fix selected: ghost only (no polyline)</text>
+    <text x="836" y="868" fill="#6c7f92" font-size="9">· polyline stroke-width: 2</text>
+
+    <text x="836" y="894" fill="#c0ccd8" font-size="10" font-weight="bold">Non-goals</text>
+    <text x="836" y="908" fill="#6c7f92" font-size="9">no relay/gateway tracks · no animation</text>
+    <text x="836" y="921" fill="#6c7f92" font-size="9">no follow mode · no speed labels</text>
+    <text x="836" y="934" fill="#6c7f92" font-size="9">no time-coloured tracks · no overlays</text>
+    <text x="836" y="947" fill="#6c7f92" font-size="9">no uncertainty disc (SPIKE-002 reject)</text>
+    <text x="836" y="960" fill="#6c7f92" font-size="9" font-style="italic">ADR-007:38-46 · SPIKE-001 closed strict</text>
+  </g>
+</svg>

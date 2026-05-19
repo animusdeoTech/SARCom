@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 620" font-family="Menlo, Consolas, monospace">
+  <!--
+    SARCOM KIOSK-001 — Map spatial aids: scale bar + compass rose.
+    Single-design v1a mockup. Fixture frame 800x480 per
+    tools/sarcom-kiosk-lab/README.md:53 (lab fixture only; substrate per ADR-015 pending).
+    Fixture occupies x=20..820, y=60..540 inside a 1100x620 viewBox; the
+    right column (x=830..1080) carries annotations + path:line citations.
+    Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs verbatim.
+
+    Map area renders three layers per pmtiles_map.rs:82-125:
+      1. PMTiles basemap (Protomaps dark) — line-art on dark slate
+      2. LIDAR hillshade (DHMV-II DSM) — translucent grayscale at 0.5
+      3. OSM XML overlays (Overpass + hand-drawn) — declaration-order
+    Sim markers paint on top.
+  -->
+
+  <defs>
+    <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a2530" stroke-width="0.5"/>
+    </pattern>
+    <pattern id="map-grid-fine" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#0f1620" stroke-width="0.4"/>
+    </pattern>
+    <linearGradient id="hillshade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgb(180,180,185)" stop-opacity="0.0"/>
+      <stop offset="35%" stop-color="rgb(200,200,205)" stop-opacity="0.32"/>
+      <stop offset="65%" stop-color="rgb(70,70,75)" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="rgb(40,40,45)" stop-opacity="0.18"/>
+    </linearGradient>
+    <radialGradient id="hillshade-ridge" cx="55%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="rgb(210,210,215)" stop-opacity="0.42"/>
+      <stop offset="55%" stop-color="rgb(150,150,155)" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="rgb(40,40,45)" stop-opacity="0.0"/>
+    </radialGradient>
+  </defs>
+
+  <g id="background">
+    <title>Viewport background, fixture frame, header + footer bands</title>
+    <rect x="0" y="0" width="1100" height="620" fill="#070b10"/>
+    <rect x="20" y="60" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="60" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="90" width="320" height="450" fill="#0c1118"/>
+    <line x1="500" y1="90" x2="500" y2="540" stroke="#1a2530" stroke-width="1"/>
+    <line x1="20" y1="516" x2="500" y2="516" stroke="#1a2530" stroke-width="0.6"/>
+
+    <text x="20" y="26" fill="#ff8232" font-size="14" font-weight="bold">SARCOM</text>
+    <text x="86" y="26" fill="#6c7f92" font-size="11">KIOSK-001 · map spatial aids (scale bar + compass rose) · 2026-05-19 · single-design v1a · rev 2 (three-layer basemap)</text>
+    <text x="20" y="44" fill="#c0ccd8" font-size="11">Lab fixture 800x480 (tools/sarcom-kiosk-lab/README.md:53) — ADR-015-pending; substrate is open per README.md:36</text>
+
+    <text x="20" y="568" fill="#6c7f92" font-size="9">Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs · MAP_BG #0a0f14 · TEXT_DIM #6c7f92 · TEXT_BRIGHT #c0ccd8 · BLUE #32b4ff · GREEN #40d080 · AMBER #eab308 · RED #ff3c3c · ORANGE #f0a030</text>
+    <text x="20" y="582" fill="#6c7f92" font-size="9">Three-layer map: basemap (pmtiles_map.rs:61,73,106) + LIDAR hillshade @ 0.5 (pmtiles_map.rs:25,64-74,107-113) + OSM XML overlays (pmtiles_map.rs:115-125) · region.rs:25-71 Overlay enum</text>
+    <text x="20" y="596" fill="#6c7f92" font-size="9">Strict ADR-007 chrome budget per tickets/README.md:26 · KIOSK-001:16, 31 · pinch-to-zoom only (walkers native); no floating buttons.</text>
+  </g>
+
+  <g id="map">
+    <title>Map area 480x426 at x=20..500, y=90..516. Three layers in z-order: (1) PMTiles
+           basemap line-art, (2) LIDAR hillshade @ 0.5 transparency, (3) OSM XML overlays.</title>
+
+    <!-- Layer 1: PMTiles basemap (Protomaps dark) — dark slate + line-art -->
+    <rect x="20" y="90" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="90" width="480" height="426" fill="url(#map-grid-fine)"/>
+    <rect x="20" y="90" width="480" height="426" fill="url(#map-grid)"/>
+
+    <!-- Layer 2: LIDAR hillshade gradient (DHMV-II DSM, ~0.5 transparency) -->
+    <g opacity="0.55">
+      <rect x="20" y="90" width="480" height="426" fill="url(#hillshade)"/>
+      <ellipse cx="260" cy="270" rx="220" ry="160" fill="url(#hillshade-ridge)"/>
+      <!-- Soft "contour" ridge suggestions in low-contrast grayscale -->
+      <path d="M 30 180 Q 140 150 240 175 T 410 195 T 495 185" stroke="#b8babd" stroke-opacity="0.22" stroke-width="0.8" fill="none"/>
+      <path d="M 30 240 Q 150 215 260 235 T 430 250 T 495 240" stroke="#a8aaad" stroke-opacity="0.18" stroke-width="0.7" fill="none"/>
+      <path d="M 30 310 Q 160 290 270 305 T 440 318 T 495 308" stroke="#888a8d" stroke-opacity="0.16" stroke-width="0.6" fill="none"/>
+      <path d="M 30 380 Q 170 360 280 372 T 450 380 T 495 372" stroke="#686a6d" stroke-opacity="0.14" stroke-width="0.6" fill="none"/>
+      <path d="M 30 450 Q 180 432 290 442 T 460 450 T 495 444" stroke="#4a4c50" stroke-opacity="0.12" stroke-width="0.5" fill="none"/>
+    </g>
+
+    <!-- Basemap line-art (paths suggesting roads / water / landuse) -->
+    <path d="M 30 220 Q 130 180 220 215 T 380 230 T 495 215" stroke="#1a2530" stroke-width="1.4" fill="none"/>
+    <path d="M 30 300 Q 150 270 250 290 T 420 305 T 495 295" stroke="#1a2530" stroke-width="1.2" fill="none"/>
+    <path d="M 30 380 Q 160 355 260 370 T 430 380 T 495 370" stroke="#1a2530" stroke-width="1" fill="none"/>
+    <!-- A water-body suggestion in subtle blue-grey -->
+    <path d="M 80 410 Q 120 400 160 408 Q 180 415 165 425 Q 130 432 90 425 Z" fill="#0d1620" stroke="#1c3040" stroke-width="0.6"/>
+
+    <!-- Layer 3: OSM XML overlays (Overpass-fetched + hand-drawn) — distinct from basemap line-art -->
+    <g>
+      <title>OSM XML overlays: Overpass-fetched buildings/landuse polygons + hand-drawn POIs.
+             Painted in declaration order per pmtiles_map.rs:118-125. Distinguishable from
+             basemap line-art by slightly brighter strokes and area fills.</title>
+      <!-- A pair of building footprints (Overpass-style polygons) -->
+      <rect x="148" y="248" width="22" height="14" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <rect x="174" y="244" width="14" height="18" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <polygon points="220,338 246,332 252,348 230,354" fill="#3a4a35" fill-opacity="0.45" stroke="#5a7048" stroke-width="0.8"/>
+      <!-- Hand-drawn footpath (later in declaration order, paints on top) -->
+      <path d="M 90 460 L 150 420 L 210 380 L 270 340 L 330 300 L 370 250 L 410 200"
+            stroke="#c0a060" stroke-width="1.1" stroke-dasharray="3 3" fill="none" opacity="0.75"/>
+      <text x="370" y="195" fill="#c0a060" font-size="8" opacity="0.85">trail (OSM overlay)</text>
+      <!-- Landuse polygon: forest patch -->
+      <path d="M 380 330 Q 420 325 460 340 Q 472 360 458 380 Q 420 390 386 372 Q 374 354 380 330 Z"
+            fill="#2a3528" fill-opacity="0.32" stroke="#4a5840" stroke-width="0.6" stroke-dasharray="4 2"/>
+    </g>
+  </g>
+
+  <g id="markers">
+    <title>Minimal scenario markers — KIOSK-001 focus is chrome, not markers. data.rs MultiTag analogue.
+           Markers paint after the three basemap layers per pmtiles_map.rs:127-130, always on top.</title>
+
+    <g>
+      <circle cx="180" cy="220" r="14" fill="none" stroke="#32b4ff" stroke-opacity="0.2" stroke-width="0.5"/>
+      <circle cx="180" cy="220" r="7" fill="#32b4ff"/>
+      <text x="194" y="217" fill="#c0ccd8" font-size="10">tag-1</text>
+      <text x="194" y="229" fill="#5a6a7a" font-size="8">12 s</text>
+    </g>
+
+    <g>
+      <g transform="translate(330,250)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#f0a030" stroke="#0a0f14" stroke-width="0.6"/>
+      </g>
+      <text x="344" y="247" fill="#f0a030" font-size="10">relay-1</text>
+      <text x="344" y="258" fill="#5a6a7a" font-size="8">POSITION 14 m</text>
+    </g>
+
+    <g>
+      <rect x="252" y="372" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
+      <text x="274" y="384" fill="#40d080" font-size="10">gw-0</text>
+      <text x="274" y="395" fill="#5a6a7a" font-size="8">RTC ok</text>
+    </g>
+  </g>
+
+  <g id="sidebar">
+    <title>Sidebar abstracted — KIOSK-003 is the sidebar-row ticket. Rendered as a column of dim row placeholders.</title>
+    <text x="514" y="108" fill="#6c7f92" font-size="9">sidebar · abstracted</text>
+    <text x="514" y="120" fill="#5a6a7a" font-size="8">(detail owned by KIOSK-003)</text>
+    <line x1="514" y1="138" x2="806" y2="138" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="186" x2="806" y2="186" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="234" x2="806" y2="234" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="282" x2="806" y2="282" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="330" x2="806" y2="330" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="514" y1="378" x2="806" y2="378" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="520" y="156" fill="#5a6a7a" font-size="9">tag-1 · 12 s</text>
+    <text x="520" y="204" fill="#5a6a7a" font-size="9">tag-2 · …</text>
+    <text x="520" y="252" fill="#5a6a7a" font-size="9">tag-3 · …</text>
+    <text x="520" y="300" fill="#5a6a7a" font-size="9">tag-4 · …</text>
+    <text x="520" y="348" fill="#5a6a7a" font-size="9">relay-1 · 14 m</text>
+    <text x="520" y="396" fill="#5a6a7a" font-size="9">gw-0 · RTC ok</text>
+  </g>
+
+  <g id="bottom-strip">
+    <title>Existing read-only PMTiles strip (non-SOS state) per app.rs:283-344. NO coord readout
+           (KIOSK-002 deferred per tickets/README.md:53, 85). Attribution acknowledges hillshade
+           source per KIOSK-001 prompt item D.</title>
+    <rect x="20" y="516" width="480" height="24" fill="#0a0f14"/>
+    <text x="28" y="532" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
+    <text x="180" y="532" fill="#5a6a7a" font-size="9" font-style="italic">© OpenStreetMap · DHMV-II LIDAR · PMTiles · zoom 15</text>
+  </g>
+
+  <g id="controls">
+    <title>v1a chrome budget = compass rose + scale bar ONLY.
+           No zoom +/-, no fit-all, no home, no clear-UI, no other floating button.
+           Source-of-truth: tickets/README.md:26 · KIOSK-001-map-scale-north.md:16, 31.</title>
+
+    <!-- Compass rose: top-left of map area. ~80x80 region centred at (66, 132). -->
+    <g transform="translate(66,132)">
+      <circle r="32" fill="#0c1118" fill-opacity="0.65" stroke="#6c7f92" stroke-width="0.8"/>
+      <circle r="24" fill="none" stroke="#6c7f92" stroke-opacity="0.5" stroke-width="0.4"/>
+      <line x1="0" y1="-32" x2="0" y2="-26" stroke="#c0ccd8" stroke-width="1.2"/>
+      <line x1="16" y1="-27.7" x2="13" y2="-22.5" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="27.7" y1="-16" x2="22.5" y2="-13" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="32" y1="0" x2="26" y2="0" stroke="#6c7f92" stroke-width="0.8"/>
+      <line x1="27.7" y1="16" x2="22.5" y2="13" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="16" y1="27.7" x2="13" y2="22.5" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="0" y1="32" x2="0" y2="26" stroke="#6c7f92" stroke-width="0.8"/>
+      <line x1="-16" y1="27.7" x2="-13" y2="22.5" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="-27.7" y1="16" x2="-22.5" y2="13" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="-32" y1="0" x2="-26" y2="0" stroke="#6c7f92" stroke-width="0.8"/>
+      <line x1="-27.7" y1="-16" x2="-22.5" y2="-13" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="-16" y1="-27.7" x2="-13" y2="-22.5" stroke="#6c7f92" stroke-width="0.6"/>
+      <polygon points="0,-22 5,4 0,-1 -5,4" fill="#c0ccd8"/>
+      <text x="0" y="-12" fill="#c0ccd8" font-size="9" font-weight="bold" text-anchor="middle">N</text>
+      <text x="22" y="3" fill="#6c7f92" font-size="8" text-anchor="middle">E</text>
+      <text x="0" y="20" fill="#6c7f92" font-size="8" text-anchor="middle">S</text>
+      <text x="-22" y="3" fill="#6c7f92" font-size="8" text-anchor="middle">W</text>
+      <text x="0" y="36" fill="#40d080" font-size="8" text-anchor="middle">N🔒</text>
+    </g>
+
+    <!-- Scale bar: bottom-left of map area. 80px fixed width, dual-tone alternating. -->
+    <g transform="translate(28,492)">
+      <rect x="0" y="0" width="80" height="6" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+      <rect x="0" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <rect x="40" y="0" width="20" height="6" fill="#6c7f92" fill-opacity="0.55"/>
+      <line x1="20" y1="-1" x2="20" y2="7" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="40" y1="-1" x2="40" y2="7" stroke="#6c7f92" stroke-width="0.6"/>
+      <line x1="60" y1="-1" x2="60" y2="7" stroke="#6c7f92" stroke-width="0.6"/>
+      <text x="0" y="20" fill="#6c7f92" font-size="9">0</text>
+      <text x="80" y="20" fill="#6c7f92" font-size="9" text-anchor="end">250 m</text>
+    </g>
+  </g>
+
+  <g id="annotations">
+    <title>Marginal callouts. Each chrome element + each basemap layer cited path:line.</title>
+
+    <!-- Numbered callout markers inside the kiosk -->
+    <circle cx="98" cy="132" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="98" y="135" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <circle cx="120" cy="495" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="120" y="498" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
+    <circle cx="350" cy="528" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="350" y="531" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
+    <circle cx="445" cy="270" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="445" y="273" fill="#ff8232" font-size="9" text-anchor="middle">4</text>
+    <!-- Layer-stack anchors -->
+    <circle cx="270" cy="200" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="270" y="203" fill="#ff8232" font-size="9" text-anchor="middle">L1</text>
+    <circle cx="380" cy="310" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="380" y="313" fill="#ff8232" font-size="9" text-anchor="middle">L2</text>
+    <circle cx="160" cy="255" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="160" y="258" fill="#ff8232" font-size="9" text-anchor="middle">L3</text>
+
+    <!-- Marginal text column at x=830..1080 -->
+    <text x="836" y="80" fill="#c0ccd8" font-size="10" font-weight="bold">Map chrome budget (v1a)</text>
+    <text x="836" y="94" fill="#6c7f92" font-size="9">scale bar + compass rose only</text>
+    <text x="836" y="107" fill="#6c7f92" font-size="9">no zoom +/-, no fit-all, no home,</text>
+    <text x="836" y="120" fill="#6c7f92" font-size="9">no clear-UI, no other floating buttons</text>
+    <text x="836" y="133" fill="#6c7f92" font-size="9" font-style="italic">tickets/README.md:26 · KIOSK-001:16, 31</text>
+
+    <text x="836" y="155" fill="#ff8232" font-size="10" font-weight="bold">1 · compass rose</text>
+    <text x="836" y="169" fill="#6c7f92" font-size="9">top-left, ~80x80; N/E/S/W cardinals;</text>
+    <text x="836" y="182" fill="#6c7f92" font-size="9">30° ticks; N-up locked (`N🔒`);</text>
+    <text x="836" y="195" fill="#6c7f92" font-size="9">subtle HUD; non-interactive</text>
+    <text x="836" y="208" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-001:25, 27, 31 · mod.rs:261-268</text>
+
+    <text x="836" y="228" fill="#ff8232" font-size="10" font-weight="bold">2 · scale bar</text>
+    <text x="836" y="242" fill="#6c7f92" font-size="9">bottom-left, 80 px fixed, dual-tone,</text>
+    <text x="836" y="255" fill="#6c7f92" font-size="9">snap step in {50,100,250,500,1k,2k} m</text>
+    <text x="836" y="268" fill="#6c7f92" font-size="9">derived from walkers zoom + centre lat</text>
+    <text x="836" y="281" fill="#6c7f92" font-size="9">via 156543.03 * cos(lat) / 2^zoom</text>
+    <text x="836" y="294" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-001:24, 42, 68 · pmtiles_map.rs:42-44</text>
+
+    <text x="836" y="314" fill="#ff8232" font-size="10" font-weight="bold">3 · tile attribution</text>
+    <text x="836" y="328" fill="#6c7f92" font-size="9">dim, bottom edge of map area;</text>
+    <text x="836" y="341" fill="#6c7f92" font-size="9">credits OSM basemap and</text>
+    <text x="836" y="354" fill="#6c7f92" font-size="9">DHMV-II hillshade sources</text>
+    <text x="836" y="367" fill="#6c7f92" font-size="9" font-style="italic">existing strip text: app.rs:283-344</text>
+
+    <text x="836" y="387" fill="#ff8232" font-size="10" font-weight="bold">4 · NO floating buttons</text>
+    <text x="836" y="401" fill="#6c7f92" font-size="9">pinch-to-zoom is the only zoom gesture;</text>
+    <text x="836" y="414" fill="#6c7f92" font-size="9">walkers native pan/pinch model</text>
+    <text x="836" y="427" fill="#6c7f92" font-size="9" font-style="italic">ADR-007:38-46 · KIOSK-001:31</text>
+
+    <!-- Three-layer basemap callouts -->
+    <text x="836" y="450" fill="#c0ccd8" font-size="10" font-weight="bold">Map basemap composition</text>
+    <text x="836" y="464" fill="#6c7f92" font-size="9">(per pmtiles_map.rs:82-125; z-order:</text>
+    <text x="836" y="477" fill="#6c7f92" font-size="9">basemap → hillshade → OSM overlays</text>
+    <text x="836" y="490" fill="#6c7f92" font-size="9">→ sim markers paint on top)</text>
+
+    <text x="836" y="510" fill="#ff8232" font-size="10" font-weight="bold">L1 · PMTiles basemap</text>
+    <text x="836" y="524" fill="#6c7f92" font-size="9">Protomaps dark style · MVT vector;</text>
+    <text x="836" y="537" fill="#6c7f92" font-size="9">roads + water + landuse + boundaries</text>
+    <text x="836" y="550" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:61, 73, 106</text>
+
+    <text x="836" y="570" fill="#ff8232" font-size="10" font-weight="bold">L2 · LIDAR hillshade</text>
+    <text x="836" y="584" fill="#6c7f92" font-size="9">DHMV-II DSM, raster PMTiles archive;</text>
+    <text x="836" y="597" fill="#6c7f92" font-size="9">transparency 0.5 (tunable 0.35–0.7)</text>
+    <text x="836" y="610" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:25, 64-74, 107-113</text>
+
+    <!-- L3 callout below the panel — using top-of-footer area -->
+    <text x="496" y="568" fill="#ff8232" font-size="10" font-weight="bold">L3 · OSM XML overlays</text>
+    <text x="496" y="582" fill="#6c7f92" font-size="9">Overpass-fetched + hand-drawn; rendered inside Map::show closure in</text>
+    <text x="496" y="596" fill="#6c7f92" font-size="9">declaration order (later wins z-fight); region.rs:25-71 Overlay enum</text>
+    <text x="496" y="610" fill="#6c7f92" font-size="9" font-style="italic">pmtiles_map.rs:115-125 · dev-log/2026-05-16-lidar-overlay-implementation.md</text>
+  </g>
+</svg>

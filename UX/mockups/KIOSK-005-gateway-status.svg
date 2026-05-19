@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 2100" font-family="Menlo, Consolas, monospace">
+  <!--
+    SARCOM KIOSK-005 — Gateway status surface: battery gradient + render-tick in sidebar gw-0 row.
+    Single-design v1a mockup. Four stacked 800x480 lab fixtures, one per gw-0 row state.
+    Render-tick in sidebar gw-0 row (NOT header) per KIOSK-005:52, 55, 82-83.
+    Map area abstracted in all four panels; abstract label names the three-layer
+    composition underneath per pmtiles_map.rs:82-125.
+  -->
+
+  <g id="background">
+    <title>Viewport background, four panel frames, header + footer bands</title>
+    <rect x="0" y="0" width="1100" height="2100" fill="#070b10"/>
+
+    <text x="20" y="26" fill="#ff8232" font-size="14" font-weight="bold">SARCOM</text>
+    <text x="86" y="26" fill="#6c7f92" font-size="11">KIOSK-005 · gateway status surface (battery gradient + render-tick in sidebar gw-0 row) · 2026-05-19 · single-design v1a · rev 2 (three-layer-aware abstract)</text>
+    <text x="20" y="44" fill="#c0ccd8" font-size="11">Lab fixture 800x480 × 4 stacked panels · ADR-015-pending substrate per README.md:36</text>
+
+    <rect x="20" y="60" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="60" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="90" width="320" height="450" fill="#0c1118"/>
+    <line x1="500" y1="90" x2="500" y2="540" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="80" fill="#c0ccd8" font-size="11" font-weight="bold">State 1 — healthy, charging, 78%</text>
+
+    <rect x="20" y="580" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="580" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="610" width="320" height="450" fill="#0c1118"/>
+    <line x1="500" y1="610" x2="500" y2="1060" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="600" fill="#c0ccd8" font-size="11" font-weight="bold">State 2 — healthy, not charging, 45%</text>
+
+    <rect x="20" y="1100" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="1100" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="1130" width="320" height="450" fill="#0c1118"/>
+    <line x1="500" y1="1130" x2="500" y2="1580" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="1120" fill="#c0ccd8" font-size="11" font-weight="bold">State 3 — low battery, 12%</text>
+
+    <rect x="20" y="1620" width="800" height="480" fill="#0a0f14"/>
+    <rect x="20" y="1620" width="800" height="30" fill="#070b10"/>
+    <rect x="500" y="1650" width="320" height="450" fill="#0c1118"/>
+    <line x1="500" y1="1650" x2="500" y2="2100" stroke="#1a2530" stroke-width="1"/>
+    <text x="28" y="1640" fill="#c0ccd8" font-size="11" font-weight="bold">State 4 — battery unknown (Option = None) — "BAT unknown", NOT "0%", NOT "BAT —"</text>
+
+    <text x="20" y="2076" fill="#6c7f92" font-size="9">Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs · TEXT_BRIGHT #c0ccd8 · TEXT_DIM #6c7f92 · GREEN #40d080 · AMBER #eab308 · RED #ff3c3c · GREY #6b7280 · GreenAmberRed gradient via existing palette per KIOSK-005:44</text>
+    <text x="20" y="2088" fill="#6c7f92" font-size="9">Honest-unknowns: NO header-side render-tick · NO LoRa-RX liveness · NO gateway-process liveness · NO fake radio/process signals · KIOSK-005:57-64, 84, 118-120</text>
+    <text x="20" y="2098" fill="#6c7f92" font-size="9">Map area abstracted in all four panels; three layers (basemap + LIDAR hillshade + OSM XML overlays) per pmtiles_map.rs:82-125 · region.rs:25-71</text>
+  </g>
+
+  <g id="map">
+    <title>Map area abstracted in all four panels with three-layer label per
+           pmtiles_map.rs:82-125. KIOSK-001 owns chrome detail.</title>
+
+    <rect x="20" y="90" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="90" width="480" height="426" fill="#1a2530" fill-opacity="0.12"/>
+    <text x="260" y="280" fill="#5a6a7a" font-size="11" text-anchor="middle">[ map abstracted · full render =</text>
+    <text x="260" y="296" fill="#5a6a7a" font-size="10" text-anchor="middle">basemap + LIDAR hillshade + OSM overlays ]</text>
+    <text x="260" y="312" fill="#5a6a7a" font-size="9" font-style="italic" text-anchor="middle">per pmtiles_map.rs:82-125</text>
+    <text x="32" y="105" fill="#5a6a7a" font-size="9">[compass]</text>
+    <text x="32" y="508" fill="#5a6a7a" font-size="9">[scale bar]</text>
+
+    <rect x="20" y="610" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="610" width="480" height="426" fill="#1a2530" fill-opacity="0.12"/>
+    <text x="260" y="800" fill="#5a6a7a" font-size="11" text-anchor="middle">[ map abstracted · basemap + hillshade + OSM ]</text>
+    <text x="260" y="816" fill="#5a6a7a" font-size="9" font-style="italic" text-anchor="middle">per pmtiles_map.rs:82-125</text>
+    <text x="32" y="625" fill="#5a6a7a" font-size="9">[compass]</text>
+    <text x="32" y="1028" fill="#5a6a7a" font-size="9">[scale bar]</text>
+
+    <rect x="20" y="1130" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="1130" width="480" height="426" fill="#1a2530" fill-opacity="0.12"/>
+    <text x="260" y="1320" fill="#5a6a7a" font-size="11" text-anchor="middle">[ map abstracted · basemap + hillshade + OSM ]</text>
+    <text x="260" y="1336" fill="#5a6a7a" font-size="9" font-style="italic" text-anchor="middle">per pmtiles_map.rs:82-125</text>
+    <text x="32" y="1145" fill="#5a6a7a" font-size="9">[compass]</text>
+    <text x="32" y="1548" fill="#5a6a7a" font-size="9">[scale bar]</text>
+
+    <rect x="20" y="1650" width="480" height="426" fill="#0a0f14"/>
+    <rect x="20" y="1650" width="480" height="426" fill="#1a2530" fill-opacity="0.12"/>
+    <text x="260" y="1840" fill="#5a6a7a" font-size="11" text-anchor="middle">[ map abstracted · basemap + hillshade + OSM ]</text>
+    <text x="260" y="1856" fill="#5a6a7a" font-size="9" font-style="italic" text-anchor="middle">per pmtiles_map.rs:82-125</text>
+    <text x="32" y="1665" fill="#5a6a7a" font-size="9">[compass]</text>
+    <text x="32" y="2068" fill="#5a6a7a" font-size="9">[scale bar]</text>
+  </g>
+
+  <g id="markers">
+    <title>Markers omitted — KIOSK-005 focus is the sidebar gw-0 row in each state.</title>
+  </g>
+
+  <g id="sidebar">
+    <title>Four sidebars, each focused on the gw-0 row. Other rows abstracted/dim.</title>
+
+    <!-- State 1 — healthy, charging, 78% -->
+    <line x1="500" y1="148" x2="820" y2="148" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="196" x2="820" y2="196" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="244" x2="820" y2="244" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="292" x2="820" y2="292" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="340" x2="820" y2="340" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="388" x2="820" y2="388" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="436" x2="820" y2="436" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="115" fill="#6c7f92" font-size="9">DISTRESS · 0</text>
+    <text x="510" y="139" fill="#5a6a7a" font-size="9">(empty)</text>
+    <text x="510" y="167" fill="#5a6a7a" font-size="9">NODES · 4</text>
+    <text x="510" y="187" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
+    <text x="510" y="235" fill="#5a6a7a" font-size="10">● tag-4 · stale · 12 m</text>
+    <text x="510" y="283" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
+
+    <text x="510" y="378" fill="#40d080" font-size="13">● gw-0</text>
+    <rect x="575" y="364" width="24" height="10" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+    <rect x="599" y="367" width="2" height="4" fill="#6c7f92"/>
+    <rect x="576" y="365" width="18.7" height="8" fill="#40d080"/>
+    <text x="608" y="374" fill="#c0ccd8" font-size="11">78%</text>
+    <polygon points="650,366 656,366 652,371 658,371 651,378 654,373 648,373" fill="#40d080" stroke="#0a0f14" stroke-width="0.4"/>
+    <circle cx="784" cy="370" r="3.5" fill="#40d080"/>
+    <text x="800" y="374" fill="#6c7f92" font-size="9">ui</text>
+    <text x="510" y="392" fill="#6c7f92" font-size="10">RTC ok</text>
+
+    <text x="510" y="426" fill="#5a6a7a" font-size="9" font-style="italic">(other rows continue…)</text>
+
+    <!-- State 2 — healthy, 45%, not charging -->
+    <line x1="500" y1="668" x2="820" y2="668" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="716" x2="820" y2="716" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="764" x2="820" y2="764" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="812" x2="820" y2="812" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="860" x2="820" y2="860" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="908" x2="820" y2="908" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="956" x2="820" y2="956" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="635" fill="#6c7f92" font-size="9">DISTRESS · 0</text>
+    <text x="510" y="659" fill="#5a6a7a" font-size="9">(empty)</text>
+    <text x="510" y="687" fill="#5a6a7a" font-size="9">NODES · 4</text>
+    <text x="510" y="707" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
+    <text x="510" y="755" fill="#5a6a7a" font-size="10">● tag-4 · stale · 12 m</text>
+    <text x="510" y="803" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
+
+    <text x="510" y="898" fill="#40d080" font-size="13">● gw-0</text>
+    <rect x="575" y="884" width="24" height="10" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+    <rect x="599" y="887" width="2" height="4" fill="#6c7f92"/>
+    <rect x="576" y="885" width="10.8" height="8" fill="#eab308"/>
+    <text x="608" y="894" fill="#c0ccd8" font-size="11">45%</text>
+    <circle cx="784" cy="890" r="3.5" fill="#40d080"/>
+    <text x="800" y="894" fill="#6c7f92" font-size="9">ui</text>
+    <text x="510" y="912" fill="#6c7f92" font-size="10">RTC ok</text>
+
+    <text x="510" y="946" fill="#5a6a7a" font-size="9" font-style="italic">(other rows continue…)</text>
+
+    <!-- State 3 — low, 12% -->
+    <line x1="500" y1="1188" x2="820" y2="1188" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1236" x2="820" y2="1236" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1284" x2="820" y2="1284" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1332" x2="820" y2="1332" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1380" x2="820" y2="1380" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1428" x2="820" y2="1428" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1476" x2="820" y2="1476" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="1155" fill="#6c7f92" font-size="9">DISTRESS · 0</text>
+    <text x="510" y="1179" fill="#5a6a7a" font-size="9">(empty)</text>
+    <text x="510" y="1207" fill="#5a6a7a" font-size="9">NODES · 4</text>
+    <text x="510" y="1227" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
+    <text x="510" y="1275" fill="#5a6a7a" font-size="10">● tag-4 · stale · 12 m</text>
+    <text x="510" y="1323" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
+
+    <text x="510" y="1418" fill="#eab308" font-size="13">⚠ gw-0</text>
+    <rect x="575" y="1404" width="24" height="10" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+    <rect x="599" y="1407" width="2" height="4" fill="#6c7f92"/>
+    <rect x="576" y="1405" width="2.9" height="8" fill="#ff3c3c"/>
+    <text x="608" y="1414" fill="#ff3c3c" font-size="11" font-weight="bold">12%</text>
+    <circle cx="784" cy="1410" r="3.5" fill="#40d080"/>
+    <text x="800" y="1414" fill="#6c7f92" font-size="9">ui</text>
+    <text x="510" y="1432" fill="#6c7f92" font-size="10">RTC ok</text>
+
+    <text x="510" y="1466" fill="#5a6a7a" font-size="9" font-style="italic">(other rows continue…)</text>
+
+    <!-- State 4 — battery unknown -->
+    <line x1="500" y1="1708" x2="820" y2="1708" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1756" x2="820" y2="1756" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1804" x2="820" y2="1804" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1852" x2="820" y2="1852" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1900" x2="820" y2="1900" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1948" x2="820" y2="1948" stroke="#1a2530" stroke-width="0.5"/>
+    <line x1="500" y1="1996" x2="820" y2="1996" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="1675" fill="#6c7f92" font-size="9">DISTRESS · 0</text>
+    <text x="510" y="1699" fill="#5a6a7a" font-size="9">(empty)</text>
+    <text x="510" y="1727" fill="#5a6a7a" font-size="9">NODES · 4</text>
+    <text x="510" y="1747" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
+    <text x="510" y="1795" fill="#5a6a7a" font-size="10">● tag-4 · stale · 12 m</text>
+    <text x="510" y="1843" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
+
+    <text x="510" y="1938" fill="#40d080" font-size="13">● gw-0</text>
+    <rect x="575" y="1924" width="24" height="10" fill="none" stroke="#6c7f92" stroke-width="0.8"/>
+    <rect x="599" y="1927" width="2" height="4" fill="#6c7f92"/>
+    <text x="608" y="1934" fill="#6c7f92" font-size="11">BAT unknown</text>
+    <circle cx="784" cy="1930" r="3.5" fill="#40d080"/>
+    <text x="800" y="1934" fill="#6c7f92" font-size="9">ui</text>
+    <text x="510" y="1952" fill="#6c7f92" font-size="10">RTC ok</text>
+
+    <text x="510" y="1986" fill="#5a6a7a" font-size="9" font-style="italic">(other rows continue…)</text>
+  </g>
+
+  <g id="bottom-strip">
+    <title>Bottom strip in each panel: existing read-only PMTiles, no coord readout.</title>
+    <rect x="20" y="516" width="480" height="24" fill="#0a0f14"/>
+    <text x="28" y="532" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
+    <rect x="20" y="1036" width="480" height="24" fill="#0a0f14"/>
+    <text x="28" y="1052" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
+    <rect x="20" y="1556" width="480" height="24" fill="#0a0f14"/>
+    <text x="28" y="1572" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
+    <rect x="20" y="2076" width="480" height="24" fill="#0a0f14"/>
+    <text x="28" y="2092" fill="#5a6a7a" font-size="10">read-only · PMTiles · zoom 15</text>
+  </g>
+
+  <g id="controls">
+    <title>Map chrome abstracted. No floating buttons, no crosshair.</title>
+  </g>
+
+  <g id="annotations">
+    <title>Per-state callouts. Each render-tick + battery + charging element cited path:line.</title>
+
+    <text x="836" y="84" fill="#c0ccd8" font-size="10" font-weight="bold">State 1 · healthy + charging</text>
+
+    <circle cx="488" cy="370" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="373" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <text x="836" y="106" fill="#ff8232" font-size="10" font-weight="bold">1 · battery 78% · GREEN fill</text>
+    <text x="836" y="121" fill="#6c7f92" font-size="9">~24×10 px; fill width proportional;</text>
+    <text x="836" y="134" fill="#6c7f92" font-size="9">colour by threshold (mockup choice):</text>
+    <text x="836" y="147" fill="#6c7f92" font-size="9">≥50% GREEN · 20-50% AMBER · &lt;20% RED</text>
+    <text x="836" y="160" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:42-44, 80-87</text>
+
+    <circle cx="660" cy="370" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="660" y="373" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
+    <text x="836" y="182" fill="#ff8232" font-size="10" font-weight="bold">2 · charging icon · GREEN tint</text>
+    <text x="836" y="197" fill="#6c7f92" font-size="9">~8×10 px lightning bolt when</text>
+    <text x="836" y="210" fill="#6c7f92" font-size="9">charging == Some(true); else omit</text>
+    <text x="836" y="223" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:45, 81, 90-94</text>
+
+    <circle cx="772" cy="370" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="772" y="373" fill="#ff8232" font-size="9" text-anchor="middle">3</text>
+    <text x="836" y="245" fill="#ff8232" font-size="10" font-weight="bold">3 · render-tick · `ui` · in sidebar gw-0</text>
+    <text x="836" y="260" fill="#6c7f92" font-size="9">pulse dot at right edge; pulses every</text>
+    <text x="836" y="273" fill="#6c7f92" font-size="9">egui render frame; label `ui` is</text>
+    <text x="836" y="286" fill="#6c7f92" font-size="9">NEVER `gateway`, `process`, or `radio`</text>
+    <text x="836" y="299" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:52-55, 71-77, 82-83</text>
+
+    <text x="836" y="324" fill="#c0ccd8" font-size="10" font-weight="bold">Honest-unknowns discipline</text>
+    <text x="836" y="339" fill="#6c7f92" font-size="9">`ui` proves egui render loop only.</text>
+    <text x="836" y="352" fill="#6c7f92" font-size="9">NOT LoRa-RX. NOT process health.</text>
+    <text x="836" y="365" fill="#6c7f92" font-size="9">NOT radio health. Deferred to later</text>
+    <text x="836" y="378" fill="#6c7f92" font-size="9">tickets when real gateway lands.</text>
+    <text x="836" y="391" fill="#6c7f92" font-size="9">NO fake radio. NO fake process.</text>
+    <text x="836" y="404" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:57-64, 74, 84, 118-120</text>
+
+    <text x="836" y="430" fill="#c0ccd8" font-size="10" font-weight="bold">Map area (all four panels)</text>
+    <text x="836" y="445" fill="#6c7f92" font-size="9">abstracted; underlying render is</text>
+    <text x="836" y="458" fill="#6c7f92" font-size="9">basemap + LIDAR hillshade + OSM XML</text>
+    <text x="836" y="471" fill="#6c7f92" font-size="9">overlays · per pmtiles_map.rs:82-125</text>
+    <text x="836" y="484" fill="#6c7f92" font-size="9" font-style="italic">region.rs:25-71 Overlay enum</text>
+
+    <!-- State 2 -->
+    <text x="836" y="600" fill="#c0ccd8" font-size="10" font-weight="bold">State 2 · healthy, not charging</text>
+
+    <circle cx="488" cy="890" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="893" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <text x="836" y="624" fill="#ff8232" font-size="10" font-weight="bold">1 · battery 45% · AMBER fill</text>
+    <text x="836" y="639" fill="#6c7f92" font-size="9">20-50% threshold bucket</text>
+    <text x="836" y="652" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:42, 85</text>
+
+    <text x="836" y="674" fill="#ff8232" font-size="10" font-weight="bold">2 · NO charging icon</text>
+    <text x="836" y="689" fill="#6c7f92" font-size="9">charging == Some(false) →</text>
+    <text x="836" y="702" fill="#6c7f92" font-size="9">lightning-bolt omitted</text>
+    <text x="836" y="715" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:81, 94</text>
+
+    <text x="836" y="737" fill="#ff8232" font-size="10" font-weight="bold">3 · render-tick still `ui`</text>
+    <text x="836" y="752" fill="#6c7f92" font-size="9">Placement invariant across states.</text>
+
+    <!-- State 3 -->
+    <text x="836" y="1120" fill="#c0ccd8" font-size="10" font-weight="bold">State 3 · low battery</text>
+
+    <circle cx="488" cy="1418" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="1421" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <text x="836" y="1144" fill="#ff8232" font-size="10" font-weight="bold">1 · warning glyph on primary</text>
+    <text x="836" y="1159" fill="#6c7f92" font-size="9">⚠ instead of ● because battery is</text>
+    <text x="836" y="1172" fill="#6c7f92" font-size="9">low (&lt;20% threshold bucket)</text>
+    <text x="836" y="1185" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:43, 86</text>
+
+    <text x="836" y="1207" fill="#ff8232" font-size="10" font-weight="bold">2 · battery 12% · RED fill + text</text>
+    <text x="836" y="1222" fill="#6c7f92" font-size="9">fill RED · text RED · bold</text>
+    <text x="836" y="1235" fill="#6c7f92" font-size="9">at-a-glance alert</text>
+
+    <text x="836" y="1257" fill="#ff8232" font-size="10" font-weight="bold">3 · render-tick still `ui`</text>
+    <text x="836" y="1272" fill="#6c7f92" font-size="9">independent of battery state.</text>
+
+    <!-- State 4 -->
+    <text x="836" y="1640" fill="#c0ccd8" font-size="10" font-weight="bold">State 4 · battery unknown</text>
+
+    <circle cx="488" cy="1934" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="488" y="1937" fill="#ff8232" font-size="9" text-anchor="middle">1</text>
+    <text x="836" y="1664" fill="#ff8232" font-size="10" font-weight="bold">1 · no-fill battery icon</text>
+    <text x="836" y="1679" fill="#6c7f92" font-size="9">outline only · dim grey</text>
+    <text x="836" y="1692" fill="#6c7f92" font-size="9">no colour signal · no implication</text>
+    <text x="836" y="1705" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:46, 87</text>
+
+    <circle cx="660" cy="1934" r="7" fill="#070b10" stroke="#ff8232" stroke-width="0.8"/>
+    <text x="660" y="1937" fill="#ff8232" font-size="9" text-anchor="middle">2</text>
+    <text x="836" y="1727" fill="#ff8232" font-size="10" font-weight="bold">2 · "BAT unknown" · TEXT_DIM</text>
+    <text x="836" y="1742" fill="#6c7f92" font-size="9">NEVER "0%" when state unknown.</text>
+    <text x="836" y="1755" fill="#6c7f92" font-size="9">NEVER "BAT —" placeholder.</text>
+    <text x="836" y="1768" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:46, 79</text>
+
+    <text x="836" y="1790" fill="#ff8232" font-size="10" font-weight="bold">3 · render-tick unchanged</text>
+    <text x="836" y="1805" fill="#6c7f92" font-size="9">Independent of battery telemetry.</text>
+
+    <text x="836" y="1835" fill="#c0ccd8" font-size="10" font-weight="bold">Default-scenario behaviour</text>
+    <text x="836" y="1850" fill="#6c7f92" font-size="9">existing scenarios load battery_pct</text>
+    <text x="836" y="1863" fill="#6c7f92" font-size="9">= None, charging = None · gw-0 row</text>
+    <text x="836" y="1876" fill="#6c7f92" font-size="9">renders State 4 by default</text>
+    <text x="836" y="1889" fill="#6c7f92" font-size="9">(new GatewayLowBattery scenario</text>
+    <text x="836" y="1902" fill="#6c7f92" font-size="9">renders State 3 at 12%)</text>
+    <text x="836" y="1915" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-005:47, 79-80, 91</text>
+  </g>
+</svg>
