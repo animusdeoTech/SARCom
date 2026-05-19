@@ -94,30 +94,6 @@ pub enum NodeState {
     LowBattery,
 }
 
-impl NodeState {
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Normal => "Normal",
-            Self::Stale => "Stale (>11 min)",
-            Self::VeryStale => "Very stale (>22 min)",
-            Self::NoFix => "No GPS fix",
-            Self::Sos => "SOS",
-            Self::LowBattery => "Low battery",
-        }
-    }
-
-    pub fn all() -> &'static [NodeState] {
-        &[
-            Self::Normal,
-            Self::Stale,
-            Self::VeryStale,
-            Self::NoFix,
-            Self::Sos,
-            Self::LowBattery,
-        ]
-    }
-}
-
 /// Inventory kind — the ONLY distinction between tag / relay / gateway in v1a.
 /// Maps `node_id → NodeKind` for icon glyph + colour assignment in the UI.
 /// Per dev-log/2026-05-19-v1a-ui-data-model-collapse-nodedata.md: this is the
@@ -211,10 +187,12 @@ impl SimState {
     }
 
     fn normal() -> Self {
+        // tag-1: 51°00'43.5"N 5°32'32.0"E (51.0121, 5.5422) — smaller hill
+        // upper-left of the terril complex.
         Self::with_infra(vec![make_tag(
             1,
             "tag-1",
-            [0.55, 0.38],
+            [0.4188, 0.3981],
             NodeState::Normal,
             8.0,
             true,
@@ -293,10 +271,11 @@ impl SimState {
         nf.last_valid_fix_pos = Some([0.69, 0.46]);
         nf.last_valid_fix_age_secs = Some(210.0);
         Self::with_infra(vec![
+            // tag-1: 51°00'43.5"N 5°32'32.0"E — smaller hill upper-left.
             make_tag(
                 1,
                 "tag-1",
-                [0.50, 0.28],
+                [0.4188, 0.3981],
                 NodeState::Normal,
                 5.0,
                 true,
@@ -348,11 +327,14 @@ impl SimState {
 
 /// Relay node — same NodeData shape as a tag, populated as a relay broadcast.
 /// 840 s = 14 min, well within relay's ~1800 s POSITION cadence per ADR-006.
+/// Position: 51°00'31.0"N 5°32'55.7"E (51.0086, 5.5488) — on the second
+/// smaller hill right-of-centre of the Terril Waterschei region.
+/// Normalised against region.toml bounds (lon 5.515..5.580, lat 50.985..51.030).
 fn default_relay_node() -> NodeData {
     NodeData {
         node_id: 101,
         label: "relay-1".into(),
-        pos: [0.55, 0.60],
+        pos: [0.5201, 0.4753],
         state: NodeState::Normal,
         last_seen_secs: 840.0,
         gps_valid: true,
@@ -368,11 +350,14 @@ fn default_relay_node() -> NodeData {
 /// Gateway node — local; `last_seen_secs = 0.0` sentinel (gateway is the
 /// receiver and doesn't receive its own frames). UI presentation may render
 /// this as `— (local)` rather than `0 s` per KIOSK-004 / KIOSK-003.
+/// Position: 51°00'05.1"N 5°32'56.8"E (51.0014, 5.5491) — bottom edge of
+/// the main terril feature.
+/// Normalised against region.toml bounds (lon 5.515..5.580, lat 50.985..51.030).
 fn default_gateway_node() -> NodeData {
     NodeData {
         node_id: 200,
         label: "gw-0".into(),
-        pos: [0.30, 0.65],
+        pos: [0.5248, 0.6352],
         state: NodeState::Normal,
         last_seen_secs: 0.0,
         gps_valid: true,

@@ -160,10 +160,8 @@
     <text x="510" y="229" fill="#eab308" font-size="11" font-weight="bold">⚠ NO FIX</text>
     <text x="595" y="229" fill="#6c7f92" font-size="10">gps_valid=false</text>
 
-    <!-- Key/value rows -->
-    <text x="510" y="256" fill="#6c7f92" font-size="10">last frame</text>
-    <text x="812" y="256" fill="#c0ccd8" font-size="10" text-anchor="end">30 s</text>
-
+    <!-- Key/value rows. `last frame` age is implicit in the state strip context;
+         the LAST FIX scoping label below is what makes lat/lon meaningful. -->
     <text x="510" y="274" fill="#6c7f92" font-size="10">last fix</text>
     <text x="812" y="274" fill="#eab308" font-size="10" text-anchor="end">8 m</text>
 
@@ -298,13 +296,11 @@
     <!-- State strip -->
     <rect x="500" y="734" width="320" height="22" fill="#1a1404"/>
     <text x="510" y="749" fill="#eab308" font-size="11" font-weight="bold">⚠ OVERDUE</text>
-    <text x="595" y="749" fill="#6c7f92" font-size="10">last_seen 65 m (> 3600 s)</text>
+    <text x="595" y="749" fill="#6c7f92" font-size="10">65 m (> 3600 s)</text>
 
-    <!-- Key/value rows: SAME shape as Panel A, different fields populated -->
-    <text x="510" y="776" fill="#6c7f92" font-size="10">last frame</text>
-    <text x="812" y="776" fill="#eab308" font-size="10" text-anchor="end">POSITION 65 m</text>
+    <!-- Key/value rows: SAME shape as Panel A, different fields populated.
+         No `last frame` row — age carried in state strip. -->
 
-    <!-- No "last fix" row (relay-2 has gps_valid=true, last_seen IS last fix) -->
     <text x="510" y="800" fill="#6c7f92" font-size="10">lat</text>
     <text x="812" y="800" fill="#c0ccd8" font-size="10" text-anchor="end">50.92414° N</text>
     <text x="510" y="818" fill="#6c7f92" font-size="10">lon</text>
@@ -407,7 +403,7 @@
     <text x="836" y="490" fill="#6c7f92" font-size="9">SAME layout. Only differences:</text>
     <text x="836" y="503" fill="#6c7f92" font-size="9">· ORANGE icon (inventory.kind=Relay)</text>
     <text x="836" y="516" fill="#6c7f92" font-size="9">· state strip = ⚠ OVERDUE</text>
-    <text x="836" y="529" fill="#6c7f92" font-size="9">· last frame = POSITION 65 m (vs 30 s)</text>
+    <text x="836" y="529" fill="#6c7f92" font-size="9">· state strip age = 65 m (vs 30 s)</text>
     <text x="836" y="542" fill="#6c7f92" font-size="9">· no LAST FIX framing (gps_valid=true)</text>
     <text x="836" y="555" fill="#6c7f92" font-size="9">· lat/lon = current pos (not last_valid)</text>
     <text x="836" y="568" fill="#6c7f92" font-size="9">· NOT SHOWN block = IDENTICAL.</text>

@@ -29,10 +29,9 @@ same 150 ms eased pan onto the relay's `pos`. The detail surface
 renders the **identical uniform layout** as Panel A — back row → node
 header (ORANGE cross from inventory) → state strip → key/value rows →
 NOT SHOWN block. The only field-level differences: ORANGE icon (vs
-BLUE), `⚠ OVERDUE` state strip (vs `⚠ NO FIX`), `last frame · POSITION
-65 m` value, no `LAST FIX` framing (relay-2 has `gps_valid=true`,
-current pos IS the last fix), `NOT SHOWN` block **identical** to
-Panel A.
+BLUE), `⚠ OVERDUE · 65 m (> 3600 s)` state strip (vs `⚠ NO FIX`),
+no `LAST FIX` framing (relay-2 has `gps_valid=true`, current pos IS
+the last fix), `NOT SHOWN` block **identical** to Panel A.
 
 **The NOT SHOWN block being identical across both panels is the
 load-bearing demonstration.** It is reserved for protocol-level
@@ -45,9 +44,9 @@ sim-fixture-gap rationalisation.
 `tickets/KIOSK-005-gateway-status-surface.md` (deferred stub). In
 v1a a gateway node renders the **same uniform detail layout**:
 header (`■` GREEN from inventory + label), state strip `● HEALTHY`,
-`last frame · — (local)` row (gateway is the receiver — sentinel-zero
-`last_seen_secs` rendered as `— (local)` rather than `0 s`), lat/lon
-from `NodeData.pos`. No extra gateway-only chrome.
+no `last frame` row (gateway is the receiver — sentinel-zero
+`last_seen_secs` is not a meaningful age, so the row is simply
+absent), lat/lon from `NodeData.pos`. No extra gateway-only chrome.
 
 In every panel the back-to-list row at the top is the **only**
 dismissal affordance. Tap-outside on the map does **not** dismiss.
@@ -102,8 +101,7 @@ glyph + colour come from inventory lookup.
 | Back row | (UI chrome) | always |
 | Header: kind-icon + `{label}` | inventory.kind + `NodeData.label` | always |
 | State strip | derived: `sos` → DISTRESS, `!gps_valid` → NO FIX, freshness-bucket → STALE/HEALTHY/OVERDUE | always |
-| `last frame` | `NodeData.last_seen_secs` via `format_age_or_unavailable` | always; gateway shows `— (local)` (sentinel-zero `last_seen` is the local-receiver case, not a real age) |
-| `last fix` | `NodeData.last_valid_fix_age_secs` | only when `!gps_valid` (otherwise current `pos` IS the last fix) |
+| `last fix` | `NodeData.last_valid_fix_age_secs` | only when `!gps_valid` (otherwise current `pos` IS the last fix); scopes the lat/lon rows below |
 | `LAST FIX · {age}` scoping label | (UI chrome) | only when `!gps_valid` |
 | `lat` / `lon` | `NodeData.pos` if `gps_valid` else `NodeData.last_valid_fix_pos` | when a position exists |
 | `🔋 BATT` token | `NodeData.battery_low` | only when `battery_low == true` |
@@ -142,4 +140,4 @@ glyph + colour come from inventory lookup.
 
 1. **State-strip wording.** Mockup uses `⚠ NO FIX` / `⚠ OVERDUE` / `● HEALTHY`. Exact text + when each fires is a presentation detail.
 2. **Tag-3 selection halo colour.** Mockup uses AMBER (matches the no-fix state). Could also be a state-neutral white halo.
-3. **Gateway last-seen rendering.** Mockup proposes `— (local)` for the gateway's `last frame` row (sentinel-zero `last_seen_secs`). Alternative: omit the row entirely for gateway. The post-collapse ticket allows either; mockup chose `— (local)` to preserve the uniform layout shape.
+3. **Gateway last-seen rendering.** Mockup omits the `last frame` row entirely for gateway (sentinel-zero `last_seen_secs` is not meaningful). The post-collapse ticket allows either rendering; current choice is omission to match the no-prefix discipline applied across the rest of the UI.

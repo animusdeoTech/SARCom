@@ -25,21 +25,19 @@ Sidebar (320 px wide, full panel height) shows:
 - **Sticky `DISTRESS` section** (header `DISTRESS · 2`) pinned at top:
   - `🔴 SOS · tag-2 · 42 s` (red, bold) — **selected**, full-row tint
   - `⚠ tag-3 · NO FIX · last fix 8 m` (amber)
-- **Scrollable `NODES · 5` section**, mission-first sort preserved:
-  - `● tag-1  ·  12 s ago` (normal)
+- **Scrollable `NODES · 4` section**, mission-first sort preserved:
+  - `● tag-1  ·  12 s` (normal)
   - `● tag-4 · stale · 12 m` (dim)
-  - `● tag-5 · very stale · 24 m` (very dim)
   - `● tag-6 · 18 s  ·  🔋 BATT` (battery-low, AMBER `🔋 BATT` token
     co-located on the primary line)
-  - `● relay-1 · POSITION 14 m`
-  - `● gw-0` (green)
+  - `✚ relay-1 · 14 m` (orange cross)
+  - `■ gw-0` (green square)
 
 ## Per-element source-of-truth citations
 
 | Element | Citation |
 |---|---|
 | One-line row format per node state | `tickets/KIOSK-003-sidebar-row-redesign.md:29-39` |
-| Very-stale row variant | `KIOSK-003:34` |
 | Battery-low: `🔋 BATT` icon + suffix together on primary line | `KIOSK-003:35, 131` |
 | Sticky `DISTRESS` section above scrollable list | `KIOSK-003:41, 73` |
 | All rows ≥48 px touch target | `KIOSK-003:40, 72, 17` |
@@ -64,20 +62,21 @@ Row format is **state-driven**, not kind-driven. The same template renders for e
 
 | Node state | Row primary text | Colour | Sticky section? |
 |---|---|---|---|
-| Fresh | `● {label}  ·  {age}` | `TEXT_BRIGHT` label, `TEXT_DIM` age, state-bullet from `freshness_color(Fresh)` | no |
-| Aging | `● {label}  ·  {age}` | `TEXT_BRIGHT` label, `TEXT_DIM` age, state-bullet from `freshness_color(Aging)` | no |
-| Stale | `● {label} · stale · {age}` | `TEXT_DIM` | no |
-| Very-stale | `● {label} · very stale · {age}` | `TEXT_DIM` (very dim) | no |
+| Fresh | `{glyph} {label}  ·  {age}` | label by kind, `TEXT_DIM` age, glyph from `freshness_color(Fresh)` | no |
+| Aging | `{glyph} {label}  ·  {age}` | label by kind, `TEXT_DIM` age, glyph from `freshness_color(Aging)` | no |
+| Stale | `{glyph} {label} · stale · {age}` | `TEXT_DIM` | no |
 | SOS | `🔴 SOS · {label} · {age}` | `RED`, bold | **yes** (DISTRESS) |
 | No-fix | `⚠ {label} · NO FIX · last fix {age}` | `AMBER` | **yes** (DISTRESS) |
 | Battery-low | append `🔋 BATT` (icon + suffix together) on the primary line — token tinted `AMBER` | compatible with any state above | inherits |
 
+Note: the timestamp itself carries no `last` / `POSITION` prefix; the line context (sidebar node row) makes the meaning unambiguous. The `last fix` framing on no-fix rows remains because it scopes the lat/lon below to a known past position, not a current sentinel.
+
 **Inventory-driven icon glyph + colour** (presentation only — no data-model branch):
-- `NodeKind::Tag` → `●` filled dot, `BLUE` label colour
+- `NodeKind::Tag` → `●` filled dot, `TEXT_BRIGHT` label colour
 - `NodeKind::Relay` → `✚` cross, `ORANGE` label colour
 - `NodeKind::Gateway` → `■` square, `GREEN` label colour; `{age}` suffix elided (gateway is local, `last_seen_secs = 0`)
 
-For the gateway specifically, the row reads `● gw-0` (with the inventory-assigned glyph + colour; no age). No `RTC ok` / `RTC unset` chrome — gateway-self status is deferred per `tickets/KIOSK-005-gateway-status-surface.md`.
+For the gateway specifically, the row reads `■ gw-0` (with the inventory-assigned glyph + colour; no age). No `RTC ok` / `RTC unset` chrome — gateway-self status is deferred per `tickets/KIOSK-005-gateway-status-surface.md`.
 
 ## What is NOT rendered
 
@@ -97,7 +96,8 @@ For the gateway specifically, the row reads `● gw-0` (with the inventory-assig
 - **Battery-low shows `🔋 BATT`** (icon + suffix together) on the
   primary line.
 - **Mission-first sort preserved**.
-- **Very-stale row present** as a distinct format from `stale`.
+- **No `last` / `POSITION` prefix on timestamps** — line context carries the meaning.
+- **Kind-specific glyphs**: tag `●` / relay `✚` / gateway `■` matching map markers.
 - **No counter footer card.**
 - **Relay and gateway rows are selectable.**
 - Map area's abstract label names the **three layers underneath**

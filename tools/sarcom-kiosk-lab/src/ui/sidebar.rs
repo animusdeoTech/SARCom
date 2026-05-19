@@ -39,15 +39,6 @@ impl KioskLabApp {
                 }
             }
 
-            if !self.status_msg.is_empty() && t < self.status_expire {
-                ui.add_space(8.0);
-                ui.label(
-                    egui::RichText::new(&self.status_msg)
-                        .color(GREEN)
-                        .size(10.0),
-                );
-            }
-
             ui.add_space(8.0);
         });
     }
@@ -112,13 +103,16 @@ fn render_node_row(
         egui::Color32::TRANSPARENT
     };
 
-    let (dot, label_color) = match kind {
-        NodeKind::Tag => (node_display_color(node), TEXT_BRIGHT),
+    // Kind-specific glyph mirrors the map markers per
+    // `tickets/KIOSK-003-sidebar-row-redesign.md` row format. Colour is
+    // state-driven (freshness-bucket for tag/relay, green for gateway-local).
+    let (glyph, dot_color, label_color) = match kind {
+        NodeKind::Tag => ("●", node_display_color(node), TEXT_BRIGHT),
         NodeKind::Relay => {
             let f = freshness_for_relay(node.last_seen_secs);
-            (freshness_color(f), ORANGE)
+            ("✚", freshness_color(f), ORANGE)
         }
-        NodeKind::Gateway => (GREEN, GREEN),
+        NodeKind::Gateway => ("■", GREEN, GREEN),
     };
 
     egui::Frame::NONE
@@ -151,9 +145,9 @@ fn render_node_row(
                 });
             }
 
-            // Primary line: bullet + label.
+            // Primary line: kind-glyph + label.
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("●").color(dot).size(11.0));
+                ui.label(egui::RichText::new(glyph).color(dot_color).size(11.0));
                 ui.label(
                     egui::RichText::new(&node.label)
                         .color(label_color)
@@ -167,13 +161,10 @@ fn render_node_row(
             // `last_seen_secs` is not a meaningful age).
             if kind != NodeKind::Gateway {
                 if !node.gps_valid {
-                    // No-fix tag: GPS_VALID=0 + last-fix-age (if any).
-                    ui.label(
-                        egui::RichText::new("  last —")
-                            .color(TEXT_DIM)
-                            .monospace()
-                            .size(10.0),
-                    );
+                    // No-fix node: GPS_VALID=0 flag + last-known-fix scope.
+                    // The `last fix` framing remains because it scopes the
+                    // coordinates to a known past position rather than a
+                    // current sentinel.
                     ui.label(
                         egui::RichText::new("  GPS_VALID=0 · sentinels")
                             .color(GREY)
@@ -189,14 +180,11 @@ fn render_node_row(
                         );
                     }
                 } else {
-                    let frame_label = if kind == NodeKind::Relay {
-                        "POSITION"
-                    } else {
-                        "last"
-                    };
+                    // Fresh / aging / stale: wall + age, no "last" or
+                    // "POSITION" prefix. The line context (sidebar node row)
+                    // makes the meaning unambiguous.
                     let line = format!(
-                        "  {} {} · {}",
-                        frame_label,
+                        "  {} · {}",
                         format_wall(t - node.last_seen_secs as f64),
                         format_age(node.last_seen_secs),
                     );
@@ -206,14 +194,10 @@ fn render_node_row(
                             .monospace()
                             .size(10.0),
                     );
-                    let coord_suffix = match kind {
-                        NodeKind::Relay => " · solar",
-                        _ => "",
-                    };
                     ui.label(
                         egui::RichText::new(format!(
-                            "  {:.5}, {:.5}{}",
-                            node.pos[0], node.pos[1], coord_suffix
+                            "  {:.5}, {:.5}",
+                            node.pos[0], node.pos[1]
                         ))
                         .color(TEXT_DIM)
                         .monospace()

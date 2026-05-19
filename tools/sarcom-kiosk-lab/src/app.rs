@@ -37,13 +37,8 @@ pub struct KioskLabApp {
     pub(crate) sim: SimState,
     pub(crate) selection: Selection,
     pub(crate) show_track: bool,
-    pub(crate) show_edit: bool,
-    pub(crate) edit_tag_idx: usize,
     pub(crate) sidebar_width: f32,
     pub(crate) drag_target: Option<DragTarget>,
-    pub(crate) layout_path: String,
-    pub(crate) status_msg: String,
-    pub(crate) status_expire: f64,
     pub(crate) map_mode: MapMode,
     /// Every `[[overlays]] kind = "osm"` block loaded as an `OsmMap`,
     /// in region.toml declaration order. Both source variants
@@ -105,13 +100,8 @@ impl KioskLabApp {
             sim: SimState::from_scenario(scenario),
             selection: Selection::None,
             show_track: true,
-            show_edit: false,
-            edit_tag_idx: 0,
             sidebar_width: 320.0,
             drag_target: None,
-            layout_path: "layout.json".into(),
-            status_msg: String::new(),
-            status_expire: 0.0,
             map_mode: default_mode,
             osm_maps,
             active_region,
@@ -126,49 +116,8 @@ impl KioskLabApp {
         self.sim = SimState::from_scenario(kind);
         self.selection = Selection::None;
         self.drag_target = None;
-        self.edit_tag_idx = 0;
         self.view_offset = egui::Vec2::ZERO;
         self.view_zoom = 1.0;
-    }
-
-    fn set_status(&mut self, msg: impl Into<String>, t: f64) {
-        self.status_msg = msg.into();
-        self.status_expire = t + 3.0;
-    }
-
-    pub(crate) fn save_layout(&mut self, t: f64) {
-        let file = LayoutFile {
-            sidebar_width: self.sidebar_width,
-            show_track: self.show_track,
-            scenario: self.scenario,
-            sim: self.sim.clone(),
-        };
-        match serde_json::to_string_pretty(&file) {
-            Ok(json) => match std::fs::write(&self.layout_path, json) {
-                Ok(_) => self.set_status(format!("Saved → {}", self.layout_path), t),
-                Err(e) => self.set_status(format!("Save failed: {e}"), t),
-            },
-            Err(e) => self.set_status(format!("Serialise failed: {e}"), t),
-        }
-    }
-
-    pub(crate) fn load_layout(&mut self, t: f64) {
-        match std::fs::read_to_string(&self.layout_path) {
-            Ok(json) => match serde_json::from_str::<LayoutFile>(&json) {
-                Ok(file) => {
-                    self.sidebar_width = file.sidebar_width;
-                    self.show_track = file.show_track;
-                    self.scenario = file.scenario;
-                    self.sim = file.sim;
-                    self.selection = Selection::None;
-                    self.drag_target = None;
-                    self.edit_tag_idx = 0;
-                    self.set_status(format!("Loaded {}", self.layout_path), t);
-                }
-                Err(e) => self.set_status(format!("Parse failed: {e}"), t),
-            },
-            Err(e) => self.set_status(format!("Read failed: {e}"), t),
-        }
     }
 }
 
@@ -183,20 +132,6 @@ impl eframe::App for KioskLabApp {
         ctx.set_visuals(visuals);
 
         let t = ctx.input(|i| i.time);
-
-        // Edit window (floating)
-        if self.show_edit {
-            let mut open = self.show_edit;
-            egui::Window::new("Edit / Tweak")
-                .open(&mut open)
-                .default_pos([820.0, 50.0])
-                .default_width(260.0)
-                .resizable(true)
-                .show(&ctx, |ui| {
-                    self.show_edit_panel(ui, t);
-                });
-            self.show_edit = open;
-        }
 
         // Header bar
         egui::Panel::top("header")
@@ -248,7 +183,7 @@ impl eframe::App for KioskLabApp {
                         );
                         ui.label(
                             egui::RichText::new(format!(
-                                "· {} · {} · flags.SOS=1 · last frame {}",
+                                "· {} · {} · flags.SOS=1 · {}",
                                 label, since, last_frame
                             ))
                             .color(egui::Color32::from_rgb(252, 220, 220))
@@ -351,12 +286,4 @@ impl eframe::App for KioskLabApp {
 
         ctx.request_repaint_after(std::time::Duration::from_millis(500));
     }
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct LayoutFile {
-    sidebar_width: f32,
-    show_track: bool,
-    scenario: ScenarioKind,
-    sim: SimState,
 }

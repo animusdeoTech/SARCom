@@ -82,7 +82,7 @@ that task, and say who wins.
 
 | | Variant B (persistent strip + stronger hierarchy) | Variant A (top banner + ACK + strip preserved) |
 |---|---|---|
-| Surface | Bottom 24 px y-band painted red, full panel width; carries `DISTRESS · tag-2 · since 14:08:23 · flags.SOS=1 · last frame 42 s · read-only · ack at the tag`. Strengthened: 13 pt bold `DISTRESS`, white leading dot, saturated red fill `Color32::from_rgb(160, 28, 28)` per [`tools/sarcom-kiosk-lab/src/app.rs:230-282`](../../tools/sarcom-kiosk-lab/src/app.rs). | 40 px top-anchored red band ABOVE the map, with an `ACKNOWLEDGE` button. Bottom strip is **also red** — preserved underneath per KIOSK-006:50. |
+| Surface | Bottom 24 px y-band painted red, full panel width; carries `DISTRESS · tag-2 · since 14:08:23 · flags.SOS=1 · 42 s · read-only · ack at the tag`. Strengthened: 13 pt bold `DISTRESS`, white leading dot, saturated red fill `Color32::from_rgb(160, 28, 28)` per [`tools/sarcom-kiosk-lab/src/app.rs:230-282`](../../tools/sarcom-kiosk-lab/src/app.rs). | 40 px top-anchored red band ABOVE the map, with an `ACKNOWLEDGE` button. Bottom strip is **also red** — preserved underneath per KIOSK-006:50. |
 | Operator surface ratio | One SOS surface (strip) plus the on-map pulse ring | Two SOS surfaces (banner + strip) plus the pulse ring |
 | ADR-007 risk | Low. The strip is the existing surface; aesthetic strengthening (size, contrast, optional pulse) is structurally identical to today. No acknowledgement affordance. `read-only · ack at the tag` is preserved — it accurately tells the operator the gateway is not the acknowledgement surface. | High. The `ACKNOWLEDGE` button is the exact shape of an "alert acknowledgement flow" prohibited by [`decisions/ADR-007-touchscreen-primary-ui.md:46`](../../decisions/ADR-007-touchscreen-primary-ui.md). Even if the acknowledgement is UI-local-only (no protocol, no DB write per KIOSK-006:49), the strip's `read-only · ack at the tag` text now disagrees with the banner's button — they cannot both be true at once. |
 | **SAR task served** | Operator glances at the kiosk mid-radio-call and needs to know an SOS is active | Same task, plus the banner attempts to demand attention more loudly. |
@@ -162,7 +162,7 @@ The bias rules in [`tickets/CLAUDE-DESIGN-PROMPT-v1a-operator-map.md:24-29`](../
    single strongest argument for Variant A on this surface.
 
 3. **Relay-1 / relay-2 selection content.** KIOSK-004 makes relay rows
-   selectable. Tapping relay-2 would surface `last frame = POSITION 65 m`. What
+   selectable. Tapping relay-2 would surface its age in the state strip (`65 m`). What
    does the operator do with that? If the answer is "go check the relay
    physically," the detail view's job is done; if the answer is "trigger
    BLE commissioning," that crosses the precedent at

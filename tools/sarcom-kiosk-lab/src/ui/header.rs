@@ -57,20 +57,11 @@ impl KioskLabApp {
                     }
                 });
 
-            // Right-side cluster: wall clock + Edit button. Built first
+            // Right-side cluster: wall clock only. ADR-007 read-only kiosk —
+            // no Edit button, no settings, no toggles. Built first
             // (right-to-left layout) so the centre slot can use the
             // remaining width.
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let edit_label = if self.show_edit { "■ Edit" } else { "Edit" };
-                if ui
-                    .button(egui::RichText::new(edit_label).size(11.0))
-                    .clicked()
-                {
-                    self.show_edit = !self.show_edit;
-                }
-
-                ui.add_space(8.0);
-
                 ui.label(
                     egui::RichText::new(format_wall(t))
                         .color(TEXT_BRIGHT)

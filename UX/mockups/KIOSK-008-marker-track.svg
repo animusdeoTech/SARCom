@@ -157,7 +157,7 @@
       <!-- faded ghost fill -->
       <circle cx="280" cy="390" r="6" fill="#32b4ff" fill-opacity="0.25"/>
       <text x="294" y="386" fill="#c0ccd8" font-size="10">tag-3</text>
-      <text x="294" y="398" fill="#5a6a7a" font-size="8">NO FIX · last 4 m</text>
+      <text x="294" y="398" fill="#5a6a7a" font-size="8">NO FIX · last fix 4 m</text>
     </g>
 
     <!-- ====== tag-4: STALE, freshness_color(Stale)=rgb(180,83,9) — three-fix tail south ====== -->
@@ -207,10 +207,10 @@
     <line x1="514" y1="378" x2="806" y2="378" stroke="#1a2530" stroke-width="0.5"/>
     <text x="520" y="156" fill="#ff3c3c" font-size="9" font-weight="bold">DISTRESS · tag-2 · 3 s</text>
     <text x="520" y="204" fill="#5a6a7a" font-size="9">tag-1 · 12 s · fresh</text>
-    <text x="520" y="252" fill="#5a6a7a" font-size="9">tag-3 · NO FIX · last 4 m</text>
+    <text x="520" y="252" fill="#5a6a7a" font-size="9">tag-3 · NO FIX · last fix 4 m</text>
     <text x="520" y="300" fill="#5a6a7a" font-size="9">tag-4 · 9 m · stale</text>
-    <text x="520" y="348" fill="#5a6a7a" font-size="9">relay-1 · 14 m</text>
-    <text x="520" y="396" fill="#5a6a7a" font-size="9">gw-0</text>
+    <text x="520" y="348" fill="#f0a030" font-size="9">✚ relay-1 · 14 m</text>
+    <text x="520" y="396" fill="#40d080" font-size="9">■ gw-0</text>
   </g>
 
   <g id="bottom-strip">
@@ -218,7 +218,7 @@
            Here SOS is active for tag-2; KIOSK-008 mockup keeps it minimal — the SOS strip
            is illustrated by KIOSK-006, not redrawn here.</title>
     <rect x="20" y="516" width="800" height="24" fill="rgb(160,28,28)"/>
-    <text x="28" y="532" fill="#ffffff" font-size="11" font-weight="bold">DISTRESS · tag-2 · last frame 3 s · ack at tag</text>
+    <text x="28" y="532" fill="#ffffff" font-size="11" font-weight="bold">DISTRESS · tag-2 · 3 s · ack at tag</text>
     <text x="500" y="532" fill="#ffd0d0" font-size="9" font-style="italic">(SOS strip rendered for context · owned by KIOSK-006)</text>
   </g>
 
@@ -370,7 +370,7 @@
     <title>Panel B SOS strip same as Panel A — SOS persists across selection.
            KIOSK-006 owns the strip; KIOSK-008 makes no change to it.</title>
     <rect x="20" y="1036" width="800" height="24" fill="rgb(160,28,28)"/>
-    <text x="28" y="1052" fill="#ffffff" font-size="11" font-weight="bold">DISTRESS · tag-2 · last frame 3 s · ack at tag</text>
+    <text x="28" y="1052" fill="#ffffff" font-size="11" font-weight="bold">DISTRESS · tag-2 · 3 s · ack at tag</text>
     <text x="500" y="1052" fill="#ffd0d0" font-size="9" font-style="italic">(SOS strip persists across selection)</text>
   </g>
 

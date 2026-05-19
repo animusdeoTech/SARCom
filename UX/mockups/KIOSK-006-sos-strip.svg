@@ -6,7 +6,7 @@
     Map areas render three layers per pmtiles_map.rs:82-125 (basemap + LIDAR
     hillshade + OSM XML overlays). Strip is FULL-WIDTH SOS state when active
     per KIOSK-006:33, 56-64. No zones. No coord readout. No crosshair.
-    Strip text exact: `DISTRESS · {label} · last frame {age} · ack at tag`.
+    Strip text exact: `DISTRESS · {label} · {age} · ack at tag`.
   -->
 
   <defs>
@@ -135,8 +135,8 @@
     <text x="510" y="167" fill="#6c7f92" font-size="9">NODES · 4</text>
     <text x="510" y="183" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
     <text x="510" y="231" fill="#5a6a7a" font-size="10">● tag-4 · stale · 12 m</text>
-    <text x="510" y="279" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
-    <text x="510" y="327" fill="#40d080" font-size="10">● gw-0</text>
+    <text x="510" y="279" fill="#5a6a7a" font-size="10">✚ relay-1 · 14 m</text>
+    <text x="510" y="327" fill="#40d080" font-size="10">■ gw-0</text>
     <text x="510" y="410" fill="#5a6a7a" font-size="9" font-style="italic">sidebar abstracted ·</text>
     <text x="510" y="423" fill="#5a6a7a" font-size="9" font-style="italic">KIOSK-003 owns detail</text>
   </g>
@@ -148,7 +148,7 @@
     <rect x="20" y="516" width="800" height="24" fill="rgb(160,28,28)">
       <animate attributeName="fill" values="rgb(160,28,28);rgb(112,20,20);rgb(160,28,28)" dur="1.2s" repeatCount="indefinite"/>
     </rect>
-    <text x="420" y="533" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle">DISTRESS · tag-2 · last frame 42s · ack at tag</text>
+    <text x="420" y="533" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle">DISTRESS · tag-2 · 42s · ack at tag</text>
   </g>
 
   <g id="controls">
@@ -173,8 +173,8 @@
     <text x="836" y="186" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-006:33, 56-64, 80</text>
 
     <text x="836" y="208" fill="#ff8232" font-size="10" font-weight="bold">2 · strip text · exact format</text>
-    <text x="836" y="223" fill="#6c7f92" font-size="9">DISTRESS · {label} · last frame</text>
-    <text x="836" y="236" fill="#6c7f92" font-size="9">{age} · ack at tag</text>
+    <text x="836" y="223" fill="#6c7f92" font-size="9">DISTRESS · {label} · {age}</text>
+    <text x="836" y="236" fill="#6c7f92" font-size="9">· ack at tag</text>
     <text x="836" y="249" fill="#6c7f92" font-size="9">13 pt bold white · size unchanged.</text>
     <text x="836" y="262" fill="#6c7f92" font-size="9">`flags.SOS=1` removed.</text>
     <text x="836" y="275" fill="#6c7f92" font-size="9">`since {wall}` removed.</text>
@@ -293,8 +293,8 @@
     <text x="510" y="698" fill="#ff3c3c" font-size="11" font-weight="bold">🔴 SOS · tag-2 · 42 s</text>
     <text x="510" y="730" fill="#6c7f92" font-size="9">NODES · 3</text>
     <text x="510" y="747" fill="#5a6a7a" font-size="10">● tag-1 · 12 s</text>
-    <text x="510" y="795" fill="#5a6a7a" font-size="10">● relay-1 · POSITION 14 m</text>
-    <text x="510" y="843" fill="#40d080" font-size="10">● gw-0</text>
+    <text x="510" y="795" fill="#5a6a7a" font-size="10">✚ relay-1 · 14 m</text>
+    <text x="510" y="843" fill="#40d080" font-size="10">■ gw-0</text>
   </g>
 
   <g id="bottom-strip-b">
@@ -302,7 +302,7 @@
     <rect x="20" y="1036" width="800" height="24" fill="rgb(160,28,28)">
       <animate attributeName="fill" values="rgb(160,28,28);rgb(112,20,20);rgb(160,28,28)" dur="1.2s" repeatCount="indefinite"/>
     </rect>
-    <text x="420" y="1053" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle">DISTRESS · tag-5 · last frame 8s · ack at tag</text>
+    <text x="420" y="1053" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle">DISTRESS · tag-5 · 8s · ack at tag</text>
   </g>
 
   <g id="controls-b">

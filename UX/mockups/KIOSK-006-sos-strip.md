@@ -24,7 +24,7 @@ fixture width**, 24 px tall (height unchanged from current per
 white, single line, exactly:
 
 ```
-DISTRESS · tag-2 · last frame 42s · ack at tag
+DISTRESS · tag-2 · 42s · ack at tag
 ```
 
 Background pulses between `rgb(160,28,28)` and `rgb(112,20,20)` over
@@ -34,7 +34,7 @@ in both elements).
 **Panel B — multi-SOS (tag-2 + tag-5; tag-5 most recent).** Two
 markers carry SOS pulse rings on the three-layer basemap. Sidebar
 sticky DISTRESS shows both. Strip shows **most-recent only**:
-`DISTRESS · tag-5 · last frame 8s · ack at tag`. No stacking, no
+`DISTRESS · tag-5 · 8s · ack at tag`. No stacking, no
 carousel.
 
 ## Three-layer basemap composition (both panels)
@@ -53,7 +53,7 @@ carousel.
 | Strip is the SOS surface; persistent bottom strip only | `KIOSK-006:29, 31-35` |
 | Strip height unchanged (24 px); text size unchanged (13 pt) | `KIOSK-006:33, 80` |
 | **Full-width** SOS state, no zone split, no coord-readout zone | `KIOSK-006:33, 56-64` |
-| Strip text exact format `DISTRESS · {label} · last frame {age} · ack at tag` | `KIOSK-006:42, 82` |
+| Strip text exact format `DISTRESS · {label} · {age} · ack at tag` | `KIOSK-006:42, 82` |
 | `ack at tag` (no "the") | `KIOSK-006:42, 47, 114` |
 | `flags.SOS=1` and `since {wall}` removed | `KIOSK-006:21, 45-46, 82` |
 | Red fill `Color32::from_rgb(160, 28, 28)` | `tools/sarcom-kiosk-lab/src/app.rs:245` |
@@ -113,8 +113,9 @@ text."
   readout (KIOSK-002 deferred).
 - **Non-SOS strip state** retains existing
   `read-only · PMTiles · zoom N` rendering unchanged.
-- **Exact strip text format**: `DISTRESS · {label} · last frame
-  {age} · ack at tag` — `ack at tag` (no "the").
+- **Exact strip text format**: `DISTRESS · {label} · {age} ·
+  ack at tag` — `ack at tag` (no "the"). No `last frame` prefix
+  on the age.
 - **No crosshair** on the map.
 - **Three-layer basemap** rendered in both panels with distinguishable
   L1/L2/L3 anchors.

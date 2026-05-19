@@ -1,4 +1,3 @@
-pub mod edit_panel;
 pub mod header;
 pub mod palette;
 pub mod sidebar;
@@ -13,37 +12,28 @@ pub fn format_age(secs: f32) -> String {
     }
 }
 
-/// Use this anywhere a relative-time string would be displayed.
-/// Returns "time unavailable" when the gateway clock has not been set
-/// (RTC missing at boot per ADR-011). Never fabricate "X ago" from a
-/// running tick when the wall clock is invalid.
-pub fn format_age_or_unavailable(secs: f32, clock_valid: bool) -> String {
-    if clock_valid {
-        format_age(secs)
-    } else {
-        "time unavailable".into()
-    }
+/// HH:MM:SS rendering of a wall-clock-style time. The lab does not have a
+/// real wall clock; callers feed it `t - secs` derived from the egui app
+/// timer, which is honest enough for the synthetic mockup.
+pub fn format_wall(t: f64) -> String {
+    let secs = t.max(0.0) as u64;
+    format!(
+        "{:02}:{:02}:{:02}",
+        (secs / 3600) % 24,
+        (secs / 60) % 60,
+        secs % 60
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // Locks in the ADR-011 invariant: when clock_valid=false, no callsite
-    // (header / sidebar / SOS banner / map labels / sighting log) may emit
-    // "X ago" via this helper.
     #[test]
-    fn unavailable_when_clock_invalid() {
-        assert_eq!(format_age_or_unavailable(0.0, false), "time unavailable");
-        assert_eq!(format_age_or_unavailable(42.0, false), "time unavailable");
-        assert_eq!(format_age_or_unavailable(9999.0, false), "time unavailable");
-    }
-
-    #[test]
-    fn formatted_when_clock_valid() {
-        assert_eq!(format_age_or_unavailable(0.0, true), "0s ago");
-        assert_eq!(format_age_or_unavailable(42.0, true), "42s ago");
-        assert_eq!(format_age_or_unavailable(180.0, true), "3m ago");
-        assert_eq!(format_age_or_unavailable(7200.0, true), "2.0h ago");
+    fn format_age_buckets() {
+        assert_eq!(format_age(0.0), "0s ago");
+        assert_eq!(format_age(42.0), "42s ago");
+        assert_eq!(format_age(180.0), "3m ago");
+        assert_eq!(format_age(7200.0), "2.0h ago");
     }
 }

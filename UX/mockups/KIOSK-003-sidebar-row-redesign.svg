@@ -22,7 +22,7 @@
     <text x="20" y="44" fill="#c0ccd8" font-size="11">Lab fixture 800x480 (tools/sarcom-kiosk-lab/README.md:53) — ADR-015-pending; substrate open per README.md:36</text>
 
     <text x="20" y="568" fill="#6c7f92" font-size="9">Palette: tools/sarcom-kiosk-lab/src/ui/palette.rs · SIDEBAR_BG #0c1118 · TEXT_DIM #6c7f92 · TEXT_BRIGHT #c0ccd8 · RED #ff3c3c · AMBER #eab308 · GREEN #40d080 · GREY #6b7280</text>
-    <text x="20" y="582" fill="#6c7f92" font-size="9">Source of truth: tickets/KIOSK-003-sidebar-row-redesign.md:29-39, 34 (very-stale), 35 (🔋 BATT), 41 (sticky distress), 67 (relay+gateway selectable), 72 (48px), 77 (full-row tint)</text>
+    <text x="20" y="582" fill="#6c7f92" font-size="9">Source of truth: tickets/KIOSK-003-sidebar-row-redesign.md row-format table, 🔋 BATT inline, sticky distress section, relay+gateway selectable, 48px rows, full-row tint, kind-specific glyphs from inventory map</text>
     <text x="20" y="596" fill="#6c7f92" font-size="9">Map abstracted; three layers (basemap + LIDAR hillshade + OSM XML overlays) live underneath per pmtiles_map.rs:82-125. No counter footer card; no overlay; no popover.</text>
   </g>
 
@@ -69,35 +69,32 @@
 
     <!-- Scrollable NODES section header -->
     <rect x="500" y="208" width="320" height="22" fill="#10171f"/>
-    <text x="508" y="223" fill="#6c7f92" font-size="10" font-weight="bold">NODES · 5</text>
+    <text x="508" y="223" fill="#6c7f92" font-size="10" font-weight="bold">NODES · 4</text>
     <text x="812" y="223" fill="#6c7f92" font-size="9" text-anchor="end">mission-first sort</text>
 
     <!-- tag-1 normal -->
     <line x1="500" y1="278" x2="820" y2="278" stroke="#1a2530" stroke-width="0.5"/>
     <text x="510" y="259" fill="#c0ccd8" font-size="13">● tag-1</text>
-    <text x="600" y="259" fill="#6c7f92" font-size="13">·  12 s ago</text>
+    <text x="600" y="259" fill="#6c7f92" font-size="13">·  12 s</text>
 
     <!-- tag-4 stale -->
     <line x1="500" y1="326" x2="820" y2="326" stroke="#1a2530" stroke-width="0.5"/>
     <text x="510" y="307" fill="#6c7f92" font-size="13">● tag-4 · stale · 12 m</text>
 
-    <!-- tag-5 very-stale -->
-    <line x1="500" y1="374" x2="820" y2="374" stroke="#1a2530" stroke-width="0.5"/>
-    <text x="510" y="355" fill="#6c7f92" font-size="13" fill-opacity="0.65">● tag-5 · very stale · 24 m</text>
-
     <!-- tag-6 battery-low (🔋 BATT icon + suffix together on primary line per KIOSK-003:35) -->
+    <line x1="500" y1="374" x2="820" y2="374" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="510" y="355" fill="#c0ccd8" font-size="13">● tag-6 · 18 s</text>
+    <text x="660" y="355" fill="#eab308" font-size="13" font-weight="bold">·  🔋 BATT</text>
+
+    <!-- relay-1 healthy (orange cross glyph from inventory.kind=Relay) -->
     <line x1="500" y1="422" x2="820" y2="422" stroke="#1a2530" stroke-width="0.5"/>
-    <text x="510" y="403" fill="#c0ccd8" font-size="13">● tag-6 · 18 s</text>
-    <text x="660" y="403" fill="#eab308" font-size="13" font-weight="bold">·  🔋 BATT</text>
+    <text x="510" y="403" fill="#f0a030" font-size="13">✚ relay-1 · 14 m</text>
+    <text x="510" y="417" fill="#6c7f92" font-size="9" font-style="italic">selectable (KIOSK-003 scope change)</text>
 
-    <!-- relay-1 healthy -->
+    <!-- gw-0 healthy (green square glyph from inventory.kind=Gateway, no age) -->
     <line x1="500" y1="470" x2="820" y2="470" stroke="#1a2530" stroke-width="0.5"/>
-    <text x="510" y="451" fill="#c0ccd8" font-size="13">● relay-1 · POSITION 14 m</text>
-    <text x="510" y="465" fill="#6c7f92" font-size="9" font-style="italic">selectable (KIOSK-003 scope change)</text>
-
-    <!-- gw-0 healthy -->
-    <text x="510" y="499" fill="#40d080" font-size="13">● gw-0</text>
-    <text x="510" y="513" fill="#6c7f92" font-size="9" font-style="italic">selectable (KIOSK-003 scope change)</text>
+    <text x="510" y="451" fill="#40d080" font-size="13">■ gw-0</text>
+    <text x="510" y="465" fill="#6c7f92" font-size="9" font-style="italic">selectable · no last-seen (gateway is local)</text>
   </g>
 
   <g id="bottom-strip">
@@ -158,10 +155,10 @@
     <text x="836" y="379" fill="#6c7f92" font-size="9">mission-first sort preserved</text>
     <text x="836" y="392" fill="#6c7f92" font-size="9" font-style="italic">src/ui/sidebar.rs:57-84</text>
 
-    <text x="836" y="416" fill="#ff8232" font-size="10" font-weight="bold">5 · very-stale row</text>
-    <text x="836" y="432" fill="#6c7f92" font-size="9">● tag-5 · very stale · 24 m</text>
-    <text x="836" y="445" fill="#6c7f92" font-size="9">very dim · distinct from `stale`</text>
-    <text x="836" y="458" fill="#6c7f92" font-size="9" font-style="italic">KIOSK-003:34</text>
+    <text x="836" y="416" fill="#ff8232" font-size="10" font-weight="bold">5 · kind-specific glyphs</text>
+    <text x="836" y="432" fill="#6c7f92" font-size="9">tag ● · relay ✚ · gateway ■</text>
+    <text x="836" y="445" fill="#6c7f92" font-size="9">from inventory.kind lookup</text>
+    <text x="836" y="458" fill="#6c7f92" font-size="9">no `last` / `POSITION` prefix on age</text>
 
     <text x="836" y="482" fill="#ff8232" font-size="10" font-weight="bold">6 · battery-low · 🔋 BATT</text>
     <text x="836" y="498" fill="#6c7f92" font-size="9">icon + suffix together on primary</text>
