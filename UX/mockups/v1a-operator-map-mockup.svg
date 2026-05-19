@@ -1,0 +1,682 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 560" font-family="Menlo, Consolas, monospace">
+  <!--
+    SARCOM v1a operator-map mockup, composite. Revision 2026-05-19.
+    Left panel:  Variant B  (strict ADR-007, the serious baseline; design to ship).
+    Right panel: Variant A  (pressure-test against B; not for implementation unless
+                              SPIKE-001 explicitly promotes a per-surface exception).
+    Both panels render the same 7-node scenario per
+      tickets/CLAUDE-DESIGN-PROMPT-v1a-operator-map.md:60-69:
+        tag-1   normal     last seen 12 s, gps_valid=true, batt ok
+        tag-2   SOS        last seen 42 s, gps_valid=true, batt ok, flags.SOS=1
+        tag-3   no-fix     gps_valid=false, last_valid_fix_age 480 s (8 m), ghost
+                            drawn at last_valid_fix_pos per markers.rs:265-302
+        tag-4   stale      last seen 700 s (~12 m), dim
+        relay-1 healthy    self_ann_age ~840 s (14 m), within 1800 s cadence
+        relay-2 overdue    self_ann_age ~3900 s (65 m), past 3600 s threshold
+        gw-0    gateway    clock valid
+    Detail view rendered for tag-3 in BOTH panels so the no-fix case is fully
+    visible per the design prompt.
+
+    Palette taken verbatim from tools/sarcom-kiosk-lab/src/ui/palette.rs.
+    Layout fixture 800x480 per tools/sarcom-kiosk-lab/README.md:53 — NOT a final
+    handheld substrate decision; ADR-015 pending (README.md:36).
+  -->
+
+  <defs>
+    <radialGradient id="pulse-sos" cx="50%" cy="50%" r="50%">
+      <stop offset="55%" stop-color="#ff3c3c" stop-opacity="0"/>
+      <stop offset="82%" stop-color="#ff3c3c" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ff3c3c" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a2530" stroke-width="0.5"/>
+    </pattern>
+    <pattern id="map-grid-fine" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#0f1620" stroke-width="0.4"/>
+    </pattern>
+  </defs>
+
+  <!-- ============================================================== -->
+  <!--  BACKGROUND: panel surfaces                                     -->
+  <!-- ============================================================== -->
+  <g id="background">
+    <title>Panel surfaces (1640x560 = 2x 800x480 + 20px gutter + 60px header band + 20px footer band)</title>
+    <rect x="0" y="0" width="1640" height="560" fill="#070b10"/>
+    <rect x="0" y="60" width="800" height="480" fill="#0a0f14"/>
+    <rect x="840" y="60" width="800" height="480" fill="#0a0f14"/>
+    <line x1="820" y1="60" x2="820" y2="540" stroke="#1a2530" stroke-width="1"/>
+  </g>
+
+  <!-- ============================================================== -->
+  <!--  HEADER + VARIANT LABELS                                        -->
+  <!-- ============================================================== -->
+  <g id="variant-labels">
+    <title>Variant headers above each 800x480 panel</title>
+    <text x="20" y="26" fill="#f0a030" font-size="14" font-weight="bold">SARCOM</text>
+    <text x="84" y="26" fill="#5a6a7a" font-size="11">v1a operator-map mockup · 2026-05-19 · rev 2 (post-ticket-read)</text>
+
+    <text x="20" y="50" fill="#c0ccd8" font-size="13" font-weight="bold">Variant B — strict ADR-007, sidebar replacement + persistent strip (default, design to ship)</text>
+    <text x="840" y="50" fill="#c0ccd8" font-size="13" font-weight="bold">Variant A — pressure-test: slide-in panel + top banner + popover (not adopted unless SPIKE-001 promotes)</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- ================  VARIANT B  =================================== -->
+  <!-- ================================================================ -->
+
+  <!-- ==========MAP ==========-->
+  <g id="map-b">
+    <title>Variant B basemap (PMTiles surrogate). Map area x 0..480, y 78..516 (full height,
+           no top banner). Sidebar at x 480..800. Bottom strip y 516..540.</title>
+    <rect x="0" y="78" width="480" height="438" fill="#0a0f14"/>
+    <rect x="0" y="78" width="480" height="438" fill="url(#map-grid-fine)"/>
+    <rect x="0" y="78" width="480" height="438" fill="url(#map-grid)"/>
+
+    <!-- Schematic ridgelines / contours -->
+    <path d="M 20 200 Q 120 160 200 195 T 360 210 T 470 195" stroke="#1a2530" stroke-width="1.2" fill="none"/>
+    <path d="M 20 280 Q 140 250 230 270 T 400 285 T 470 275" stroke="#1a2530" stroke-width="1" fill="none"/>
+    <path d="M 20 360 Q 150 335 240 350 T 410 360 T 470 350" stroke="#1a2530" stroke-width="0.8" fill="none"/>
+    <path d="M 90 500 L 150 450 L 210 400 L 270 350 L 330 300 L 370 240 L 410 180"
+          stroke="#5a6a7a" stroke-width="0.8" stroke-dasharray="3 4" fill="none"/>
+    <text x="370" y="175" fill="#5a6a7a" font-size="8">trail</text>
+  </g>
+
+  <!-- ==========MARKERS ==========-->
+  <g id="markers-b">
+    <title>7-node scenario: tag-1 normal, tag-2 SOS, tag-3 no-fix ghost,
+           tag-4 stale, relay-1 healthy, relay-2 overdue, gw-0 gateway.</title>
+
+    <!-- tag-4 STALE (dim grey, faded; last seen 700 s) -->
+    <g>
+      <circle cx="95" cy="200" r="14" fill="none" stroke="#6b7280" stroke-opacity="0.2" stroke-width="0.5"/>
+      <circle cx="95" cy="200" r="7" fill="#6b7280" fill-opacity="0.7"/>
+      <text x="109" y="197" fill="#8a96a4" font-size="11">tag-4</text>
+      <text x="109" y="209" fill="#5a6a7a" font-size="9">stale · 12 m</text>
+    </g>
+
+    <!-- relay-1 HEALTHY: cross ✚ glyph, blue/normal -->
+    <g>
+      <g transform="translate(370,200)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#32b4ff" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#32b4ff" stroke="#0a0f14" stroke-width="0.6"/>
+      </g>
+      <text x="384" y="196" fill="#32b4ff" font-size="10">relay-1</text>
+      <text x="384" y="208" fill="#5a6a7a" font-size="9">self-ann 14 m</text>
+    </g>
+
+    <!-- tag-2 SOS — pulse ring + bright red dot -->
+    <g>
+      <circle cx="240" cy="260" r="26" fill="url(#pulse-sos)"/>
+      <circle cx="240" cy="260" r="17" fill="none" stroke="#ff3c3c" stroke-opacity="0.55" stroke-width="2"/>
+      <circle cx="240" cy="260" r="9" fill="#ff3c3c"/>
+      <text x="256" y="257" fill="#c0ccd8" font-size="11" font-weight="bold">tag-2</text>
+      <text x="256" y="269" fill="#ff3c3c" font-size="9" font-weight="bold">SOS · 42 s</text>
+    </g>
+
+    <!-- tag-1 NORMAL: short track + fresh blue dot -->
+    <g opacity="0.5">
+      <polyline points="120,330 145,318 170,310 195,302 220,298 245,300 270,310 300,320 330,326"
+                stroke="#32b4ff" stroke-width="1.2" fill="none"/>
+    </g>
+    <g>
+      <circle cx="330" cy="326" r="14" fill="none" stroke="#32b4ff" stroke-opacity="0.2" stroke-width="0.5"/>
+      <circle cx="330" cy="326" r="8" fill="#32b4ff"/>
+      <text x="344" y="323" fill="#c0ccd8" font-size="11">tag-1</text>
+      <text x="344" y="335" fill="#5a6a7a" font-size="9">12 s ago</text>
+    </g>
+
+    <!-- tag-3 NO-FIX ghost at last_valid_fix_pos (NOT at sentinel current pos).
+         Dashed outer ring + faded fill. SELECTED state shown (the row is the active
+         selection driving the sidebar detail view). -->
+    <g>
+      <!-- selection halo (subtle) -->
+      <circle cx="170" cy="395" r="20" fill="none" stroke="#eab308" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="2 2"/>
+      <!-- ghost dashed ring -->
+      <circle cx="170" cy="395" r="12" fill="none" stroke="#dcdcdc" stroke-opacity="0.63"
+              stroke-dasharray="3.5 3.5" stroke-width="1"/>
+      <circle cx="170" cy="395" r="8" fill="#6b7280" fill-opacity="0.35"/>
+      <text x="186" y="392" fill="#c0ccd8" fill-opacity="0.7" font-size="10">tag-3 · last fix</text>
+      <text x="186" y="404" fill="#eab308" font-size="9">NO FIX · 8 m</text>
+    </g>
+
+    <!-- relay-2 OVERDUE: cross ✚ glyph, amber (self-ann 65 m, past 3600 s) -->
+    <g>
+      <g transform="translate(415,420)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
+      </g>
+      <text x="365" y="445" fill="#eab308" font-size="10" text-anchor="end">relay-2 ⚠</text>
+      <text x="365" y="457" fill="#5a6a7a" font-size="9" text-anchor="end">self-ann 65 m</text>
+    </g>
+
+    <!-- gw-0 GATEWAY: square outline -->
+    <g>
+      <rect x="32" y="464" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
+      <text x="55" y="476" fill="#40d080" font-size="10">gw-0</text>
+      <text x="55" y="487" fill="#5a6a7a" font-size="9">RTC ok</text>
+    </g>
+  </g>
+
+  <!-- ==========MAP CHROME ==========-->
+  <g id="controls-b">
+    <title>Always-visible map chrome: north arrow + N-lock, scale bar, zoom +/-, fit-all,
+           home, clear-UI toggle, tile attribution. Bias rule #1 (always-visible chrome
+           over popups). Per CLAUDE-DESIGN-PROMPT lines 85-91.</title>
+
+    <!-- North arrow + N-lock indicator (top-left of map). 44x44 hit target. -->
+    <g transform="translate(34,108)">
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <polygon points="0,-14 5,4 0,0 -5,4" fill="#c0ccd8"/>
+      <text x="0" y="-16" fill="#c0ccd8" font-size="8" text-anchor="middle">N</text>
+      <text x="0" y="14" fill="#40d080" font-size="8" text-anchor="middle">N🔒</text>
+    </g>
+
+    <!-- Clear-UI toggle (top-right of map). 44x44 hit target. -->
+    <g transform="translate(446,108)">
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <!-- eye icon -->
+      <ellipse cx="0" cy="-2" rx="11" ry="6" fill="none" stroke="#c0ccd8" stroke-width="1.4"/>
+      <circle cx="0" cy="-2" r="2.5" fill="#c0ccd8"/>
+      <text x="0" y="16" fill="#5a6a7a" font-size="7" text-anchor="middle">clear-UI</text>
+    </g>
+
+    <!-- Zoom + / Zoom - / fit-all / home stack (bottom-right of map area).
+         4 buttons x 44px tall with 4px gaps = 188px total. -->
+    <g transform="translate(446,294)">
+      <!-- zoom + -->
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <text x="0" y="6" fill="#c0ccd8" font-size="22" text-anchor="middle">+</text>
+    </g>
+    <g transform="translate(446,342)">
+      <!-- zoom - -->
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <text x="0" y="6" fill="#c0ccd8" font-size="22" text-anchor="middle">−</text>
+    </g>
+    <g transform="translate(446,390)">
+      <!-- fit-all (outward arrows) -->
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <polyline points="-9,-9 -14,-9 -14,-14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+      <polyline points="9,-9 14,-9 14,-14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+      <polyline points="-9,9 -14,9 -14,14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+      <polyline points="9,9 14,9 14,14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+      <text x="0" y="20" fill="#5a6a7a" font-size="7" text-anchor="middle">fit</text>
+    </g>
+    <g transform="translate(446,438)">
+      <!-- home (house) -->
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <path d="M -10 4 L 0 -8 L 10 4 L 10 8 L 5 8 L 5 2 L -5 2 L -5 8 L -10 8 Z" fill="#c0ccd8"/>
+      <text x="0" y="20" fill="#5a6a7a" font-size="7" text-anchor="middle">home</text>
+    </g>
+
+    <!-- Scale bar (bottom-left of map). -->
+    <g transform="translate(20,500)">
+      <rect x="0" y="0" width="40" height="3" fill="#c0ccd8"/>
+      <rect x="40" y="0" width="40" height="3" fill="#5a6a7a"/>
+      <text x="0" y="-3" fill="#c0ccd8" font-size="8">0</text>
+      <text x="36" y="-3" fill="#c0ccd8" font-size="8">50</text>
+      <text x="76" y="-3" fill="#c0ccd8" font-size="8">100 m</text>
+    </g>
+
+    <!-- Tile attribution (bottom of map, dim). -->
+    <text x="160" y="510" fill="#3d4854" font-size="8">© OpenStreetMap · PMTiles · zoom 15</text>
+  </g>
+
+  <!-- ==========SIDEBAR — Variant B: DETAIL VIEW (tag-3 selected) ==========-->
+  <g id="sidebar-b">
+    <title>Variant B sidebar: detail view REPLACES the list per KIOSK-004 Variant B scope
+           (tickets/KIOSK-004-selection-detail-panel.md). 320 px wide, full height.
+           A ← Back-to-list row at top is the only chrome remaining. Bias rule #2
+           (sidebar replacement over slide-in).</title>
+    <rect x="480" y="78" width="320" height="438" fill="#0c1118"/>
+    <line x1="480" y1="78" x2="480" y2="516" stroke="#1a2530" stroke-width="1"/>
+
+    <!-- Back-to-list row (≥48 px touch target) -->
+    <rect x="480" y="78" width="320" height="48" fill="#101822"/>
+    <text x="496" y="100" fill="#c0ccd8" font-size="13">←</text>
+    <text x="514" y="100" fill="#c0ccd8" font-size="13" font-weight="bold">Back to list</text>
+    <text x="514" y="115" fill="#5a6a7a" font-size="9">(tag-3 selected — tap to return)</text>
+    <line x1="480" y1="126" x2="800" y2="126" stroke="#1a2530" stroke-width="1"/>
+
+    <!-- Detail header: id + label -->
+    <text x="496" y="148" fill="#5a6a7a" font-size="9" font-weight="bold">NODE</text>
+    <text x="496" y="170" fill="#eab308" font-size="22" font-weight="bold">tag-3</text>
+    <text x="496" y="188" fill="#c0ccd8" font-size="11">hiker · last fix 8 m ago</text>
+
+    <!-- State strip -->
+    <rect x="488" y="200" width="304" height="34" fill="#1a1a08" stroke="#eab308" stroke-width="1"/>
+    <text x="500" y="222" fill="#eab308" font-size="14" font-weight="bold">⚠ NO FIX</text>
+    <text x="582" y="222" fill="#c0ccd8" font-size="11">gps_valid=false</text>
+
+    <!-- Key/value detail rows, big enough to read at 2 m -->
+    <g font-family="Menlo, Consolas, monospace">
+      <text x="496" y="258" fill="#5a6a7a" font-size="11">last frame age</text>
+      <text x="640" y="258" fill="#c0ccd8" font-size="13">30 s</text>
+
+      <text x="496" y="280" fill="#5a6a7a" font-size="11">last valid fix age</text>
+      <text x="640" y="280" fill="#eab308" font-size="13">8 m</text>
+
+      <text x="496" y="302" fill="#5a6a7a" font-size="11">last fix lat</text>
+      <text x="640" y="302" fill="#c0ccd8" font-size="13">50.92338° N</text>
+
+      <text x="496" y="324" fill="#5a6a7a" font-size="11">last fix lon</text>
+      <text x="640" y="324" fill="#c0ccd8" font-size="13">5.41862° E</text>
+
+      <text x="496" y="346" fill="#5a6a7a" font-size="11">battery</text>
+      <text x="640" y="346" fill="#40d080" font-size="13">ok</text>
+    </g>
+
+    <!-- Flags row -->
+    <text x="496" y="382" fill="#5a6a7a" font-size="9" font-weight="bold">FLAGS</text>
+    <line x1="496" y1="386" x2="784" y2="386" stroke="#1a2530" stroke-width="1"/>
+    <g>
+      <rect x="496" y="394" width="86" height="26" fill="#0f1620" stroke="#1a2530" stroke-width="1"/>
+      <text x="539" y="411" fill="#5a6a7a" font-size="11" text-anchor="middle">SOS · 0</text>
+
+      <rect x="586" y="394" width="120" height="26" fill="#1a1a08" stroke="#eab308" stroke-width="1"/>
+      <text x="646" y="411" fill="#eab308" font-size="11" text-anchor="middle" font-weight="bold">GPS_VALID · 0</text>
+
+      <rect x="710" y="394" width="74" height="26" fill="#0f1620" stroke="#1a2530" stroke-width="1"/>
+      <text x="747" y="411" fill="#5a6a7a" font-size="11" text-anchor="middle">BATT · 0</text>
+    </g>
+
+    <!-- Annotation: which fields are intentionally NOT here -->
+    <text x="496" y="448" fill="#5a6a7a" font-size="9" font-weight="bold">NOT SHOWN</text>
+    <line x1="496" y1="452" x2="784" y2="452" stroke="#1a2530" stroke-width="1"/>
+    <text x="496" y="466" fill="#5a6a7a" font-size="9">RSSI / SNR / hop count — kiosk-lab data model</text>
+    <text x="496" y="478" fill="#5a6a7a" font-size="9">does not carry these fields (data.rs:131-160).</text>
+    <text x="496" y="494" fill="#5a6a7a" font-size="9">Uncertainty disc — open per SPIKE-002.</text>
+  </g>
+
+  <!-- ==========BOTTOM STRIP — Variant B: SOS persistent ==========-->
+  <g id="bottom-strip-b">
+    <title>Persistent SOS state strip per KIOSK-006 Variant B (default).
+           Strengthened visual hierarchy on the existing strip:
+             - 24 px tall (was already 24 px; SOS state may grow to 28-32 px in impl)
+             - DISTRESS in 13 pt bold white
+             - Red fill Color32::from_rgb(160,28,28) per app.rs:245
+             - Right-aligned "read-only · ack at the tag" preserved per app.rs:275-278
+           No banner. No acknowledge button. No dismiss. The strip is the SOS surface.</title>
+    <rect x="0" y="516" width="800" height="24" fill="#a01c1c"/>
+    <circle cx="14" cy="528" r="5" fill="#ffffff"/>
+    <text x="26" y="532" fill="#ffffff" font-size="13" font-weight="bold">DISTRESS</text>
+    <text x="104" y="532" fill="#fcdcdc" font-size="11">· tag-2 · since 14:08:23 · flags.SOS=1 · last frame 42 s</text>
+    <text x="788" y="532" fill="#fcdcdc" font-size="11" text-anchor="end">read-only · ack at the tag</text>
+  </g>
+
+  <!-- ==========INSET — Variant B: non-SOS bottom strip with coord readout ==========-->
+  <g id="coord-readout-inset-b">
+    <title>Out-of-canvas inset showing how Variant B's bottom strip would carry the
+           cursor coordinate readout WHILE TOUCH IS HELD, in a non-SOS state.
+           Per KIOSK-002 Variant B (bottom-strip readout, no popover).
+           Because this scenario is SOS-active, the live strip above is RED, and
+           KIOSK-002 acceptance criterion 6 + KIOSK-002 ticket:80 (SOS > coord readout)
+           prevents simultaneous display. That precedence is flagged as an
+           UNRESOLVED design question, not pretended to be solved.</title>
+    <rect x="0" y="540" width="800" height="20" fill="#070b10"/>
+    <text x="6" y="554" fill="#5a6a7a" font-size="9" font-weight="bold">INSET (non-SOS state):</text>
+    <rect x="120" y="544" width="680" height="14" fill="#0c1118" stroke="#1a2530" stroke-width="0.5"/>
+    <text x="128" y="554" fill="#c0ccd8" font-size="10" font-family="monospace">coord · 50.92341° N · 5.41872° E</text>
+    <text x="794" y="554" fill="#5a6a7a" font-size="10" font-family="monospace" text-anchor="end">read-only · PMTiles · zoom 15</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- ================  VARIANT A — PRESSURE-TEST  =================== -->
+  <!-- ================================================================ -->
+
+  <!-- ==========SOS BANNER (top-anchored, above the map) ==========-->
+  <g id="sos-banner-a">
+    <title>Variant A top-anchored SOS banner per KIOSK-006 Variant A. Sits above the
+           map and pushes the map area down by 40 px (visible cost).
+           Carries an ACKNOWLEDGE button which directly tests the ADR-007:46
+           prohibition on alert-acknowledgement flows.
+           The PERSISTENT BOTTOM STRIP REMAINS UNDERNEATH per KIOSK-006:50 — the strip
+           stays red whether or not the banner is dismissed. Variant A is a FAIR
+           pressure-test: it ADDS a surface, it does not REMOVE the persistent state
+           surface that Variant B keeps.</title>
+    <rect x="840" y="60" width="800" height="40" fill="#a01c1c"/>
+    <circle cx="858" cy="80" r="6" fill="#ffffff"/>
+    <text x="872" y="85" fill="#ffffff" font-size="14" font-weight="bold">SOS · tag-2 · 42 s</text>
+    <text x="1020" y="85" fill="#fcdcdc" font-size="11">flags.SOS=1 · since 14:08:23</text>
+    <!-- Acknowledge button (forbidden term + exception marker present) -->
+    <rect x="1410" y="68" width="220" height="24" fill="#1a0808" stroke="#ff3c3c" stroke-width="1.5"/>
+    <text x="1520" y="84" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">ACKNOWLEDGE — pressure-test against ADR-007:46</text>
+  </g>
+
+  <!-- ==========MAP — Variant A ==========-->
+  <g id="map-a">
+    <title>Variant A basemap. Same 7-node scenario as B. Map starts at y=100 because
+           the banner above pushes it down by 22 px from B's y=78. The slide-in detail
+           panel overlays the right portion of the map.</title>
+    <rect x="840" y="100" width="480" height="416" fill="#0a0f14"/>
+    <rect x="840" y="100" width="480" height="416" fill="url(#map-grid-fine)"/>
+    <rect x="840" y="100" width="480" height="416" fill="url(#map-grid)"/>
+
+    <path d="M 860 222 Q 960 182 1040 217 T 1200 232 T 1310 217" stroke="#1a2530" stroke-width="1.2" fill="none"/>
+    <path d="M 860 302 Q 980 272 1070 292 T 1240 307 T 1310 297" stroke="#1a2530" stroke-width="1" fill="none"/>
+    <path d="M 860 382 Q 990 357 1080 372 T 1250 382 T 1310 372" stroke="#1a2530" stroke-width="0.8" fill="none"/>
+    <path d="M 930 500 L 990 450 L 1050 400 L 1110 350 L 1170 300 L 1210 240 L 1250 180"
+          stroke="#5a6a7a" stroke-width="0.8" stroke-dasharray="3 4" fill="none"/>
+  </g>
+
+  <!-- ==========MARKERS — Variant A (same scenario, shifted by +840 x and +22 y) ==========-->
+  <g id="markers-a">
+    <title>Same 7-node scene as Variant B. The slide-in panel covers the right ~280 px of
+           the map; relay-1, tag-2's right edge, and tag-3 are partially or fully under
+           the slide-in surface (a cost annotated at right).</title>
+
+    <!-- tag-4 STALE -->
+    <g>
+      <circle cx="935" cy="222" r="14" fill="none" stroke="#6b7280" stroke-opacity="0.2" stroke-width="0.5"/>
+      <circle cx="935" cy="222" r="7" fill="#6b7280" fill-opacity="0.7"/>
+      <text x="949" y="219" fill="#8a96a4" font-size="11">tag-4</text>
+      <text x="949" y="231" fill="#5a6a7a" font-size="9">stale · 12 m</text>
+    </g>
+
+    <!-- relay-1 HEALTHY (will be partially covered by slide-in) -->
+    <g>
+      <g transform="translate(1210,222)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#32b4ff" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#32b4ff" stroke="#0a0f14" stroke-width="0.6"/>
+      </g>
+      <text x="1224" y="218" fill="#32b4ff" font-size="10">relay-1</text>
+      <text x="1224" y="230" fill="#5a6a7a" font-size="9">self-ann 14 m</text>
+    </g>
+
+    <!-- tag-2 SOS -->
+    <g>
+      <circle cx="1080" cy="282" r="26" fill="url(#pulse-sos)"/>
+      <circle cx="1080" cy="282" r="17" fill="none" stroke="#ff3c3c" stroke-opacity="0.55" stroke-width="2"/>
+      <circle cx="1080" cy="282" r="9" fill="#ff3c3c"/>
+      <text x="1096" y="279" fill="#c0ccd8" font-size="11" font-weight="bold">tag-2</text>
+      <text x="1096" y="291" fill="#ff3c3c" font-size="9" font-weight="bold">SOS · 42 s</text>
+    </g>
+
+    <!-- tag-1 NORMAL + track -->
+    <g opacity="0.5">
+      <polyline points="960,352 985,340 1010,332 1035,324 1060,320 1085,322 1110,332 1140,342 1170,348"
+                stroke="#32b4ff" stroke-width="1.2" fill="none"/>
+    </g>
+    <g>
+      <circle cx="1170" cy="348" r="14" fill="none" stroke="#32b4ff" stroke-opacity="0.2" stroke-width="0.5"/>
+      <circle cx="1170" cy="348" r="8" fill="#32b4ff"/>
+      <text x="1184" y="345" fill="#c0ccd8" font-size="11">tag-1</text>
+      <text x="1184" y="357" fill="#5a6a7a" font-size="9">12 s ago</text>
+    </g>
+
+    <!-- tag-3 NO-FIX ghost (selection indicator preserved) -->
+    <g>
+      <circle cx="1010" cy="417" r="20" fill="none" stroke="#eab308" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="2 2"/>
+      <circle cx="1010" cy="417" r="12" fill="none" stroke="#dcdcdc" stroke-opacity="0.63"
+              stroke-dasharray="3.5 3.5" stroke-width="1"/>
+      <circle cx="1010" cy="417" r="8" fill="#6b7280" fill-opacity="0.35"/>
+      <text x="1026" y="414" fill="#c0ccd8" fill-opacity="0.7" font-size="10">tag-3 · last fix</text>
+      <text x="1026" y="426" fill="#eab308" font-size="9">NO FIX · 8 m</text>
+    </g>
+
+    <!-- relay-2 OVERDUE -->
+    <g>
+      <g transform="translate(1255,442)">
+        <rect x="-2.5" y="-9" width="5" height="18" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
+        <rect x="-9" y="-2.5" width="18" height="5" fill="#eab308" stroke="#0a0f14" stroke-width="0.6"/>
+      </g>
+      <text x="1205" y="467" fill="#eab308" font-size="10" text-anchor="end">relay-2 ⚠</text>
+      <text x="1205" y="479" fill="#5a6a7a" font-size="9" text-anchor="end">self-ann 65 m</text>
+    </g>
+
+    <!-- gw-0 GATEWAY -->
+    <g>
+      <rect x="872" y="486" width="16" height="16" fill="none" stroke="#40d080" stroke-width="2"/>
+      <text x="895" y="498" fill="#40d080" font-size="10">gw-0</text>
+      <text x="895" y="509" fill="#5a6a7a" font-size="9">RTC ok</text>
+    </g>
+  </g>
+
+  <!-- ==========MAP CHROME — Variant A (same as B) ==========-->
+  <g id="controls-a">
+    <title>Identical chrome to B. Buttons live in the still-visible left strip of the
+           map and at the top-left because the slide-in covers the right.</title>
+
+    <!-- North arrow + N-lock -->
+    <g transform="translate(874,130)">
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <polygon points="0,-14 5,4 0,0 -5,4" fill="#c0ccd8"/>
+      <text x="0" y="-16" fill="#c0ccd8" font-size="8" text-anchor="middle">N</text>
+      <text x="0" y="14" fill="#40d080" font-size="8" text-anchor="middle">N🔒</text>
+    </g>
+
+    <!-- Zoom + / - / fit / home stack — pushed left because slide-in covers right edge -->
+    <g transform="translate(986,316)">
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <text x="0" y="6" fill="#c0ccd8" font-size="22" text-anchor="middle">+</text>
+    </g>
+    <g transform="translate(986,364)">
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <text x="0" y="6" fill="#c0ccd8" font-size="22" text-anchor="middle">−</text>
+    </g>
+    <g transform="translate(986,412)">
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <polyline points="-9,-9 -14,-9 -14,-14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+      <polyline points="9,-9 14,-9 14,-14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+      <polyline points="-9,9 -14,9 -14,14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+      <polyline points="9,9 14,9 14,14" fill="none" stroke="#c0ccd8" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(986,460)">
+      <rect x="-22" y="-22" width="44" height="44" rx="3" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+      <path d="M -10 4 L 0 -8 L 10 4 L 10 8 L 5 8 L 5 2 L -5 2 L -5 8 L -10 8 Z" fill="#c0ccd8"/>
+    </g>
+
+    <!-- Scale bar -->
+    <g transform="translate(860,500)">
+      <rect x="0" y="0" width="40" height="3" fill="#c0ccd8"/>
+      <rect x="40" y="0" width="40" height="3" fill="#5a6a7a"/>
+      <text x="0" y="-3" fill="#c0ccd8" font-size="8">0</text>
+      <text x="36" y="-3" fill="#c0ccd8" font-size="8">50</text>
+      <text x="76" y="-3" fill="#c0ccd8" font-size="8">100 m</text>
+    </g>
+  </g>
+
+  <!-- ==========COORDINATE READOUT POPOVER — Variant A pressure-test ==========-->
+  <g id="coord-popover-a">
+    <title>Variant A coordinate readout per KIOSK-002 Variant A (popover near touch
+           point). Pressure-test: the popover occludes the patch of map being read.
+           Shown on the still-visible left strip of the map (the slide-in covers the right).</title>
+    <!-- Imagined touch point -->
+    <circle cx="935" cy="380" r="5" fill="#ffffff" fill-opacity="0.0" stroke="#c0ccd8" stroke-width="1" stroke-dasharray="2 2"/>
+    <line x1="935" y1="385" x2="935" y2="396" stroke="#5a6a7a" stroke-width="0.8"/>
+    <!-- popover box -->
+    <rect x="900" y="396" width="170" height="34" fill="#0c1118" stroke="#c0ccd8" stroke-width="1"/>
+    <text x="908" y="411" fill="#c0ccd8" font-size="10" font-family="monospace">50.92341° N</text>
+    <text x="908" y="424" fill="#c0ccd8" font-size="10" font-family="monospace">5.41872° E</text>
+    <text x="1062" y="411" fill="#5a6a7a" font-size="9" text-anchor="end">touch&amp;hold</text>
+    <text x="1062" y="424" fill="#5a6a7a" font-size="9" text-anchor="end">popover</text>
+  </g>
+
+  <!-- ==========SIDEBAR — Variant A: LIST (with sticky alerts) ==========-->
+  <g id="sidebar-a">
+    <title>Variant A sidebar shows the LIST because the detail surface lives in the
+           slide-in panel, not in the sidebar. STICKY ALERTS section pinned at top
+           contains tag-2 (SOS) and tag-3 (NO FIX, SELECTED). Scrollable section
+           contains tag-4, tag-1, relay-1, relay-2, gw-0. Row height 48 px per
+           CLAUDE-DESIGN-PROMPT line 96.</title>
+    <rect x="1320" y="100" width="320" height="416" fill="#0c1118"/>
+    <line x1="1320" y1="100" x2="1320" y2="516" stroke="#1a2530" stroke-width="1"/>
+
+    <!-- STICKY ALERTS header -->
+    <rect x="1320" y="100" width="320" height="20" fill="#1a1308"/>
+    <text x="1334" y="114" fill="#eab308" font-size="10" font-weight="bold">STICKY ALERTS</text>
+    <text x="1626" y="114" fill="#5a6a7a" font-size="9" text-anchor="end">2</text>
+
+    <!-- Row: tag-2 SOS (48 px tall) -->
+    <g>
+      <rect x="1320" y="120" width="320" height="48" fill="#2a0e0e"/>
+      <circle cx="1338" cy="144" r="6" fill="#ff3c3c"/>
+      <text x="1352" y="139" fill="#ff3c3c" font-size="11" font-weight="bold">🔴 SOS · tag-2</text>
+      <text x="1352" y="156" fill="#fcdcdc" font-size="10">42 s · last frame</text>
+      <text x="1626" y="148" fill="#ff3c3c" font-size="11" font-weight="bold" text-anchor="end">SOS</text>
+    </g>
+    <line x1="1320" y1="168" x2="1640" y2="168" stroke="#1a2530" stroke-width="0.5"/>
+
+    <!-- Row: tag-3 NO FIX (SELECTED) -->
+    <g>
+      <rect x="1320" y="168" width="320" height="48" fill="#1a1a08"/>
+      <rect x="1320" y="168" width="3" height="48" fill="#eab308"/>
+      <text x="1338" y="187" fill="#eab308" font-size="13">⚠</text>
+      <text x="1352" y="187" fill="#eab308" font-size="11" font-weight="bold">tag-3 · NO FIX</text>
+      <text x="1352" y="203" fill="#c0ccd8" font-size="10">last fix 8 m</text>
+      <text x="1626" y="195" fill="#eab308" font-size="10" font-weight="bold" text-anchor="end">SELECTED</text>
+    </g>
+    <line x1="1320" y1="216" x2="1640" y2="216" stroke="#1a2530" stroke-width="0.5"/>
+
+    <!-- Scrollable list header -->
+    <text x="1334" y="234" fill="#5a6a7a" font-size="10" font-weight="bold">NODES</text>
+    <text x="1626" y="234" fill="#5a6a7a" font-size="9" text-anchor="end">5</text>
+
+    <!-- Row: tag-4 STALE -->
+    <g>
+      <rect x="1320" y="240" width="320" height="40" fill="#0c1118"/>
+      <circle cx="1338" cy="260" r="5" fill="#6b7280"/>
+      <text x="1352" y="257" fill="#8a96a4" font-size="11">tag-4 · stale</text>
+      <text x="1352" y="271" fill="#5a6a7a" font-size="10">12 m</text>
+    </g>
+
+    <!-- Row: tag-1 NORMAL -->
+    <g>
+      <rect x="1320" y="280" width="320" height="40" fill="#0c1118"/>
+      <circle cx="1338" cy="300" r="5" fill="#32b4ff"/>
+      <text x="1352" y="297" fill="#c0ccd8" font-size="11">tag-1</text>
+      <text x="1352" y="311" fill="#5a6a7a" font-size="10">12 s ago</text>
+    </g>
+
+    <!-- Row: relay-1 healthy -->
+    <g>
+      <rect x="1320" y="320" width="320" height="40" fill="#0c1118"/>
+      <g transform="translate(1338,340)">
+        <rect x="-1.5" y="-6" width="3" height="12" fill="#32b4ff"/>
+        <rect x="-6" y="-1.5" width="12" height="3" fill="#32b4ff"/>
+      </g>
+      <text x="1352" y="337" fill="#c0ccd8" font-size="11">relay-1</text>
+      <text x="1352" y="351" fill="#5a6a7a" font-size="10">self-ann 14 m</text>
+    </g>
+
+    <!-- Row: relay-2 overdue -->
+    <g>
+      <rect x="1320" y="360" width="320" height="40" fill="#1a1a08"/>
+      <g transform="translate(1338,380)">
+        <rect x="-1.5" y="-6" width="3" height="12" fill="#eab308"/>
+        <rect x="-6" y="-1.5" width="12" height="3" fill="#eab308"/>
+      </g>
+      <text x="1352" y="377" fill="#eab308" font-size="11">⚠ relay-2</text>
+      <text x="1352" y="391" fill="#c0ccd8" font-size="10">self-ann 65 m</text>
+    </g>
+
+    <!-- Row: gw-0 gateway -->
+    <g>
+      <rect x="1320" y="400" width="320" height="40" fill="#0c1118"/>
+      <rect x="1334" y="414" width="10" height="10" fill="none" stroke="#40d080" stroke-width="1.5"/>
+      <text x="1352" y="417" fill="#c0ccd8" font-size="11">gw-0</text>
+      <text x="1352" y="431" fill="#5a6a7a" font-size="10">RTC ok</text>
+    </g>
+  </g>
+
+  <!-- ==========SLIDE-IN DETAIL PANEL — Variant A pressure-test ==========-->
+  <g id="slide-in-detail-a">
+    <title>Variant A slide-in detail panel per KIOSK-004 Variant A. ~280 px wide,
+           overlays the right portion of the map area. Shows the same tag-3 detail as
+           Variant B's sidebar replacement; the comparison is the SURFACE, not the
+           content. Pressure-test: this panel covers the map (relay-1, tag-2 partially,
+           tag-3 partially). The bottom strip and the banner remain visible.</title>
+    <!-- subtle dim under the slide-in to show map occlusion -->
+    <rect x="1040" y="100" width="280" height="416" fill="#000000" fill-opacity="0.45"/>
+    <!-- slide-in panel surface -->
+    <rect x="1040" y="116" width="280" height="384" fill="#101822" stroke="#1a2530" stroke-width="1"/>
+
+    <!-- close affordance (tap-outside or × on the panel) -->
+    <rect x="1284" y="120" width="32" height="32" fill="#0c1118" stroke="#1a2530" stroke-width="1"/>
+    <text x="1300" y="140" fill="#c0ccd8" font-size="14" font-weight="bold" text-anchor="middle">×</text>
+
+    <text x="1054" y="140" fill="#5a6a7a" font-size="9" font-weight="bold">SELECTED NODE</text>
+    <text x="1054" y="166" fill="#eab308" font-size="20" font-weight="bold">tag-3</text>
+    <text x="1054" y="184" fill="#c0ccd8" font-size="10">hiker · last fix 8 m ago</text>
+
+    <rect x="1052" y="196" width="262" height="30" fill="#1a1a08" stroke="#eab308" stroke-width="1"/>
+    <text x="1062" y="216" fill="#eab308" font-size="13" font-weight="bold">⚠ NO FIX</text>
+    <text x="1136" y="216" fill="#c0ccd8" font-size="10">gps_valid=false</text>
+
+    <g font-family="Menlo, Consolas, monospace">
+      <text x="1054" y="246" fill="#5a6a7a" font-size="10">last frame age</text>
+      <text x="1186" y="246" fill="#c0ccd8" font-size="11">30 s</text>
+
+      <text x="1054" y="266" fill="#5a6a7a" font-size="10">last valid fix age</text>
+      <text x="1186" y="266" fill="#eab308" font-size="11">8 m</text>
+
+      <text x="1054" y="286" fill="#5a6a7a" font-size="10">last fix lat</text>
+      <text x="1186" y="286" fill="#c0ccd8" font-size="11">50.92338° N</text>
+
+      <text x="1054" y="306" fill="#5a6a7a" font-size="10">last fix lon</text>
+      <text x="1186" y="306" fill="#c0ccd8" font-size="11">5.41862° E</text>
+
+      <text x="1054" y="326" fill="#5a6a7a" font-size="10">battery</text>
+      <text x="1186" y="326" fill="#40d080" font-size="11">ok</text>
+    </g>
+
+    <text x="1054" y="358" fill="#5a6a7a" font-size="9" font-weight="bold">FLAGS</text>
+    <line x1="1054" y1="362" x2="1308" y2="362" stroke="#1a2530" stroke-width="1"/>
+    <g>
+      <rect x="1054" y="370" width="78" height="24" fill="#0f1620" stroke="#1a2530" stroke-width="1"/>
+      <text x="1093" y="386" fill="#5a6a7a" font-size="10" text-anchor="middle">SOS · 0</text>
+
+      <rect x="1136" y="370" width="106" height="24" fill="#1a1a08" stroke="#eab308" stroke-width="1"/>
+      <text x="1189" y="386" fill="#eab308" font-size="10" text-anchor="middle" font-weight="bold">GPS_VALID · 0</text>
+
+      <rect x="1246" y="370" width="62" height="24" fill="#0f1620" stroke="#1a2530" stroke-width="1"/>
+      <text x="1277" y="386" fill="#5a6a7a" font-size="10" text-anchor="middle">BATT · 0</text>
+    </g>
+
+    <text x="1054" y="425" fill="#5a6a7a" font-size="9" font-weight="bold">NOT SHOWN</text>
+    <line x1="1054" y1="429" x2="1308" y2="429" stroke="#1a2530" stroke-width="1"/>
+    <text x="1054" y="443" fill="#5a6a7a" font-size="9">RSSI / SNR / hop count — kiosk-lab data model</text>
+    <text x="1054" y="455" fill="#5a6a7a" font-size="9">does not carry these fields (data.rs:131-160).</text>
+    <text x="1054" y="471" fill="#5a6a7a" font-size="9">Uncertainty disc — open per SPIKE-002.</text>
+
+    <text x="1054" y="491" fill="#5a6a7a" font-size="8" font-style="italic">tap outside / × — dismiss — pressure-test</text>
+  </g>
+
+  <!-- ==========BOTTOM STRIP — Variant A: SOS persistent (PRESERVED under banner) ==========-->
+  <g id="bottom-strip-a">
+    <title>Variant A keeps the persistent SOS strip per KIOSK-006:50 — the strip stays
+           red whether or not the banner is dismissed. Variant A ADDS the banner; it
+           does not REMOVE the strip. (This is the fair pressure-test correction over
+           the prior revision, which had Variant A revert the strip to calm. That made
+           Variant A fail by giving up a required persistent state surface, which is
+           not what KIOSK-006 Variant A actually proposes.)</title>
+    <rect x="840" y="516" width="800" height="24" fill="#a01c1c"/>
+    <circle cx="854" cy="528" r="5" fill="#ffffff"/>
+    <text x="866" y="532" fill="#ffffff" font-size="13" font-weight="bold">DISTRESS</text>
+    <text x="944" y="532" fill="#fcdcdc" font-size="11">· tag-2 · since 14:08:23 · flags.SOS=1 · last frame 42 s</text>
+    <text x="1628" y="532" fill="#fcdcdc" font-size="11" text-anchor="end">read-only · ack at the tag (conflicts w/ banner button)</text>
+  </g>
+
+  <!-- ============================================================== -->
+  <!-- ANNOTATIONS                                                     -->
+  <!-- ============================================================== -->
+  <g id="annotations">
+    <title>Marginal callouts. Every forbidden term ("acknowledge", "dashboard",
+           "settings", "login", "CRUD", "dismiss") appears only with an exception
+           marker on the same element per sarcom-svg-wireframe validator.</title>
+
+    <!-- B-side positive callouts -->
+    <text x="20" y="76" fill="#5a6a7a" font-size="9">B · always-visible chrome (north/scale/zoom/fit/home/clear-UI) — bias rule #1.</text>
+    <text x="488" y="76" fill="#5a6a7a" font-size="9">B · sidebar REPLACEMENT detail view (320 px, no overlay) — bias rule #2.</text>
+
+    <!-- A-side cost callouts -->
+    <text x="840" y="76" fill="#5a6a7a" font-size="9">A · banner above map costs 22 px of vertical map area · ack button = ADR-007:46 tension.</text>
+    <text x="1320" y="76" fill="#5a6a7a" font-size="9">A · sidebar shows LIST; detail moved to slide-in panel (covers map).</text>
+  </g>
+
+  <!-- ============================================================== -->
+  <!-- FOOTER non-goal exception markers (forbidden-term laundry list) -->
+  <!-- ============================================================== -->
+  <g id="footer-non-goals">
+    <text x="20" y="558" fill="#5a6a7a" font-size="8">non-goal · neither variant renders: login screens, settings panes, CRUD forms, a remote dashboard, or any data entry (ADR-007:38-46; ARCHITECTURE.md:493-496). non-goal · no RSSI/SNR/hop fields (data model does not carry them). non-goal · no uncertainty disc on tag-3 (SPIKE-002 open). non-goal · no sentinel coordinates rendered as a marker (tag-3 ghost drawn at last_valid_fix_pos, not current sentinel pos).</text>
+  </g>
+</svg>
